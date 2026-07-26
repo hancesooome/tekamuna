@@ -19,23 +19,23 @@ import { MASCOT_URL } from "@/constants";
 const PROCESS_STEPS = [
   {
     num: "01",
-    title: "Claim Ingestion",
+    title: "Claim Submission",
     description: (
       <>
-        Tinatanggap at ini-parse ng aming NLP system ang bawat claim para ma-identify ang key{" "}
-        <span className="text-primary font-semibold underline">assertions</span>.
+        Tinatanggap ang iyong claim at bina-validate — dapat hindi bababa sa{" "}
+        <span className="text-primary font-semibold underline">5 characters</span> at
+        hindi hihigit sa <span className="text-primary font-semibold underline">1,000 characters</span>.
       </>
     ),
   },
   {
     num: "02",
-    title: "Source Harvest",
+    title: "Web Search via Tavily",
     description: (
       <>
-        Nag-a-access ang AI ng 450+ na verified{" "}
-        <span className="text-primary font-semibold underline">news sources</span>,{" "}
-        <span className="text-primary font-semibold underline">government databases</span>, at{" "}
-        <span className="text-primary font-semibold underline">academic journals</span>.
+        Naghahanap kami ng pinaka-relevant na{" "}
+        <span className="text-primary font-semibold underline">web sources</span> gamit
+        ang Tavily Search API — mula sa balita, gobyerno, at akademikong websites.
       </>
     ),
   },
@@ -43,29 +43,31 @@ const PROCESS_STEPS = [
     num: "03",
     title: "Credibility Scoring",
     description:
-      "Bawat source ay sinusukat sa domain authority, publication date, at editorial standards.",
+      "Bawat source ay binibigyan ng credibility score (0–100) base sa domain — government, fact-checkers, at major media ay may mataas na score.",
   },
   {
     num: "04",
-    title: "Cross-Reference Analysis",
+    title: "Top Source Selection",
     description: (
       <>
-        Kino-compare ang mga natulilasang impormasyon at kino-compute ang agreement/
-        <span className="text-primary font-semibold underline">disagreement</span> matrix.
+        Pinipili ang{" "}
+        <span className="text-primary font-semibold underline">top 5 sources</span>{" "}
+        base sa credibility score para ipadala sa AI — nagpapanatili ng maliit na prompt
+        para makatipid ng quota.
       </>
     ),
   },
   {
     num: "05",
-    title: "Verdict Generation",
+    title: "AI Verdict Generation",
     description:
-      "Ang final verdict ay kinakalkula base sa weighted average ng lahat ng evidence scores.",
+      "Ang AI (OpenRouter o Gemini) ay nag-aanalisa ng mga source at nagbibigay ng verdict: Totoo, Hindi Totoo, Mapanlinlang, o Hindi Ma-verify — kasama ang confidence score.",
   },
   {
     num: "06",
-    title: "Human Review (High-Priority)",
+    title: "Result Assembly",
     description:
-      "Ang mga claim na may mataas na viralness ay nire-review ng aming human fact-checkers.",
+      "Pinagsama-sama ang verdict, explanation, supporting at contradicting evidence, at lahat ng sources — ibinabalik sa user bilang kumpletong fact-check result.",
   },
 ] as const;
 
@@ -173,7 +175,8 @@ function ProcessSection() {
         <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Paano Namin Sinusuri</h2>
         <p className="mt-1 text-sm text-muted-foreground max-w-2xl mx-auto">
           Ang aming{" "}
-          <span className="text-primary font-bold">6-step</span> na proseso para sa bawat claim
+          <span className="text-primary font-bold">6-step</span> na proseso para sa bawat claim —
+          mula sa web search hanggang AI verdict
         </p>
       </div>
 
