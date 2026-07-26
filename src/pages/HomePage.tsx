@@ -143,8 +143,7 @@ function CategoryPill({ label }: { label: string }) {
 
 function HeroSection() {
   const navigate = useNavigate();
-  const [query, setQuery]     = useState("");
-  const [focused, setFocused] = useState(false);
+  const [query, setQuery] = useState("");
 
   const handleSuriin = () => {
     navigate("/verify", { state: { claim: query.trim() } });
@@ -153,8 +152,6 @@ function HeroSection() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSuriin();
   };
-
-  const isExpanded = focused || query.length > 0;
 
   return (
     <section className="relative w-full overflow-hidden bg-gradient-primary">
@@ -185,7 +182,7 @@ function HeroSection() {
             {/* Badge pill */}
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm shadow-lg">
               <Zap className="h-3.5 w-3.5 text-accent" />
-              Powered by AI · Trusted by Pilipinos
+              Powered by AI · Built for Every Juan
             </div>
 
             {/* Headline */}
@@ -201,14 +198,12 @@ function HeroSection() {
             </p>
 
             {/* Search bar */}
-            <div className={`mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-300 ${isExpanded ? "rounded-2xl" : "rounded-full"}`}>
+            <div className="mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
               <div className="flex items-stretch">
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
                   onKeyDown={handleKeyDown}
                   placeholder="I-type ang claim na gusto mong suriin..."
                   className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -216,20 +211,12 @@ function HeroSection() {
                 <button
                   type="button"
                   onClick={handleSuriin}
-                  className="m-1.5 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                  className="m-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
                 >
                   <Search className="h-4 w-4" />
                   Suriin
                 </button>
               </div>
-              {/* Expanded hint */}
-              {isExpanded && (
-                <div className="px-6 pb-3 flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground">
-                    Pindutin ang <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">Enter</kbd> o i-click ang <strong>Suriin</strong> para magpatuloy
-                  </span>
-                </div>
-              )}
             </div>
 
 
