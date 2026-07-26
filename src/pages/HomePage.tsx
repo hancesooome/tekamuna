@@ -353,7 +353,7 @@ function RecentChecksSection() {
 
 function CTASection() {
   return (
-    <section className="w-full bg-gradient-primary py-16 sm:py-24">
+    <section className="w-full bg-gradient-primary py-12 sm:py-24">
       <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-0 flex flex-col items-center text-center gap-8">
         <div className="relative">
           <div className="absolute inset-0 bg-accent/30 rounded-full blur-2xl" />
