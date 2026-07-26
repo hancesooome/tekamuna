@@ -149,7 +149,8 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
   const topSourcesBlock = rankedSources.map((r, i) => {
     const s       = scoredIndex.get(r.url)!;
     const excerpt = s.summary.slice(0, 150).replace(/\n/g, " ");
-    return `[${i + 1}] "${s.title}" | ${s.sourceName} (score:${s.credibilityScore}) | "${excerpt}"`;
+    const date    = s.publishedDate ? ` | date:${s.publishedDate}` : "";
+    return `[${i + 1}] "${s.title}" | ${s.sourceName} (score:${s.credibilityScore})${date} | "${excerpt}"`;
   }).join("\n");
 
   const systemMsg: AIMessage = {
@@ -230,11 +231,16 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       const raw   = item as Record<string, unknown>;
       const url   = String(raw.url ?? "");
       const known = scoredIndex.get(url);
+      // Prefer AI-provided date, fall back to Tavily-scraped date
+      const publishedDate =
+        String(raw.publishedDate ?? "").trim() ||
+        known?.publishedDate ||
+        "";
       return {
         title:         known?.title         ?? String(raw.title         ?? ""),
         url:           known?.url           ?? url,
         sourceName:    known?.sourceName    ?? String(raw.sourceName    ?? ""),
-        publishedDate: known?.publishedDate ?? String(raw.publishedDate ?? ""),
+        publishedDate,
         summary:       String(raw.summary   ?? known?.summary           ?? ""),
       };
     });
