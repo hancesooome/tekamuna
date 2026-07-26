@@ -28,90 +28,7 @@ import { cn } from "@/lib/utils";
 
 export type FilterCategory = (typeof FILTER_CATEGORIES)[number];
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
-
-const DEMO: VerifyResult[] = [
-  {
-    claim: "Ang Pilipinas ay may pinakamabilis na Internet sa ASEAN",
-    verdict: "false",
-    confidence: 23,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 8,
-    verifiedAt: "2026-07-25T10:32:00.000Z",
-  },
-  {
-    claim: "Libre ang tuition fee sa lahat ng state universities",
-    verdict: "true",
-    confidence: 96,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 9,
-    verifiedAt: "2026-07-24T08:15:00.000Z",
-  },
-  {
-    claim: "Si Fernando Poe Jr. ay namatay sa natural na kamatayan",
-    verdict: "misleading",
-    confidence: 61,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 5,
-    verifiedAt: "2026-07-23T14:00:00.000Z",
-  },
-  {
-    claim: "Pinamamahalaan ng China ang West Philippine Sea ng ganap na",
-    verdict: "false",
-    confidence: 15,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 10,
-    verifiedAt: "2026-07-22T09:45:00.000Z",
-  },
-  {
-    claim: "Ang Pilipinas ay sumali na sa BRICS bilang full member",
-    verdict: "unverified",
-    confidence: 45,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 6,
-    verifiedAt: "2026-07-21T11:20:00.000Z",
-  },
-  {
-    claim: "100% renewable energy na ang Siargao Island",
-    verdict: "true",
-    confidence: 88,
-    explanation: "",
-    truthStatement: "",
-    supportingEvidence: [],
-    contradictingEvidence: [],
-    reliableSources: [],
-    mascotAdvice: "",
-    searchResultsCount: 7,
-    verifiedAt: "2026-07-20T16:30:00.000Z",
-  },
-];
-
-// Category derived from claim keywords (demo only — real data would store category)
+// Category derived from claim keywords
 function inferCategory(claim: string): string {
   for (const [key, cat] of Object.entries(CATEGORY_KEYWORD_MAP)) {
     if (claim.includes(key)) return cat;
@@ -198,10 +115,10 @@ export default function HistoryPage() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("Lahat");
 
-  // Load from sessionStorage via historyService, fall back to demo data
+  // Load from sessionStorage via historyService — show empty state if none
   useEffect(() => {
     const stored = loadHistory();
-    setHistory(stored.length > 0 ? stored : DEMO);
+    setHistory(stored);
   }, []);
 
   // Stats

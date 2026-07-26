@@ -166,3 +166,16 @@ select {
 .animate-page-in {
   animation: page-fade-in 0.2s ease-out both;
 }
+
+/* ── Prevent iOS Safari auto-zoom on input focus ────────────────────────────
+   iOS zooms in when an input's font-size is < 16px. Setting font-size to 1rem
+   (16px) on all inputs/textareas prevents this while keeping visual sizing
+   controlled via padding and height as before.
+─────────────────────────────────────────────────────────────────────────── */
+@media screen and (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 1rem !important;
+  }
+}

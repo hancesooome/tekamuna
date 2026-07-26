@@ -8,7 +8,7 @@
  *  4. CTA           — full-bleed blue, call-to-action
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge, type Verdict } from "@/components/shared/VerdictBadge";
@@ -106,11 +106,6 @@ const RECENT_CHECKS: {
   },
 ];
 
-const EXAMPLES = [
-  "Ang Pilipinas ay may pinakamabilis na internet s...",
-  "Si Jose Rizal ay hindi pinatay sa Luneta",
-];
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /** Highlighted text in a claim row */
@@ -150,7 +145,6 @@ function HeroSection() {
   const navigate = useNavigate();
   const [query, setQuery]     = useState("");
   const [focused, setFocused] = useState(false);
-  const inputRef              = useRef<HTMLInputElement>(null);
 
   const handleSuriin = () => {
     navigate("/verify", { state: { claim: query.trim() } });
@@ -158,11 +152,6 @@ function HeroSection() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSuriin();
-  };
-
-  const fillExample = (ex: string) => {
-    setQuery(ex.replace(/\.\.\.$/, ""));
-    inputRef.current?.focus();
   };
 
   const isExpanded = focused || query.length > 0;
@@ -215,7 +204,6 @@ function HeroSection() {
             <div className={`mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-300 ${isExpanded ? "rounded-2xl" : "rounded-full"}`}>
               <div className="flex items-stretch">
                 <input
-                  ref={inputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -244,19 +232,7 @@ function HeroSection() {
               )}
             </div>
 
-            {/* Example chips */}
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <span className="text-xs font-semibold text-white/70">Halimbawa:</span>
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => fillExample(ex)}
-                  className="text-left rounded-full border border-white/25 bg-white/5 px-4 py-2 text-xs font-medium text-white/95 transition-all hover:bg-white/15 hover:border-white/40 backdrop-blur-sm"
-                >
-                  "{ex}"
-                </button>
-              ))}
-            </div>
+
           </div>
 
           {/* ── Right: mascot ── */}

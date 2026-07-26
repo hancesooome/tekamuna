@@ -7,9 +7,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { Settings, ArrowRight, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { NavLink } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { MASCOT_URL } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +20,6 @@ const NAV_ITEMS = [
 ] as const;
 
 export function Navbar() {
-  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -48,7 +46,7 @@ export function Navbar() {
 
           {/* ── Logo ── */}
           <button
-            onClick={() => { void navigate("/"); handleNavClick(); }}
+            onClick={() => { window.location.href = "/"; handleNavClick(); }}
             className="flex items-center gap-2 group focus:outline-none"
             aria-label="Teka Muna — bumalik sa Home"
           >
@@ -90,27 +88,8 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* ── Desktop right controls ── */}
-          <div className="hidden md:flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Buksan ang settings"
-              className="rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-
-            <Button
-              variant="accent"
-              size="default"
-              onClick={() => { void navigate("/verify"); handleNavClick(); }}
-              className="rounded-full px-5 py-2 font-black shadow-lg hover:shadow-xl"
-            >
-              Suriin
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* ── Desktop right controls — intentionally empty ── */}
+          <div className="hidden md:flex items-center gap-3" />
 
           {/* ── Mobile hamburger ── */}
           <button
@@ -146,15 +125,6 @@ export function Navbar() {
                 {label}
               </NavLink>
             ))}
-          </div>
-          <div className="mt-4 space-y-2">
-            <Button
-              variant="accent"
-              className="w-full rounded-xl py-3.5 font-black shadow-lg"
-              onClick={() => { void navigate("/verify"); handleNavClick(); }}
-            >
-              Suriin <ArrowRight className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       )}
