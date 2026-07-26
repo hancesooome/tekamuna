@@ -35,6 +35,13 @@ export const APP_TAGLINE = "AI Fact-Checker";
 export const MASCOT_URL =
   "https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/solo-nobg.png";
 
+/**
+ * Logo icon URL — used in the Navbar circle and browser favicon.
+ * This is the full icon with background, distinct from the transparent mascot.
+ */
+export const LOGO_ICON_URL =
+  "https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/icon.png";
+
 // ── Storage keys ──────────────────────────────────────────────────────────────
 // All sessionStorage keys are defined here to avoid collision and make
 // clearing storage predictable (just reference these constants).

@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { MASCOT_URL } from "@/constants";
+import { LOGO_ICON_URL } from "@/constants";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -52,7 +52,7 @@ export function Navbar() {
           >
             <div className="h-9 w-9 overflow-hidden rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
               <img
-                src={MASCOT_URL}
+                src={LOGO_ICON_URL}
                 alt="Teka mascot"
                 className="h-full w-full object-contain"
                 referrerPolicy="no-referrer"
