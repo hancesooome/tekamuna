@@ -1,5 +1,5 @@
-﻿/**
- * ResultPage — redesigned to match Figma screenshots.
+/**
+ * ResultPage � redesigned to match Figma screenshots.
  *
  * Layout:
  *   Breadcrumb
@@ -25,7 +25,7 @@ import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
-// ─── Verdict config ───────────────────────────────────────────────────────────
+// --- Verdict config -----------------------------------------------------------
 
 const V = {
   true: {
@@ -66,7 +66,7 @@ const V = {
   },
 } satisfies Record<Verdict, { Icon: React.ElementType; bg: string; border: string; iconBg: string; label: string; ring: string; arc: string }>;
 
-// ─── Donut confidence gauge ───────────────────────────────────────────────────
+// --- Donut confidence gauge ---------------------------------------------------
 
 function ConfidenceDonut({ value, color }: { value: number; color: string }) {
   const r = 52;
@@ -95,7 +95,7 @@ function ConfidenceDonut({ value, color }: { value: number; color: string }) {
   );
 }
 
-// ─── Stance badge ─────────────────────────────────────────────────────────────
+// --- Stance badge -------------------------------------------------------------
 
 function StanceBadge({ stance }: { stance: "Supports" | "Contradicts" | "Neutral" | "Partially Contradicts" }) {
   const map = {
@@ -111,7 +111,7 @@ function StanceBadge({ stance }: { stance: "Supports" | "Contradicts" | "Neutral
   );
 }
 
-// ─── Credibility level badge ──────────────────────────────────────────────────
+// --- Credibility level badge --------------------------------------------------
 
 function CredBadge({ score }: { score: number }) {
   if (score >= 85) return <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Mataas na Kredibilidad</span>;
@@ -119,7 +119,7 @@ function CredBadge({ score }: { score: number }) {
   return <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Mababang Kredibilidad</span>;
 }
 
-// ─── Loading / Error skeletons ────────────────────────────────────────────────
+// --- Loading / Error skeletons ------------------------------------------------
 
 function LoadingSkeleton() {
   return (
@@ -158,7 +158,7 @@ function ErrorState() {
   );
 }
 
-// ─── Main success view ────────────────────────────────────────────────────────
+// --- Main success view --------------------------------------------------------
 
 function SuccessView({ result }: { result: VerifyResult }) {
   const navigate = useNavigate();
@@ -178,7 +178,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
   return (
     <PageContainer className="animate-page-in max-w-[850px] pb-12">
 
-      {/* ── Breadcrumb ── */}
+      {/* -- Breadcrumb -- */}
       <nav className="flex items-center gap-1.5 pt-8 pb-6 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
         <ChevronRight className="h-3 w-3" />
@@ -187,7 +187,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
         <span className="font-semibold text-foreground">Resulta</span>
       </nav>
 
-      {/* ── Claim banner ── */}
+      {/* -- Claim banner -- */}
       <div className="flex items-center gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-6 py-6 mb-6 shadow-sm">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
           <FileText className="h-4 w-4 text-primary" />
@@ -202,7 +202,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
         </div>
       </div>
 
-      {/* ── Two-column: verdict + confidence ── */}
+      {/* -- Two-column: verdict + confidence -- */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-5 mb-6">
 
         {/* Left: verdict card */}
@@ -237,9 +237,9 @@ function SuccessView({ result }: { result: VerifyResult }) {
               const url = buildShareUrl(result.claim);
               if (navigator.share) {
                 try {
-                  await navigator.share({ title: "Teka Muna — Fact Check", text: `${label}: ${result.claim}`, url });
+                  await navigator.share({ title: "Teka Muna � Fact Check", text: `${label}: ${result.claim}`, url });
                   return;
-                } catch { /* user cancelled — fall through */ }
+                } catch { /* user cancelled � fall through */ }
               }
               try {
                 await navigator.clipboard.writeText(url);
@@ -312,7 +312,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
         </div>
       </div>
 
-      {/* ── Three tabs ── */}
+      {/* -- Three tabs -- */}
       <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-2xl border border-[#d9e4ff] bg-[#f8faff] shadow-sm">
         <TabsList className="w-full rounded-none border-b border-[#d9e4ff] bg-transparent p-0 h-auto justify-start gap-0 overflow-x-auto">
           {(["buod", "timeline", "sources"] as const).map((v) => {
@@ -332,16 +332,16 @@ function SuccessView({ result }: { result: VerifyResult }) {
           })}
         </TabsList>
 
-        {/* ── Buod ── */}
+        {/* -- Buod -- */}
         <TabsContent value="buod" className="mt-0 px-5 py-5">
           <div className="flex flex-col gap-6">
             {/* Metadata grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { label: "Pinagmulan ng Claim", value: "Web Search" },
-                { label: "Napatunayan noong", value: `${verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} · ${verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}` },
+                { label: "Napatunayan noong", value: `${verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} � ${verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}` },
                 { label: "Kategorya", value: "General" },
-                { label: "Nakaraang Verdict", value: "—" },
+                { label: "Nakaraang Verdict", value: "�" },
               ].map(({ label: l, value }) => (
                 <div key={l} className="rounded-2xl bg-white/55 px-4 py-3">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">{l}</p>
@@ -358,7 +358,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
 
             {/* Truth statement */}
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-xs font-black text-amber-800 mb-2">✨ Ano ang Totoo</p>
+              <p className="text-xs font-black text-amber-800 mb-2">? Ano ang Totoo</p>
               <p className="text-sm text-amber-900 leading-relaxed">{result.truthStatement}</p>
             </div>
 
@@ -383,7 +383,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
           </div>
         </TabsContent>
 
-        {/* ── Timeline ng Ebidensya ── */}
+        {/* -- Timeline ng Ebidensya -- */}
         <TabsContent value="timeline" className="mt-0 px-5 py-5">
           <p className="text-xs text-primary mb-5">
             Narito ang mga ebidensya na nakolekta sa iba't ibang oras, mula pinaka-bago hanggang pinaka-luma.
@@ -422,7 +422,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                       <p className="text-xs text-foreground leading-relaxed mb-3">{source.summary}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground">
-                          {source.publishedDate ? formatDate(source.publishedDate) : "Petsa hindi available"}
+                          {formatDate(source.publishedDate)}
                         </span>
                         <a href={source.url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
@@ -437,7 +437,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
           )}
         </TabsContent>
 
-        {/* ── Mga Source ── */}
+        {/* -- Mga Source -- */}
         <TabsContent value="sources" className="mt-0 px-5 py-5">
           <p className="text-xs text-muted-foreground mb-4">
             <span className="font-bold text-foreground">{allSources.length}</span> sources ang sinuri. Ang bawat isa ay sinusukat sa accuracy, recency, at domain authority.
@@ -462,7 +462,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                     <p className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">{source.title || source.sourceName}</p>
                     <p className="text-[10px] sm:text-[11px] text-muted-foreground">{source.sourceName}</p>
                   </div>
-                  {/* Stance — always visible */}
+                  {/* Stance � always visible */}
                   <div className="shrink-0">
                     <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
                   </div>
@@ -482,7 +482,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
         </TabsContent>
       </Tabs>
 
-      {/* ── Bottom actions ── */}
+      {/* -- Bottom actions -- */}
       <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
         <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate(-1)}>
           Bumalik sa Verify
@@ -495,7 +495,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
   );
 }
 
-// ─── Page state machine ───────────────────────────────────────────────────────
+// --- Page state machine -------------------------------------------------------
 
 type PageState =
   | { status: "loading" }

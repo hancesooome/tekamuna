@@ -375,7 +375,7 @@ function ResultView({ result }: { result: VerifyResult }) {
                       <p className="text-xs text-foreground leading-relaxed mb-3">{source.summary}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground">
-                          {source.publishedDate ? formatDate(source.publishedDate) : "Petsa hindi available"}
+                          {formatDate(source.publishedDate)}
                         </span>
                         <a href={source.url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">

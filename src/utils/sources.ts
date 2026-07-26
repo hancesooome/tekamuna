@@ -84,9 +84,9 @@ export function allSourcesMerged(result: VerifyResult): Source[] {
  *   formatDate("")                          // "—"
  */
 export function formatDate(iso: string): string {
-  if (!iso || iso.trim() === "") return "—";
+  if (!iso || iso.trim() === "") return "Hindi available";
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "Hindi available";
   return d.toLocaleDateString("en-PH", {
     month: "short",
     day:   "numeric",

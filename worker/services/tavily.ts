@@ -136,6 +136,8 @@ export async function searchWeb(
     include_answer: false,
     include_raw_content: false,
     max_results: MAX_RESULTS,
+    include_domains: [],
+    exclude_domains: [],
   };
 
   try {
