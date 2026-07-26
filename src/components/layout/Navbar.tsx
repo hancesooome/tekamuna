@@ -50,14 +50,12 @@ export function Navbar() {
             className="flex items-center gap-2 group focus:outline-none"
             aria-label="Teka Muna — bumalik sa Home"
           >
-            <div className="h-9 w-9 overflow-hidden rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
-              <img
-                src={LOGO_ICON_URL}
-                alt="Teka mascot"
-                className="h-full w-full object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <img
+              src={LOGO_ICON_URL}
+              alt="Teka Muna logo"
+              className="h-9 w-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
+              referrerPolicy="no-referrer"
+            />
             <div className="flex flex-col leading-none">
               <span className="text-[20px] font-black tracking-tight text-primary">Teka Muna</span>
               <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
