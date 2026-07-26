@@ -383,14 +383,12 @@ export default function VerifyPage() {
 
         {/* ── Page header ── */}
         <div className="flex flex-col items-center text-center pt-12 pb-10 gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-            <img
-              src="https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/think.png"
-              alt="Teka thinking"
-              className="h-12 w-12 object-contain"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+        <img
+            src="https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/think.png"
+            alt="Teka thinking"
+            className="h-16 w-16 object-contain"
+            referrerPolicy="no-referrer"
+          />
           <h1 className="text-3xl sm:text-[36px] font-black text-foreground tracking-tight">
             I-Verify ang Claim
           </h1>
