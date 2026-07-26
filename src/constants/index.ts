@@ -54,7 +54,7 @@ export const HISTORY_MAX_ENTRIES = 50;
  * In dev: Vite proxies /api → localhost:8787 (wrangler dev).
  * In prod: the Worker is bound to the same Pages domain under /api/*.
  */
-export const API_BASE_URL = "/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 // ── Claim categories ──────────────────────────────────────────────────────────
 
