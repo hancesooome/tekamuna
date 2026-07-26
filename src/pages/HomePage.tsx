@@ -8,8 +8,9 @@
  *  4. CTA           — full-bleed blue, call-to-action
  */
 
+import { useState, useRef } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge, type Verdict } from "@/components/shared/VerdictBadge";
 import { MASCOT_URL } from "@/constants";
 
@@ -146,6 +147,26 @@ function CategoryPill({ label }: { label: string }) {
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
 function HeroSection() {
+  const navigate = useNavigate();
+  const [query, setQuery]     = useState("");
+  const [focused, setFocused] = useState(false);
+  const inputRef              = useRef<HTMLInputElement>(null);
+
+  const handleSuriin = () => {
+    navigate("/verify", { state: { claim: query.trim() } });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSuriin();
+  };
+
+  const fillExample = (ex: string) => {
+    setQuery(ex.replace(/\.\.\.$/, ""));
+    inputRef.current?.focus();
+  };
+
+  const isExpanded = focused || query.length > 0;
+
   return (
     <section className="relative w-full overflow-hidden bg-gradient-primary">
       {/* Dot grid overlay */}
@@ -191,20 +212,36 @@ function HeroSection() {
             </p>
 
             {/* Search bar */}
-            <div className="mt-8 flex items-stretch overflow-hidden rounded-full bg-white shadow-2xl ring-1 ring-black/5">
-              <input
-                type="text"
-                placeholder="I-type ang claim na gusto mong suriin..."
-                className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                onFocus={(e) => e.target.blur()}
-              />
-              <Link
-                to="/verify"
-                className="m-1.5 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg"
-              >
-                <Search className="h-4 w-4" />
-                Suriin
-              </Link>
+            <div className={`mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-300 ${isExpanded ? "rounded-2xl" : "rounded-full"}`}>
+              <div className="flex items-stretch">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="I-type ang claim na gusto mong suriin..."
+                  className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSuriin}
+                  className="m-1.5 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                >
+                  <Search className="h-4 w-4" />
+                  Suriin
+                </button>
+              </div>
+              {/* Expanded hint */}
+              {isExpanded && (
+                <div className="px-6 pb-3 flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Pindutin ang <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">Enter</kbd> o i-click ang <strong>Suriin</strong> para magpatuloy
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Example chips */}
@@ -213,6 +250,7 @@ function HeroSection() {
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex}
+                  onClick={() => fillExample(ex)}
                   className="text-left rounded-full border border-white/25 bg-white/5 px-4 py-2 text-xs font-medium text-white/95 transition-all hover:bg-white/15 hover:border-white/40 backdrop-blur-sm"
                 >
                   "{ex}"

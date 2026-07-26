@@ -16,6 +16,7 @@ import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
 import { cn }             from "@/lib/utils";
+import { useLocation }    from "react-router-dom";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -326,6 +327,7 @@ function ImageUploadCollapsible({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function VerifyPage() {
+  const location = useLocation();
   const [claim, setClaim]                       = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [optionsOpen, setOptionsOpen]           = useState(false);
@@ -336,6 +338,16 @@ export default function VerifyPage() {
   });
 
   const { mutate, isPending, error, reset } = useVerify();
+
+  // Pre-fill claim from HomePage search bar navigation
+  useEffect(() => {
+    const state = location.state as { claim?: string } | null;
+    if (state?.claim && state.claim.trim().length > 0) {
+      setClaim(state.claim.trim().slice(0, MAX_CHARS));
+      // Clear the router state so a page refresh doesn't re-fill
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
 
   const canSubmit = claim.trim().length >= 10 && !isPending;
   const charsLeft = MAX_CHARS - claim.length;
