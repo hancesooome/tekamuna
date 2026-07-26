@@ -12,7 +12,7 @@
 
 import { ShieldCheck, TrendingUp, Medal } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { MASCOT_URL } from "@/constants";
+import { LOGO_ICON_URL } from "@/constants";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ function HeroSection() {
       <div className="relative">
         <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl" />
         <img
-          src={MASCOT_URL}
+          src={LOGO_ICON_URL}
           alt="Teka mascot"
           className="relative h-24 w-24 sm:h-28 sm:w-28 object-contain drop-shadow-lg"
           referrerPolicy="no-referrer"
