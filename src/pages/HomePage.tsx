@@ -8,7 +8,7 @@
  *  4. CTA           — full-bleed blue, call-to-action
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge, type Verdict } from "@/components/shared/VerdictBadge";
@@ -144,13 +144,28 @@ function CategoryPill({ label }: { label: string }) {
 function HeroSection() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSuriin = () => {
     navigate("/verify", { state: { claim: query.trim() } });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSuriin();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Enter without Shift
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSuriin();
+    }
+  };
+
+  // Auto-resize textarea as user types
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setQuery(e.target.value);
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
   };
 
   return (
@@ -199,19 +214,20 @@ function HeroSection() {
 
             {/* Search bar */}
             <div className="mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-              <div className="flex items-stretch">
-                <input
-                  type="text"
+              <div className="flex items-end">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={handleChange}
                   onKeyDown={handleKeyDown}
                   placeholder="I-type ang claim na gusto mong suriin..."
-                  className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="flex-1 resize-none overflow-hidden bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
                 />
                 <button
                   type="button"
                   onClick={handleSuriin}
-                  className="m-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                  className="m-1.5 mb-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
                 >
                   <Search className="h-4 w-4" />
                   Suriin
