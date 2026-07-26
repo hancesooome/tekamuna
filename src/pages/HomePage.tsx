@@ -213,21 +213,21 @@ function HeroSection() {
             </p>
 
             {/* Search bar */}
-            <div className="mt-8 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-              <div className="flex items-end">
-                <textarea
-                  ref={textareaRef}
-                  rows={1}
-                  value={query}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="I-type ang claim na gusto mong suriin..."
-                  className="flex-1 resize-none overflow-hidden bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
-                />
+            <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={query}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="I-type ang claim na gusto mong suriin..."
+                className="w-full resize-none overflow-hidden bg-transparent px-6 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
+              />
+              <div className="flex justify-end px-2 pb-2">
                 <button
                   type="button"
                   onClick={handleSuriin}
-                  className="m-1.5 mb-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                  className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg"
                 >
                   <Search className="h-4 w-4" />
                   Suriin
