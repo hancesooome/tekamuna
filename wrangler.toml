@@ -1,0 +1,20 @@
+name = "teka-muna-worker"
+main = "worker/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── Local dev ──────────────────────────────────────────────────────────────
+[dev]
+port = 8787
+local_protocol = "http"
+
+# ── Bindings (secrets are set via .dev.vars locally / CF dashboard in prod) ─
+# GEMINI_API_KEY  → wrangler secret put GEMINI_API_KEY
+# TAVILY_API_KEY  → wrangler secret put TAVILY_API_KEY
+
+# ── Cloudflare Pages integration ───────────────────────────────────────────
+# The SPA static assets are deployed to Pages; the Worker is bound as a
+# Functions route under /api/*.  This section is used by `wrangler pages dev`.
+[[rules]]
+type = "ESModule"
+globs = ["**/*.ts"]

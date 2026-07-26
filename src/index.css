@@ -1,0 +1,168 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Design tokens — exact values from the Figma theme.css
+   --radius: 0.75rem base
+   --radius-sm: 0.5rem   (radius - 4px)
+   --radius-md: 0.625rem (radius - 2px)
+   --radius-lg: 0.75rem  (radius)
+   --radius-xl: 1rem     (radius + 4px)
+───────────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  /* ── Primary blue (Figma exact) ── */
+  --color-primary:            #1A56DB;
+  --color-primary-foreground: #ffffff;
+
+  /* ── Yellow accent (Figma exact) ── */
+  --color-accent:             #FBBF24;
+  --color-accent-foreground:  #0f172a;
+
+  /* ── Surfaces ── */
+  --color-background:         #ffffff;
+  --color-foreground:         #0f172a;
+
+  --color-card:               #f8faff;
+  --color-card-foreground:    #0f172a;
+
+  --color-popover:            #ffffff;
+  --color-popover-foreground: #0f172a;
+
+  /* ── Secondary ── */
+  --color-secondary:            #eff6ff;
+  --color-secondary-foreground: #1e3a8a;
+
+  /* ── Muted ── */
+  --color-muted:            #f1f5f9;
+  --color-muted-foreground: #64748b;
+
+  /* ── Border / input ── */
+  --color-border:           rgba(26, 86, 219, 0.12);
+  --color-input:            transparent;
+  --color-input-background: #f8fafc;
+  --color-ring:             #2B5FED;
+
+  /* ── Destructive ── */
+  --color-destructive:            #dc2626;
+  --color-destructive-foreground: #ffffff;
+
+  /* ── Verdict colours ── */
+  --color-verdict-true:       #10b981;
+  --color-verdict-false:      #ef4444;
+  --color-verdict-misleading: #f59e0b;
+  --color-verdict-unverified: #94a3b8;
+
+  /* ── Charts ── */
+  --color-chart-1: #2B5FED;
+  --color-chart-2: #FFC629;
+  --color-chart-3: #10b981;
+  --color-chart-4: #f43f5e;
+  --color-chart-5: #8b5cf6;
+
+  /* ── Border radius ── derived from Figma --radius: 0.75rem ── */
+  --radius:    0.75rem;
+  --radius-sm: calc(0.75rem - 4px);   /* 0.5rem  — 8px  */
+  --radius-md: calc(0.75rem - 2px);   /* 0.625rem — 10px */
+  --radius-lg: 0.75rem;               /* 12px */
+  --radius-xl: calc(0.75rem + 4px);   /* 1rem — 16px */
+  --radius-2xl: calc(0.75rem + 8px);  /* 1.25rem — 20px */
+}
+
+/* ── Base resets ─────────────────────────────────────────────────────────── */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1 { font-size: var(--text-2xl); font-weight: 600; line-height: 1.5; }
+  h2 { font-size: var(--text-xl);  font-weight: 600; line-height: 1.5; }
+  h3 { font-size: var(--text-lg);  font-weight: 600; line-height: 1.5; }
+  h4 { font-size: var(--text-base);font-weight: 600; line-height: 1.5; }
+
+  label  { font-size: var(--text-base); font-weight: 600; line-height: 1.5; }
+  button { font-size: var(--text-base); font-weight: 600; line-height: 1.5; }
+  input  { font-size: var(--text-base); font-weight: 400; line-height: 1.5; }
+}
+
+/* Figma typography: interface labels/headings use Jakarta; reading copy uses DM Sans. */
+p,
+input,
+textarea,
+select {
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono,
+.tabular-nums {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.font-display {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-body {
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Custom scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background-color: var(--color-muted); }
+::-webkit-scrollbar-thumb { background-color: var(--color-border); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-muted-foreground); }
+
+/* ── Dot-grid utility (hero backgrounds) ────────────────────────────────── */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* ── Blue gradient backgrounds ──────────────────────────────────────────── */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #1A56DB 0%, #1E3A8A 100%);
+}
+
+.bg-gradient-primary-soft {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+}
+
+/* ── Wave separator ─────────────────────────────────────────────────────── */
+.wave-bottom {
+  position: relative;
+}
+.wave-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 56' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'%3E%3Cpath d='M0,32 C360,56 1080,8 1440,32 L1440,56 L0,56 Z' fill='white'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: 100% 56px;
+}
+
+/* ── Page fade-in ───────────────────────────────────────────────────────── */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-page-in {
+  animation: page-fade-in 0.2s ease-out both;
+}

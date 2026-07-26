@@ -1,0 +1,38 @@
+﻿{
+    "claim":  "may jurisdiction parin ang icc sa philippines",
+    "verdict":  "true",
+    "confidence":  85,
+    "explanation":  "Mayroon pa ring hurisdiksyon ang International Criminal Court (ICC) sa Pilipinas, lalo na para sa mga krimen na naganap bago ang pag-withdraw ng bansa mula sa Rome Statute. Kinumpirma ng Appeals Chamber ng ICC ang hurisdiksyon nito sa kaso laban kay dating Pangulong Duterte noong Abril 2026.",
+    "truthStatement":  "May hurisdiksyon pa rin ang ICC sa Pilipinas para sa mga krimen na naganap habang miyembro pa ang bansa ng Rome Statute, at kinumpirma ito ng ICC Appeals Chamber.",
+    "supportingEvidence":  [
+                               {
+                                   "title":  "Republic of the Philippines",
+                                   "url":  "https://www.icc-cpi.int/philippines",
+                                   "sourceName":  "icc-cpi.int",
+                                   "publishedDate":  "",
+                                   "summary":  "Ang opisyal na website ng ICC ay nagpapakita ng \u0027Situation in the Republic of the Philippines\u0027 (ICC-01/21) na nakatuon sa \u0027Any alleged crime within the jurisdiction of the Court\u0027, na nagpapahiwatig ng patuloy na hurisdiksyon."
+                               }
+                           ],
+    "contradictingEvidence":  [
+
+                              ],
+    "reliableSources":  [
+                            {
+                                "title":  "Republic of the Philippines",
+                                "url":  "https://www.icc-cpi.int/philippines",
+                                "sourceName":  "icc-cpi.int",
+                                "publishedDate":  "",
+                                "summary":  "Ang opisyal na website ng ICC ay nagpapakita ng \u0027Situation in the Republic of the Philippines\u0027 (ICC-01/21) na nakatuon sa \u0027Any alleged crime within the jurisdiction of the Court\u0027, na nagpapahiwatig ng patuloy na hurisdiksyon."
+                            },
+                            {
+                                "title":  "Situation in The Philippines: ICC confirms jurisdiction and charges in the case against Former Philippines President Duterte, clearing the way for trial | Coalition for the International Criminal Court",
+                                "url":  "https://www.coalitionfortheicc.org/news/philippines-icc-confirms-jurisdiction-and-charges-case-against-duterte",
+                                "sourceName":  "coalitionfortheicc.org",
+                                "publishedDate":  "",
+                                "summary":  "Kinumpirma ng Appeals Chamber ng ICC noong Abril 22, 2026, na may hurisdiksyon ang Korte sa kaso laban kay dating Pangulong Duterte, na nagbibigay daan para sa paglilitis."
+                            }
+                        ],
+    "mascotAdvice":  "Always check official sources like the ICC\u0027s website for the most accurate information about its jurisdiction, para hindi ka maligaw sa fake news!",
+    "searchResultsCount":  10,
+    "verifiedAt":  "2026-07-25T16:22:49.195Z"
+}
