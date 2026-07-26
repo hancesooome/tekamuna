@@ -144,21 +144,20 @@ function CategoryPill({ label }: { label: string }) {
 function HeroSection() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSuriin = () => {
     navigate("/verify", { state: { claim: query.trim() } });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Submit on Enter without Shift
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSuriin();
     }
   };
 
-  // Auto-resize textarea as user types
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setQuery(e.target.value);
     const el = textareaRef.current;
@@ -167,6 +166,8 @@ function HeroSection() {
       el.style.height = `${el.scrollHeight}px`;
     }
   };
+
+  const isExpanded = focused || query.length > 0;
 
   return (
     <section className="relative w-full overflow-hidden bg-gradient-primary">
@@ -212,27 +213,53 @@ function HeroSection() {
               Pilipino na makilala ang katotohanan mula sa maling impormasyon.
             </p>
 
-            {/* Search bar */}
-            <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={query}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="I-type ang claim na gusto mong suriin..."
-                className="w-full resize-none overflow-hidden bg-transparent px-6 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
-              />
-              <div className="flex justify-end px-2 pb-2">
-                <button
-                  type="button"
-                  onClick={handleSuriin}
-                  className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg"
-                >
-                  <Search className="h-4 w-4" />
-                  Suriin
-                </button>
-              </div>
+            {/* Search bar — single line until focused, then expands */}
+            <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-200">
+              {!isExpanded ? (
+                /* Collapsed: single-line look with inline button */
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    readOnly
+                    onFocus={() => setFocused(true)}
+                    placeholder="I-type ang claim na gusto mong suriin..."
+                    className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground cursor-text focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFocused(true)}
+                    className="m-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                  >
+                    <Search className="h-4 w-4" />
+                    Suriin
+                  </button>
+                </div>
+              ) : (
+                /* Expanded: full textarea + button below */
+                <>
+                  <textarea
+                    ref={textareaRef}
+                    autoFocus
+                    rows={2}
+                    value={query}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    onBlur={() => { if (!query) setFocused(false); }}
+                    placeholder="I-type ang claim na gusto mong suriin..."
+                    className="w-full resize-none overflow-hidden bg-transparent px-6 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
+                  />
+                  <div className="flex justify-end px-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={handleSuriin}
+                      className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg"
+                    >
+                      <Search className="h-4 w-4" />
+                      Suriin
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
 
