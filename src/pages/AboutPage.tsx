@@ -284,9 +284,9 @@ export default function AboutPage() {
       <HeroSection />
       <MissionVisionSection />
       <ProcessSection />
-      <TeamSection />
+      {/* <TeamSection /> */}
       <PartnersSection />
-      <AwardsSection />
+      {/* <AwardsSection /> */}
     </PageContainer>
   );
 }
