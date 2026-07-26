@@ -12,7 +12,7 @@ import { useState } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge, type Verdict } from "@/components/shared/VerdictBadge";
-import { MASCOT_URL } from "@/constants";
+import { LOGO_ICON_URL, MASCOT_URL } from "@/constants";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -242,12 +242,12 @@ function HeroSection() {
               <img
                 src={MASCOT_URL}
                 alt="Teka mascot holding a magnifying glass"
-                className="relative h-64 w-64 object-contain drop-shadow-2xl"
+                className="relative h-96 w-96 object-contain drop-shadow-2xl"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="text-center">
-              <p className="text-xl font-black text-white">Kumusta? Ako si Teka!</p>
+              <p className="text-xl font-black text-white">Kumusta? Ako si Muna!</p>
               <p className="text-sm text-white/80 mt-1">Ang inyong AI fact-checking na kasama</p>
             </div>
           </div>
@@ -358,7 +358,7 @@ function CTASection() {
         <div className="relative">
           <div className="absolute inset-0 bg-accent/30 rounded-full blur-2xl" />
           <img
-            src={MASCOT_URL}
+            src={LOGO_ICON_URL}
             alt="Teka mascot"
             className="relative h-20 w-20 object-contain drop-shadow-xl"
             referrerPolicy="no-referrer"
