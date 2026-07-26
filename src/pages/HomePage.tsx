@@ -147,8 +147,11 @@ function HeroSection() {
   const [focused, setFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const canSubmit = query.trim().length >= 10;
+
   const handleSuriin = () => {
-    navigate("/verify", { state: { claim: query.trim() } });
+    if (!canSubmit) return;
+    navigate("/verify", { state: { claim: query.trim(), autoSubmit: true } });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -252,7 +255,8 @@ function HeroSection() {
                     <button
                       type="button"
                       onClick={handleSuriin}
-                      className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg"
+                      disabled={!canSubmit}
+                      className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Search className="h-4 w-4" />
                       Suriin

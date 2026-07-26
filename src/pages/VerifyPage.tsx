@@ -341,13 +341,19 @@ export default function VerifyPage() {
 
   // Pre-fill claim from HomePage search bar navigation
   useEffect(() => {
-    const state = location.state as { claim?: string } | null;
+    const state = location.state as { claim?: string; autoSubmit?: boolean } | null;
     if (state?.claim && state.claim.trim().length > 0) {
-      setClaim(state.claim.trim().slice(0, MAX_CHARS));
+      const filled = state.claim.trim().slice(0, MAX_CHARS);
+      setClaim(filled);
       // Clear the router state so a page refresh doesn't re-fill
       window.history.replaceState({}, "");
+      // Auto-submit if the home page Suriin button was clicked
+      if (state.autoSubmit && filled.trim().length >= 10) {
+        mutate({ claim: filled.trim(), category: undefined });
+      }
     }
-  }, [location.state]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canSubmit = claim.trim().length >= 10 && !isPending;
   const charsLeft = MAX_CHARS - claim.length;
@@ -393,12 +399,8 @@ export default function VerifyPage() {
             I-Verify ang Claim
           </h1>
           <p className="text-base leading-relaxed max-w-xl">
-            <span className="text-foreground font-medium">
-              I-type o i-paste ang claim, o mag-upload ng larawan/screenshot.
-            </span>
-            <br />
             <span className="text-muted-foreground">
-              Ang aming AI ay mag-a-analyze ng daan-daang sources.
+              I-type o i-paste ang claim, o mag-upload ng larawan/screenshot.
             </span>
           </p>
         </div>
