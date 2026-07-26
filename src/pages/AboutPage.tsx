@@ -197,6 +197,8 @@ function ProcessSection() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-ignore -- temporarily hidden from UI
 function TeamSection() {
   return (
     <div className="mb-14 sm:mb-16">
@@ -253,6 +255,8 @@ function PartnersSection() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-ignore -- temporarily hidden from UI
 function AwardsSection() {
   return (
     <div className="mb-16">
