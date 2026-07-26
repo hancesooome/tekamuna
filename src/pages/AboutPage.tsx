@@ -19,55 +19,47 @@ import { MASCOT_URL } from "@/constants";
 const PROCESS_STEPS = [
   {
     num: "01",
-    title: "Claim Submission",
-    description: (
-      <>
-        Tinatanggap ang iyong claim at bina-validate — dapat hindi bababa sa{" "}
-        <span className="text-primary font-semibold underline">5 characters</span> at
-        hindi hihigit sa <span className="text-primary font-semibold underline">1,000 characters</span>.
-      </>
-    ),
+    title: "Isinumite ang Claim",
+    description:
+      "Ilagay ang claim, balita, o pahayag na gusto mong suriin. Sisiguraduhin muna naming kumpleto at maayos ang iyong isinumite bago ito iproseso.",
   },
   {
     num: "02",
-    title: "Web Search via Tavily",
-    description: (
-      <>
-        Naghahanap kami ng pinaka-relevant na{" "}
-        <span className="text-primary font-semibold underline">web sources</span> gamit
-        ang Tavily Search API — mula sa balita, gobyerno, at akademikong websites.
-      </>
-    ),
+    title: "Naghahanap ng Mapagkakatiwalaang Sanggunian",
+    description:
+      "Awtomatiko kaming naghahanap ng kaugnay na impormasyon mula sa iba't ibang mapagkakatiwalaang website tulad ng mga news outlet, opisyal na ahensya ng gobyerno, at iba pang mapagkakatiwalaang sanggunian.",
   },
   {
     num: "03",
-    title: "Credibility Scoring",
+    title: "Sinusuri ang mga Sanggunian",
     description:
-      "Bawat source ay binibigyan ng credibility score (0–100) base sa domain — government, fact-checkers, at major media ay may mataas na score.",
+      "Hindi lahat ng website ay pare-pareho ang kredibilidad. Mas binibigyan namin ng halaga ang impormasyon mula sa mga opisyal na ahensya, fact-checking organizations, at kilalang media.",
   },
   {
     num: "04",
-    title: "Top Source Selection",
+    title: "Pinipili ang Pinakamahuhusay na Ebidensya",
+    description:
+      "Mula sa lahat ng nahanap na impormasyon, pinipili namin ang mga pinaka-mapagkakatiwalaan at pinaka-angkop na sanggunian upang maging batayan ng pagsusuri.",
+  },
+  {
+    num: "05",
+    title: "Sinusuri ng AI ang Ebidensya",
     description: (
       <>
-        Pinipili ang{" "}
-        <span className="text-primary font-semibold underline">top 5 sources</span>{" "}
-        base sa credibility score para ipadala sa AI — nagpapanatili ng maliit na prompt
-        para makatipid ng quota.
+        Tinutulungan kami ng AI na ihambing ang claim sa mga nakalap na ebidensya at magbigay ng
+        paunang resulta kung ito ay{" "}
+        <span className="text-primary font-semibold">Totoo</span>,{" "}
+        <span className="text-primary font-semibold">Hindi Totoo</span>,{" "}
+        <span className="text-primary font-semibold">Mapanlinlang</span>, o{" "}
+        <span className="text-primary font-semibold">Hindi Ma-verify</span>.
       </>
     ),
   },
   {
-    num: "05",
-    title: "AI Verdict Generation",
-    description:
-      "Ang AI (OpenRouter o Gemini) ay nag-aanalisa ng mga source at nagbibigay ng verdict: Totoo, Hindi Totoo, Mapanlinlang, o Hindi Ma-verify — kasama ang confidence score.",
-  },
-  {
     num: "06",
-    title: "Result Assembly",
+    title: "Ipinapakita ang Resulta",
     description:
-      "Pinagsama-sama ang verdict, explanation, supporting at contradicting evidence, at lahat ng sources — ibinabalik sa user bilang kumpletong fact-check result.",
+      "Makikita mo ang aming naging pasya, paliwanag, mga ebidensyang sumusuporta o sumasalungat sa claim, at ang mga pinagkunang ginamit sa pagsusuri.",
   },
 ] as const;
 
@@ -172,11 +164,9 @@ function ProcessSection() {
   return (
     <div className="mb-14 sm:mb-16">
       <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Paano Namin Sinusuri</h2>
+        <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Paano Namin Sinusuri ang Impormasyon</h2>
         <p className="mt-1 text-sm text-muted-foreground max-w-2xl mx-auto">
-          Ang aming{" "}
-          <span className="text-primary font-bold">6-step</span> na proseso para sa bawat claim —
-          mula sa web search hanggang AI verdict
+          Ganito namin sinusuri ang bawat claim bago ito bigyan ng resulta.
         </p>
       </div>
 
