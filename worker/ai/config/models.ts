@@ -62,6 +62,8 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "qwen/qwen3-32b:free",                   // Qwen 3 32B — free
     "nvidia/nemotron-3-super-120b-a12b:free",// Nvidia 120B — free
     "mistralai/mistral-small:free",          // Mistral Small — free fallback
+    "gemini-2.0-flash",                      // Gemini direct — final fallback
+    "gemini-1.5-flash",                      // Gemini 1.5 — last resort
   ],
 
   /**
@@ -86,27 +88,22 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "mistralai/mistral-small:free",
     "qwen/qwen3-32b:free",
     "deepseek/deepseek-chat:free",
+    "gemini-2.0-flash",
   ],
 
-  /**
-   * SEARCH_QUERY — generate optimised Tavily search queries.
-   * Very fast, low-latency preferred.
-   */
   SEARCH_QUERY: [
     "mistralai/mistral-small:free",
     "google/gemma-4-26b-a4b-it:free",
     "qwen/qwen3-32b:free",
+    "gemini-2.0-flash",
   ],
 
-  /**
-   * TRANSLATION — Filipino/Taglish translation.
-   * Models with strong multilingual support preferred.
-   */
   TRANSLATION: [
     "google/gemma-4-26b-a4b-it:free",
-    "qwen/qwen3-32b:free",                   // Qwen has strong Asian language support
+    "qwen/qwen3-32b:free",
     "deepseek/deepseek-chat:free",
     "mistralai/mistral-small:free",
+    "gemini-2.0-flash",
   ],
 };
 
