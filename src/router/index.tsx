@@ -20,6 +20,7 @@ import { PageLoader } from "@/components/shared/PageLoader";
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const VerifyPage = lazy(() => import("@/pages/VerifyPage"));
 const ResultPage = lazy(() => import("@/pages/ResultPage"));
+const CheckPage = lazy(() => import("@/pages/CheckPage"));
 const SourceComparisonPage = lazy(() => import("@/pages/SourceComparisonPage"));
 const HistoryPage = lazy(() => import("@/pages/HistoryPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
       { path: "verify", element: withSuspense(VerifyPage) },
       { path: "result", element: withSuspense(ResultPage) },
       { path: "result/sources", element: withSuspense(SourceComparisonPage) },
+      { path: "check", element: withSuspense(CheckPage) },
       { path: "kasaysayan", element: withSuspense(HistoryPage) },
       { path: "tungkol", element: withSuspense(AboutPage) },
       { path: "*", element: <Navigate to="/" replace /> },

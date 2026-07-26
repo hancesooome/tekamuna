@@ -21,6 +21,7 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
+import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -161,6 +162,7 @@ function ErrorState() {
 
 function SuccessView({ result }: { result: VerifyResult }) {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
   const cfg = V[result.verdict];
   const { Icon } = cfg;
   const label = VERDICT_LABELS[result.verdict];
@@ -231,13 +233,22 @@ function SuccessView({ result }: { result: VerifyResult }) {
                 Ikumpara ang Sources
               </Link>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
+            <Button variant="outline" size="sm" className={cn("text-xs transition-all", copied && "border-emerald-400 text-emerald-600")} onClick={async () => {
+              const url = buildShareUrl(result.claim);
               if (navigator.share) {
-                navigator.share({ title: "Teka Muna Result", text: `${label}: ${result.claim}`, url: window.location.href }).catch(() => {});
+                try {
+                  await navigator.share({ title: "Teka Muna — Fact Check", text: `${label}: ${result.claim}`, url });
+                  return;
+                } catch { /* user cancelled — fall through */ }
               }
+              try {
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2500);
+              } catch { /* clipboard blocked */ }
             }}>
               <Share2 className="h-3.5 w-3.5" />
-              I-share
+              {copied ? "Link copied!" : "I-share"}
             </Button>
             <Button variant="outline" size="sm" className="text-xs" onClick={() => {
               const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
