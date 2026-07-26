@@ -19,9 +19,7 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
 import {
   RESULT_STORAGE_KEY,
-  HISTORY_STORAGE_KEY,
   FILTER_CATEGORIES,
-  VERDICT_LABELS,
   CATEGORY_KEYWORD_MAP,
 } from "@/constants";
 import { loadHistory } from "@/services/historyService";

@@ -21,7 +21,7 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
-import type { VerifyResult, Source, Verdict } from "@/types";
+import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
 // ─── Verdict config ───────────────────────────────────────────────────────────

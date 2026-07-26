@@ -94,38 +94,6 @@ function getManager(input: AnalyseInput): AIManager {
   return _manager;
 }
 
-// ── Robust JSON extractor ─────────────────────────────────────────────────────
-
-function extractJson<T>(raw: string): T {
-  let s = raw
-    .replace(/^```json\s*/im, "")
-    .replace(/^```\s*/im, "")
-    .replace(/\s*```\s*$/im, "")
-    .trim();
-
-  const objStart = s.indexOf("{");
-  if (objStart === -1) throw new Error("No JSON object found");
-  s = s.slice(objStart);
-
-  let depth = 0, inStr = false, esc = false, end = -1;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (esc)       { esc = false; continue; }
-    if (c === "\\") { esc = true;  continue; }
-    if (c === '"')  { inStr = !inStr; continue; }
-    if (inStr)      continue;
-    if (c === "{")  { depth++; continue; }
-    if (c === "}") { depth--; if (depth === 0) { end = i; break; } }
-  }
-
-  const jsonStr = end !== -1
-    ? s.slice(0, end + 1)
-    : s.slice(0, s.lastIndexOf("}") + 1);
-
-  if (!jsonStr) throw new Error("Could not extract JSON");
-  return JSON.parse(jsonStr) as T;
-}
-
 // ── Fallback result ───────────────────────────────────────────────────────────
 
 function fallbackResult(
@@ -149,39 +117,6 @@ function fallbackResult(
     searchResultsCount:    allSources.length,
     verifiedAt:            new Date().toISOString(),
   };
-}
-
-// ── Phase 3: verdict call ─────────────────────────────────────────────────────
-
-interface VerdictResponse {
-  verdict:        string;
-  confidence:     number;
-  explanation:    string;
-  truthStatement: string;
-  mascotAdvice:   string;
-}
-
-async function runVerdictCall(
-  graph: ReturnType<typeof mergeEvidence>,
-  manager: AIManager,
-): Promise<VerdictResponse> {
-  const built = buildVerdictPrompt(graph);
-
-  console.info(
-    `[Pipeline] Verdict prompt: ~${built.estimatedInputTokens} tokens ` +
-    `(${built.claimsIncluded.supporting} supporting clusters, ` +
-    `${built.claimsIncluded.contradicting} contradicting clusters)`,
-  );
-
-  const response = await manager.complete({
-    task:        "VERDICT",
-    messages:    built.messages,
-    maxTokens:   600,   // safety cap — prompt is already compact by design
-    temperature: 0.1,
-    requestId:   `verdict_${Date.now()}`,
-  });
-
-  return extractJson<VerdictResponse>(response.content);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
