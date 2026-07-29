@@ -34,3 +34,5 @@ Thumbs.db
 # logs
 *.log
 npm-debug.log*
+# personal learning
+docs/MY_LEARNING_GUIDE.md
