@@ -32,15 +32,18 @@ export const APP_TAGLINE = "AI Fact-Checker";
  *
  * To change the mascot: update this single constant.
  */
-export const MASCOT_URL =
-  "https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/solo-nobg.png";
+
+import mascot from "../assets/mascot.png";
+
+export const MASCOT_URL = mascot;
 
 /**
  * Logo icon URL — used in the Navbar circle and browser favicon.
  * This is the full icon with background, distinct from the transparent mascot.
  */
-export const LOGO_ICON_URL =
-  "https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/icon.png";
+import logo from "../assets/icon.png";
+
+export const LOGO_ICON_URL = logo;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 // All sessionStorage keys are defined here to avoid collision and make

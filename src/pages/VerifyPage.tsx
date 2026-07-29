@@ -17,6 +17,7 @@ import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
+import thinkImage from "../assets/think.png";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -390,7 +391,7 @@ export default function VerifyPage() {
         {/* ── Page header ── */}
         <div className="flex flex-col items-center text-center pt-12 pb-10 gap-4">
         <img
-            src="https://zodkmcvqdfhqmvnkzzfm.supabase.co/storage/v1/object/public/assets/think.png"
+            src={thinkImage}
             alt="Teka thinking"
             className="h-16 w-16 object-contain"
             referrerPolicy="no-referrer"
