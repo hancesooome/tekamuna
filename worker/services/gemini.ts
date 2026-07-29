@@ -1,4 +1,4 @@
-﻿/**
+/**
  * worker/services/gemini.ts  (rename candidate: analyzeService.ts)
  *
  * Purpose:
@@ -29,28 +29,52 @@
  */
 
 import type { SearchResult, VerifyResult, Source, Verdict } from "../../src/types/verify";
+// Importing only types — erased at compile time, no runtime cost.
+
 import { buildScoredSourceIndex }     from "./credibility";
+// buildScoredSourceIndex(searchResults) → Map<url, ScoredSource>
+// A Map is like an object but keys can be any type and order is preserved.
+
 import { AIManager, AIExhaustedError } from "../ai/AIManager";
+// AIManager       → orchestrates AI calls with provider fallback
+// AIExhaustedError → thrown when ALL AI providers are unavailable
+
 import type { AIMessage }              from "../ai/types/index";
+// AIMessage → { role: "system" | "user" | "assistant", content: string }
+// This is the standard "chat" message format used by OpenAI-compatible APIs.
+
 import { extractJson }                 from "../utils/json";
+// extractJson<T>(str) → parses a JSON object from a string, even if surrounded
+// by markdown code fences (```json ... ```) that some models add.
 
 // ── Public input type ─────────────────────────────────────────────────────────
-
+// This is what handleVerify passes into analyseEvidence().
 export interface AnalyseInput {
-  claim: string;
-  category?: string;
-  searchResults: SearchResult[];
-  geminiApiKey?: string | undefined;
-  openRouterApiKey?:  string | undefined;
-  openRouterApiKey2?: string | undefined;  // second key, used when first is exhausted
-  envVars?: Record<string, string | undefined>;
+  claim:             string;             // The factual claim to verify
+  category?:         string;             // Optional category hint (e.g. "Pulitika")
+  searchResults:     SearchResult[];     // Raw results from Tavily
+  geminiApiKey?:     string | undefined; // Direct Gemini API key (fallback)
+  openRouterApiKey?: string | undefined; // Primary OpenRouter key
+  openRouterApiKey2?:string | undefined; // Second OpenRouter key (used when first is rate-limited)
+  envVars?:          Record<string, string | undefined>; // All env vars for MODELS_* overrides
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Clamps the AI's reported confidence to a realistic range based on source count.
+ * The AI tends to be overconfident — this prevents misleading high confidence
+ * when there's very little evidence.
+ *
+ * @param confidence     Raw confidence from the AI (0–100)
+ * @param relevantSources Number of Tavily results retrieved
+ * @returns              Clamped confidence value
+ */
 function clampConfidence(confidence: number, relevantSources: number): number {
-  if (relevantSources === 0) return Math.min(confidence, 40);
-  if (relevantSources === 1) return Math.min(confidence, 70);
+  if (relevantSources === 0) return Math.min(confidence, 40);  // No sources → max 40%
+  if (relevantSources === 1) return Math.min(confidence, 70);  // 1 source  → max 70%
+  // 2+ sources → allow up to 95%, but never below 30%
+  // Math.max(30, Math.min(confidence, 95)) = clamp between [30, 95]
   return Math.max(30, Math.min(confidence, 95));
 }
 
@@ -58,37 +82,54 @@ function clampConfidence(confidence: number, relevantSources: number): number {
 // IMPORTANT: must be module-level so health state persists across requests
 // within the same Worker isolate. A new instance per request throws away all
 // failure/cooldown tracking, defeating the entire fallback mechanism.
+//
+// What is a singleton?
+//   A singleton is an object that is created ONCE and reused for every future call.
+//   Here, _manager is created the first time getManager() is called,
+//   then reused for all subsequent requests in the same Worker isolate.
 
 let _manager: AIManager | null = null;
 let _managerKeys = "";   // tracks which keys were used to create the singleton
 
+/**
+ * Returns the existing AIManager singleton, or creates a new one if:
+ *   - It doesn't exist yet (first request)
+ *   - The API keys changed (e.g. hot-reloading during development)
+ */
 function getManager(input: AnalyseInput): AIManager {
-  // Fingerprint the current keys — recreate if they changed
+  // Build a "fingerprint" string from all three API keys.
+  // If the keys change, the fingerprint changes, and we recreate the manager.
+  // ?? "" → use empty string if the key is undefined (so join() always works)
   const keyFingerprint = [
     input.openRouterApiKey  ?? "",
     input.openRouterApiKey2 ?? "",
     input.geminiApiKey      ?? "",
-  ].join("|");
+  ].join("|"); // "|" is the separator, e.g. "key1|key2|"
 
+  // Check if we need to create a new AIManager instance.
   if (!_manager || _managerKeys !== keyFingerprint) {
     _manager = new AIManager(
       {
+        // Register each provider only if its API key exists.
+        // Undefined providers are silently skipped by AIManager.
         openrouter: input.openRouterApiKey
           ? { id: "openrouter", apiKey: input.openRouterApiKey }
-          : undefined,
+          : undefined,  // ternary: condition ? valueIfTrue : valueIfFalse
         openrouter2: input.openRouterApiKey2
           ? { id: "openrouter2", apiKey: input.openRouterApiKey2 }
           : undefined,
         gemini: input.geminiApiKey?.startsWith("AIza")
+          // Gemini keys always start with "AIza" — this rejects placeholder values
           ? { id: "gemini", apiKey: input.geminiApiKey }
           : undefined,
       },
-      input.envVars ?? {},
+      input.envVars ?? {}, // Pass env vars so AIManager can read MODELS_* overrides
     );
-    _managerKeys = keyFingerprint;
+    _managerKeys = keyFingerprint; // Update the stored fingerprint
     console.info(
       `[Pipeline] AIManager singleton created. ` +
       `Providers: OR1=${!!input.openRouterApiKey} OR2=${!!input.openRouterApiKey2} Gemini=${!!input.geminiApiKey?.startsWith("AIza")}`,
+      // !! converts any value to boolean: !!undefined = false, !!"key" = true
     );
   }
   return _manager;
@@ -96,6 +137,14 @@ function getManager(input: AnalyseInput): AIManager {
 
 // ── Fallback result ───────────────────────────────────────────────────────────
 
+/**
+ * Returns a safe VerifyResult when the AI pipeline fails completely.
+ * Still shows all retrieved sources so the user can research manually.
+ *
+ * @param claim      The original claim text
+ * @param reason     Human-readable explanation of why AI failed
+ * @param allSources All Tavily sources retrieved (for UI display)
+ */
 function fallbackResult(
   claim: string,
   reason: string,
@@ -103,19 +152,19 @@ function fallbackResult(
 ): VerifyResult {
   return {
     claim,
-    verdict:               "unverified",
-    confidence:            0,
+    verdict:               "unverified", // Can't verify without AI
+    confidence:            0,            // Zero confidence — we have no AI verdict
     explanation:
       "Hindi pa namin masuri ang claim na ito dahil naubos ang aming AI quota ngayon. " +
       "Makikita mo pa rin ang mga web sources na nahanap namin sa ibaba.",
-    truthStatement:        reason,
-    supportingEvidence:    [],
+    truthStatement:        reason,       // Shows the technical reason to the user
+    supportingEvidence:    [],           // Empty — no AI classification
     contradictingEvidence: [],
-    reliableSources:       allSources,
+    reliableSources:       allSources,   // Still show all sources! (better than nothing)
     mascotAdvice:
       "Ka-Teka! Basahin ang mga source sa ibaba habang hinihintay ang AI verdict.",
     searchResultsCount:    allSources.length,
-    verifiedAt:            new Date().toISOString(),
+    verifiedAt:            new Date().toISOString(), // ISO 8601 timestamp of now
   };
 }
 
@@ -124,37 +173,54 @@ function fallbackResult(
 /** Max sources sent to the verdict AI call — keeps prompt small, saves quota */
 const MAX_SOURCES_FOR_VERDICT = 5;
 
+/**
+ * Main analysis function: takes Tavily search results and returns a VerifyResult.
+ *
+ * @param input  AnalyseInput with claim, searchResults, and API keys
+ * @returns      Promise<VerifyResult> — always resolves (never rejects)
+ */
 export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult> {
+  // Get (or create) the shared AIManager singleton.
   const manager = getManager(input);
 
-  // Build scored source index for all Tavily results
+  // Build a Map of url → ScoredSource for all Tavily results.
+  // A ScoredSource adds credibilityScore and credibilityCategory to each Source.
   const scoredIndex = buildScoredSourceIndex(input.searchResults);
 
-  // All sources for UI display — always returned regardless of AI outcome
+  // Convert the Map to an array of Source objects for the UI (all sources, no filter).
+  // Array.from(map.values()) converts Map values to a plain array.
+  // The destructuring `{ credibilityScore: _cs, credibilityCategory: _cc, ...s }`
+  // strips the scoring fields (they're internal) and keeps the rest as `s`.
   const allSources: Source[] = Array.from(scoredIndex.values()).map(
     ({ credibilityScore: _cs, credibilityCategory: _cc, ...s }) => s,
   );
 
   // ── Select top sources by credibility for the AI call ────────────────────
-  // Sort descending by credibility, take top N. This keeps the prompt
-  // small (1 AI call) while using the most authoritative sources.
+  // Sort all Tavily results descending by credibility score.
+  // We spread [...input.searchResults] to avoid mutating the original array.
   const rankedSources = [...input.searchResults].sort((a, b) => {
+    // Look up the credibility score for each URL.
+    // ?? 40 = default score of 40 if the URL isn't in our scored index.
     const sa = scoredIndex.get(a.url)?.credibilityScore ?? 40;
     const sb = scoredIndex.get(b.url)?.credibilityScore ?? 40;
-    return sb - sa;
-  }).slice(0, MAX_SOURCES_FOR_VERDICT);
+    return sb - sa; // Descending: higher score sorts first
+  }).slice(0, MAX_SOURCES_FOR_VERDICT); // Take only the top 5
 
-  // Build a synthetic MergedEvidenceGraph from the top sources
-  // using backend-only logic (no per-article AI calls)
+  // Build the source block to include in the AI prompt.
+  // Each source becomes one line: [1] "Title" | SourceName (score:90) | date:2026-07-01 | "excerpt"
   const topSourcesBlock = rankedSources.map((r, i) => {
-    const s       = scoredIndex.get(r.url)!;
-    const excerpt = s.summary.slice(0, 150).replace(/\n/g, " ");
-    const date    = s.publishedDate ? ` | date:${s.publishedDate}` : "";
+    const s       = scoredIndex.get(r.url)!; // ! = non-null assertion (we know it exists)
+    const excerpt = s.summary.slice(0, 150).replace(/\n/g, " "); // First 150 chars, no newlines
+    const date    = s.publishedDate ? ` | date:${s.publishedDate}` : ""; // Only include if available
     return `[${i + 1}] "${s.title}" | ${s.sourceName} (score:${s.credibilityScore})${date} | "${excerpt}"`;
-  }).join("\n");
+  }).join("\n"); // Join all lines with newlines for the prompt
 
+  // ── Build the AI messages ─────────────────────────────────────────────────
+  // Most AI models use a "chat" format: system message (rules) + user message (question).
+
+  // The system message defines the AI's persona and strict rules.
   const systemMsg: AIMessage = {
-    role: "system",
+    role: "system", // "system" = high-priority instructions that shape the AI's behaviour
     content:
       `You are Teka Muna, a Filipino AI fact-checker.\n` +
       `RULES:\n` +
@@ -163,6 +229,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       `3. Verdict: "true"=evidence supports, "false"=evidence contradicts, ` +
       `"misleading"=partially true/out of context, "unverified"=insufficient evidence.\n` +
       `4. Output ONLY a single JSON object. No markdown, no extra text.\n\n` +
+      // We include the exact JSON shape so the AI knows what fields to include.
       `JSON shape (exact, no extra fields):\n` +
       `{"verdict":"true|false|misleading|unverified","confidence":0-100,` +
       `"explanation":"2-3 sentences Filipino/Taglish","truthStatement":"1-2 sentences",` +
@@ -172,29 +239,40 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       `"mascotAdvice":"1 Taglish sentence","searchResultsCount":${input.searchResults.length}}`,
   };
 
+  // The user message contains the actual claim and the source data.
   const userMsg: AIMessage = {
-    role: "user",
+    role: "user", // "user" = the query/prompt to respond to
     content:
       `CLAIM: "${input.claim}"` +
-      (input.category ? ` [${input.category}]` : "") +
+      (input.category ? ` [${input.category}]` : "") + // Only add category if provided
       `\n\nTOP ${rankedSources.length} SOURCES (by credibility):\n${topSourcesBlock}\n\n` +
       `Use EXACT urls/titles from sources above. Return ONE JSON object only.`,
   };
 
   // ── Single verdict AI call ───────────────────────────────────────────────
+  // We use a single AI call (not multi-phase) to conserve free-tier quota.
+
+  // Partial<VerifyResult> means "an object with SOME of VerifyResult's fields".
+  // The AI might not return every field perfectly, so Partial is safer than VerifyResult.
   let verdictData: Partial<VerifyResult>;
+
   try {
+    // manager.complete() tries each AI provider in order until one succeeds.
+    // task: "VERDICT" → tells AIManager which model list to use for this task.
     const response = await manager.complete({
       task:        "VERDICT",
       messages:    [systemMsg, userMsg],
-      maxTokens:   1200,
-      temperature: 0.1,
-      requestId:   `verify_${Date.now()}`,
+      maxTokens:   1200,      // Limit output tokens to keep responses focused
+      temperature: 0.1,       // Low temperature (0–1) = more deterministic, less creative
+      requestId:   `verify_${Date.now()}`, // Unique ID for logging
     });
 
+    // response.content is the raw text from the AI.
+    // extractJson handles cases where the AI wraps JSON in ```json ... ``` fences.
     try {
       verdictData = extractJson<Partial<VerifyResult>>(response.content);
     } catch {
+      // If the AI returned malformed JSON, log it and return the fallback.
       console.error(`[analyseEvidence] JSON parse failed. Raw: ${response.content.slice(0, 300)}`);
       return fallbackResult(input.claim, `JSON parse error from ${response.modelUsed}.`, allSources);
     }
@@ -203,7 +281,9 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       `[analyseEvidence] Success via ${response.providerUsed}/${response.modelUsed} ` +
       `in ${response.latencyMs}ms`,
     );
+
   } catch (err) {
+    // AIExhaustedError is thrown when every AI provider failed.
     if (err instanceof AIExhaustedError) {
       console.error(`[analyseEvidence] All models exhausted: ${err.message}`);
       return fallbackResult(
@@ -212,31 +292,48 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
         allSources,
       );
     }
+    // Any other error (unexpected) is re-thrown — let the route handler deal with it.
     throw err;
   }
 
   // ── Assemble VerifyResult ────────────────────────────────────────────────
+  // Now we take the raw AI output and build a clean, validated VerifyResult.
+
   const srcCount   = input.searchResults.length;
+
+  // ?? "unverified" → default to "unverified" if the AI didn't include "verdict"
+  // `as Verdict` tells TypeScript we trust this is one of the four valid values
   const rawVerdict = (verdictData.verdict ?? "unverified") as Verdict;
+
+  // Clamp the confidence to a realistic range based on how many sources we had.
   const confidence = clampConfidence(
-    Math.round(Number(verdictData.confidence ?? 40)),
+    Math.round(Number(verdictData.confidence ?? 40)), // Number() ensures it's a number
     srcCount,
   );
+
+  // Safety: if there were 0 search results and AI says "true", override to "unverified".
+  // The AI can't verify anything without sources, so "true" would be fabricated.
   const verdict: Verdict =
     srcCount === 0 && rawVerdict === "true" ? "unverified" : rawVerdict;
 
+  // ── Source normaliser ────────────────────────────────────────────────────
+  // Converts the AI's raw source arrays into clean Source objects.
+  // We prefer data from our scoredIndex over the AI's data (more reliable).
   const toSrc = (arr: unknown): Source[] => {
-    if (!Array.isArray(arr)) return [];
+    if (!Array.isArray(arr)) return []; // Guard: if AI didn't return an array, use []
     return arr.map((item) => {
-      const raw   = item as Record<string, unknown>;
-      const url   = String(raw.url ?? "");
-      const known = scoredIndex.get(url);
-      // Prefer AI-provided date, fall back to Tavily-scraped date
+      const raw   = item as Record<string, unknown>; // Treat each item as a generic object
+      const url   = String(raw.url ?? "");           // String() ensures it's always a string
+      const known = scoredIndex.get(url);            // Look up in our credibility index
+      // Prefer AI-provided date, fall back to Tavily-scraped date.
+      // String(...).trim() cleans whitespace. || known?.publishedDate falls back to Tavily's value.
       const publishedDate =
         String(raw.publishedDate ?? "").trim() ||
         known?.publishedDate ||
         "";
       return {
+        // Prefer scoredIndex data (from Tavily/credibility scoring) over AI data.
+        // ?? is used for each field: try the known (indexed) value first, fall back to AI's value.
         title:         known?.title         ?? String(raw.title         ?? ""),
         url:           known?.url           ?? url,
         sourceName:    known?.sourceName    ?? String(raw.sourceName    ?? ""),
@@ -246,20 +343,21 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
     });
   };
 
+  // Build and return the final VerifyResult.
   return {
     claim:                 input.claim,
     verdict,
     confidence,
-    explanation:           String(verdictData.explanation    ?? ""),
+    explanation:           String(verdictData.explanation    ?? ""), // String() = safe fallback
     truthStatement:        String(verdictData.truthStatement ?? ""),
     supportingEvidence:    toSrc(verdictData.supportingEvidence),
     contradictingEvidence: toSrc(verdictData.contradictingEvidence),
-    reliableSources:       allSources,  // always all sources for UI
+    reliableSources:       allSources,  // Always all sources — never just the AI's subset
     mascotAdvice: String(
       verdictData.mascotAdvice ??
-      "Ka-Teka! Palaging mag-double check bago maniwala o mag-share.",
+      "Ka-Teka! Palaging mag-double check bago maniwala o mag-share.", // Default if AI omits it
     ),
     searchResultsCount: srcCount,
-    verifiedAt:         new Date().toISOString(),
+    verifiedAt:         new Date().toISOString(), // ISO 8601 timestamp
   };
 }
