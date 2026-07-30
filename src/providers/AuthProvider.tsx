@@ -70,7 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Otherwise sign the user out immediately and set an error message.
    */
   const applySession = useCallback(async (sess: Session | null) => {
-    console.log("[AuthProvider] applySession called with email:", sess?.user?.email);
+    console.log("[AuthProvider] applySession called with details:", {
+      email: sess?.user?.email,
+      confirmed_at: sess?.user?.email_confirmed_at,
+      last_sign_in: sess?.user?.last_sign_in_at,
+      role: sess?.user?.role,
+    });
     if (sess && !isAdminEmail(sess)) {
       console.warn("[AuthProvider] Access denied for email:", sess.user.email, "Expected admin email:", ADMIN_EMAIL);
       // Wrong account — sign out and refuse access
