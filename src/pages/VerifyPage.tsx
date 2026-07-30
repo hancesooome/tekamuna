@@ -15,7 +15,7 @@ import { Button }         from "@/components/ui/button";
 import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
-import { isFactCheckingQuery } from "@/utils/intent";
+import { shouldRunVerificationPipeline } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import thinkImage from "../assets/think.png";
@@ -352,8 +352,8 @@ export default function VerifyPage() {
       window.history.replaceState({}, "");
       // Auto-submit if the home page Suriin button was clicked
       if (state.autoSubmit && filled.trim().length >= 10) {
-        const detection = isFactCheckingQuery(filled);
-        if (detection.isFactCheck) {
+        const detection = shouldRunVerificationPipeline(filled);
+        if (detection.shouldVerify) {
           setIntentError(null);
           mutate({ claim: filled.trim(), category: undefined });
         } else {
@@ -371,8 +371,8 @@ export default function VerifyPage() {
     e.preventDefault();
     if (!canSubmit) return;
 
-    const detection = isFactCheckingQuery(claim.trim());
-    if (!detection.isFactCheck) {
+    const detection = shouldRunVerificationPipeline(claim.trim());
+    if (!detection.shouldVerify) {
       setIntentError(detection.reason);
       return;
     }
