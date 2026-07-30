@@ -16,6 +16,8 @@
 
 import type { VisionProvider, VisionRequest, VisionResponse } from "./VisionProvider";
 import { VisionProviderError } from "./VisionProvider";
+import { parseOpenRouterRateLimitHeaders } from "../../lib/quotaFetcher";
+import { apiLogger } from "../../lib/apiLogger";
 
 // ── Free vision-capable models in priority order ──────────────────────────────
 const VISION_MODELS = [
@@ -80,6 +82,10 @@ export class OpenRouterVisionProvider implements VisionProvider {
 
         if (!response.ok) {
           const msg = data.error?.message ?? `HTTP ${response.status}`;
+          const quotaFromHeaders = parseOpenRouterRateLimitHeaders(response.headers);
+          if (quotaFromHeaders !== undefined) {
+            apiLogger.setQuotaCache("openrouter", quotaFromHeaders);
+          }
           const retryable = response.status === 429 || response.status >= 500;
           lastError = new VisionProviderError(
             `${modelId}: ${msg}`, retryable, response.status,

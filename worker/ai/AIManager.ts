@@ -59,6 +59,7 @@ import { getModelsForTask, getAllConfiguredModels } from "./config/models";
 // getAllConfiguredModels(envVars) → returns all models across all tasks (for health pre-warming)
 
 import type { BaseProvider } from "./providers/BaseProvider";
+import { apiLogger, type ApiName, type QuotaValue } from "../lib/apiLogger";
 // BaseProvider is the abstract interface both OpenRouterProvider and GeminiProvider implement.
 // This lets AIManager work with any provider without knowing its specifics (polymorphism).
 
@@ -93,23 +94,28 @@ export class AIExhaustedError extends Error {
   }
 }
 
-// ── Log entry ─────────────────────────────────────────────────────────────────
-// Structured log entry stored in memory (last 100) for diagnostics.
-// This is NOT persisted to disk — it's in-process memory only.
+// ── Log entry (AIManager diagnostics — also mirrored to apiLogger) ────────────
 interface RequestLog {
   requestId:    string;
   task:         string;
-  modelUsed:    string;       // e.g. "deepseek/deepseek-chat:free"
-  providerUsed: string;       // e.g. "openrouter"
-  attemptCount: number;       // How many models were tried before success
-  latencyMs:    number;       // Total time from start to response
+  modelUsed:    string;
+  providerUsed: string;
+  attemptCount: number;
+  latencyMs:    number;
   success:      boolean;
-  fallbackUsed: boolean;      // true if a secondary model was used (attemptCount > 1)
-  failureReason?: string;     // Present only on failure
-  retryChain:   Array<{ modelId: string; reason: string }>; // All failed models before success
-  tokenUsage?:  AIResponse["usage"]; // Input + output token counts from the AI
-  timestamp:    string;       // ISO 8601
+  fallbackUsed: boolean;
+  failureReason?: string;
+  retryChain:   Array<{ modelId: string; reason: string }>;
+  tokenUsage?:  AIResponse["usage"];
+  timestamp:    string;
+  apiLogId?:    string;
 }
+
+const PROVIDER_ENDPOINTS: Record<string, string> = {
+  openrouter:  "https://openrouter.ai/api/v1/chat/completions",
+  openrouter2: "https://openrouter.ai/api/v1/chat/completions",
+  gemini:      "https://generativelanguage.googleapis.com/v1beta/models",
+};
 
 // ── AIManager ─────────────────────────────────────────────────────────────────
 
@@ -239,7 +245,16 @@ export class AIManager {
           // `...partial` spreads all fields from the provider response
           // then we add/override attemptCount and latencyMs
 
-          // Store log entry for diagnostics.
+          const apiLogEntry = this.logToApiLogger({
+            providerId,
+            modelId,
+            latencyMs,
+            success:    true,
+            statusCode: 200,
+            responseBody: { modelUsed: modelId, usage: partial.usage },
+            quotaRemaining: partial.quotaRemaining,
+          });
+
           this.pushLog({
             requestId,
             task:         request.task,
@@ -248,10 +263,11 @@ export class AIManager {
             attemptCount,
             latencyMs,
             success:      true,
-            fallbackUsed: attemptCount > 1, // Was a fallback model used?
+            fallbackUsed: attemptCount > 1,
             retryChain,
             tokenUsage:   partial.usage,
             timestamp:    new Date().toISOString(),
+            apiLogId:     apiLogEntry.id,
           });
 
           this.log(
@@ -284,6 +300,21 @@ export class AIManager {
           // Non-retryable errors (e.g. 400 Bad Request = invalid prompt):
           // No point trying other models with the same bad input — throw immediately.
           if (!retryable) {
+            const statusCode =
+              err instanceof Error && "statusCode" in err
+                ? (err as { statusCode?: number }).statusCode
+                : undefined;
+
+            const apiLogEntry = this.logToApiLogger({
+              providerId,
+              modelId,
+              latencyMs,
+              success:      false,
+              statusCode,
+              errorMessage: msg,
+              quotaRemaining: this.quotaFromError(err),
+            });
+
             this.pushLog({
               requestId,
               task:         request.task,
@@ -296,9 +327,23 @@ export class AIManager {
               failureReason: msg,
               retryChain,
               timestamp:    new Date().toISOString(),
+              apiLogId:     apiLogEntry.id,
             });
-            throw err; // Re-throw — let the caller handle it
+            throw err;
           }
+
+          this.logToApiLogger({
+            providerId,
+            modelId,
+            latencyMs,
+            success:      false,
+            statusCode:
+              err instanceof Error && "statusCode" in err
+                ? (err as { statusCode?: number }).statusCode
+                : undefined,
+            errorMessage: msg,
+            quotaRemaining: this.quotaFromError(err),
+          });
 
           // Retryable failure → loop to next key slot or next model.
           continue;
@@ -457,9 +502,48 @@ export class AIManager {
   /** Appends a structured log entry and trims the buffer to 100 entries. */
   private pushLog(entry: RequestLog): void {
     this.logs.push(entry);
-    // Prevent unbounded memory growth — keep only the last 100 log entries.
-    // .shift() removes the first element (oldest entry).
     if (this.logs.length > 100) this.logs.shift();
+  }
+
+  /** Mirror provider calls to the centralized apiLogger. */
+  private logToApiLogger(params: {
+    providerId: string;
+    modelId: string;
+    latencyMs: number;
+    success: boolean;
+    statusCode?: number;
+    errorMessage?: string;
+    responseBody?: unknown;
+    quotaRemaining?: QuotaValue;
+  }) {
+    const apiName = params.providerId as ApiName;
+    const endpoint =
+      apiName === "gemini"
+        ? `${PROVIDER_ENDPOINTS.gemini}/${params.modelId}:generateContent`
+        : PROVIDER_ENDPOINTS[params.providerId] ?? params.providerId;
+
+    if (params.quotaRemaining !== undefined) {
+      apiLogger.setQuotaCache(apiName, params.quotaRemaining);
+    }
+
+    return apiLogger.log({
+      apiName,
+      endpoint,
+      method:       "POST",
+      durationMs:   params.latencyMs,
+      success:      params.success,
+      statusCode:   params.statusCode,
+      errorMessage: params.errorMessage,
+      responseBody: params.responseBody,
+      quotaRemaining: params.quotaRemaining,
+    });
+  }
+
+  private quotaFromError(err: unknown): QuotaValue | undefined {
+    if (err instanceof Error && "quotaRemaining" in err) {
+      return (err as { quotaRemaining?: QuotaValue }).quotaRemaining;
+    }
+    return undefined;
   }
 
   /** Generates a unique request ID using timestamp + random suffix. */

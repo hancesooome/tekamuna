@@ -9,6 +9,8 @@
 
 import type { VisionProvider, VisionRequest, VisionResponse } from "./VisionProvider";
 import { VisionProviderError } from "./VisionProvider";
+import { parseGeminiQuotaHeaders } from "../../lib/quotaFetcher";
+import { apiLogger } from "../../lib/apiLogger";
 
 const GEMINI_VISION_MODEL = "gemini-2.0-flash";
 const GEMINI_BASE_URL =
@@ -73,6 +75,11 @@ export class GeminiVisionProvider implements VisionProvider {
     }
 
     const data = (await response.json()) as GeminiResponse;
+
+    const quotaRemaining = parseGeminiQuotaHeaders(response.headers);
+    if (quotaRemaining !== undefined) {
+      apiLogger.setQuotaCache("gemini", quotaRemaining);
+    }
 
     if (!response.ok) {
       const msg = data.error?.message ?? `HTTP ${response.status}`;

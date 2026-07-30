@@ -14,6 +14,8 @@
 
 import { BaseProvider, makeProviderError, categoryFromStatus } from "./BaseProvider";
 import type { AIRequest, AIResponse, AIProviderConfig } from "../types/index";
+import { parseOpenRouterRateLimitHeaders } from "../../lib/quotaFetcher";
+import { apiLogger, type ApiName } from "../../lib/apiLogger";
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -122,7 +124,13 @@ export class OpenRouterProvider extends BaseProvider {
       const reasons = data.error?.metadata?.reasons?.join(", ") ?? "";
       const fullMsg = reasons ? `${rawMsg} (${reasons})` : rawMsg;
       const category = categoryFromStatus(response.status);
-      throw makeProviderError(fullMsg, category, response.status);
+      const quotaFromHeaders = parseOpenRouterRateLimitHeaders(response.headers);
+      if (quotaFromHeaders !== undefined) {
+        apiLogger.setQuotaCache(this.id as ApiName, quotaFromHeaders);
+      }
+      throw makeProviderError(fullMsg, category, response.status, {
+        quotaRemaining: quotaFromHeaders,
+      });
     }
 
     // ── Empty / missing content ─────────────────────────────────────────────

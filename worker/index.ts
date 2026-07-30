@@ -46,6 +46,7 @@
 import { handleVerify }       from "./routes/verify";       // POST /api/verify
 import { handleSearch }       from "./routes/search";       // GET  /api/search
 import { handleAnalyzeImage } from "./routes/analyzeImage"; // POST /api/analyze-image
+import { handleStats }        from "./routes/stats";        // GET  /api/stats/*
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -127,6 +128,11 @@ export default {
     // Accepts a multipart image upload, runs OCR + AI to extract the claim.
     if (url.pathname === "/api/analyze-image" && request.method === "POST") {
       return handleAnalyzeImage(request, env);
+    }
+
+    // ── GET /api/stats/* ───────────────────────────────────────────────────
+    if (url.pathname.startsWith("/api/stats") && request.method === "GET") {
+      return handleStats(request, env);
     }
 
     // ── GET /api/health ────────────────────────────────────────────────────

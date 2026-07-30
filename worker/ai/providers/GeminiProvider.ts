@@ -15,6 +15,8 @@
 
 import { BaseProvider, makeProviderError, categoryFromStatus } from "./BaseProvider";
 import type { AIRequest, AIResponse, AIProviderConfig } from "../types/index";
+import { parseGeminiQuotaHeaders } from "../../lib/quotaFetcher";
+import { apiLogger } from "../../lib/apiLogger";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -126,12 +128,19 @@ export class GeminiProvider extends BaseProvider {
 
     const data = (await response.json()) as GeminiResponse;
 
+    const quotaRemaining = parseGeminiQuotaHeaders(response.headers);
+    if (quotaRemaining !== undefined) {
+      apiLogger.setQuotaCache("gemini", quotaRemaining);
+    }
+
     // ── Error response ──────────────────────────────────────────────────────
     if (!response.ok) {
       const msg = data.error?.message ?? `HTTP ${response.status}`;
       // Treat RESOURCE_EXHAUSTED as a rate limit so AIManager retries next model
       const category = isQuotaMessage(msg) ? "RATE_LIMIT" : categoryFromStatus(response.status);
-      throw makeProviderError(msg, category, response.status);
+      throw makeProviderError(msg, category, response.status, {
+        quotaRemaining: quotaRemaining ?? 0,
+      });
     }
 
     const candidate = data.candidates?.[0];
@@ -166,6 +175,7 @@ export class GeminiProvider extends BaseProvider {
       modelUsed:    modelId,
       providerUsed: this.id,
       usage,
+      quotaRemaining,
     };
   }
 }

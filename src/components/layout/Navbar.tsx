@@ -17,6 +17,9 @@ const NAV_ITEMS = [
   { to: "/verify", label: "I-Verify", end: false },
   { to: "/kasaysayan", label: "Kasaysayan", end: false },
   { to: "/tungkol", label: "Tungkol Sa Amin", end: false },
+  ...(import.meta.env.DEV
+    ? [{ to: "/dashboard", label: "Dashboard", end: false } as const]
+    : []),
 ] as const;
 
 export function Navbar() {

@@ -54,6 +54,8 @@ export interface AIResponse {
     totalTokens: number;
     costUsd?: number;
   };
+  /** Quota remaining parsed from response headers, if available. */
+  quotaRemaining?: import("../../lib/apiLogger").QuotaValue;
 }
 
 // ── Model health tracking ─────────────────────────────────────────────────────
@@ -110,4 +112,5 @@ export interface AIProviderError extends Error {
   category: FailureCategory;
   statusCode?: number;
   retryable: boolean;
+  quotaRemaining?: import("../../lib/apiLogger").QuotaValue;
 }

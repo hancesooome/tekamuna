@@ -41,6 +41,7 @@ const SourceComparisonPage = lazy(() => import("@/pages/SourceComparisonPage"));
 const HistoryPage          = lazy(() => import("@/pages/HistoryPage"));
 const AboutPage            = lazy(() => import("@/pages/AboutPage"));
 const MaintenancePage      = lazy(() => import("@/pages/MaintenancePage"));
+const DashboardPage        = lazy(() => import("@/pages/DashboardPage"));
 
 // ── Helper: wrap any lazy page with a Suspense loading fallback ──────────────
 // Instead of repeating <Suspense fallback={...}> for every route, we wrap once.
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
       { path: "check",              element: withSuspense(CheckPage) },            // /check
       { path: "kasaysayan",         element: withSuspense(HistoryPage) },          // /kasaysayan
       { path: "tungkol",            element: withSuspense(AboutPage) },            // /tungkol
+      { path: "dashboard",          element: withSuspense(DashboardPage) },        // /dashboard
       { path: "*", element: <Navigate to="/" replace /> },            // 404 → redirect home
       // "replace" means the redirect URL replaces the 404 in browser history,
       // so the user can't press Back and land on a broken 404 page.

@@ -38,11 +38,15 @@ export function makeProviderError(
   message: string,
   category: FailureCategory,
   statusCode?: number,
+  extras?: { quotaRemaining?: import("../../lib/apiLogger").QuotaValue },
 ): AIProviderError {
   const err = new Error(message) as AIProviderError;
   err.category  = category;
   err.statusCode = statusCode;
   err.retryable = isRetryable(category);
+  if (extras?.quotaRemaining !== undefined) {
+    err.quotaRemaining = extras.quotaRemaining;
+  }
   return err;
 }
 

@@ -21,6 +21,8 @@
  */
 
 import type { SearchResult } from "../../src/types/verify";
+import { apiLogger } from "../lib/apiLogger";
+import { refreshTavilyQuotaIfStale } from "../lib/quotaFetcher";
 // SearchResult is our internal type (not Tavily's raw format).
 // toSearchResult() below converts Tavily's format → our SearchResult.
 
@@ -169,7 +171,15 @@ export async function searchWeb(
   // ?. = optional chaining; .trim() removes whitespace; if falsy → skip.
   if (!apiKey?.trim()) {
     console.warn("[Tavily] TAVILY_API_KEY not configured — skipping web search.");
-    return []; // Return empty array instead of throwing
+    apiLogger.log({
+      apiName:      "tavily",
+      endpoint:     TAVILY_API_URL,
+      method:       "POST",
+      durationMs:   0,
+      success:      false,
+      errorMessage: "TAVILY_API_KEY not configured",
+    });
+    return [];
   }
 
   // Append "Philippines" to bias Tavily's ranking toward PH content.
@@ -192,49 +202,76 @@ export async function searchWeb(
     exclude_domains:     [],           // [] = no domain blacklist
   };
 
+  const headers = {
+    "Content-Type":  "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+
   try {
-    // Send POST request to Tavily's API.
-    // Authorization: Bearer <token> is the standard way to pass API keys in HTTP headers.
+    const startMs = Date.now();
+
     const response = await fetch(TAVILY_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`, // Template literal inserts the API key
-      },
-      body: JSON.stringify(requestBody),
+      method:  "POST",
+      headers,
+      body:    JSON.stringify(requestBody),
     });
 
-    // If status is not 2xx, log the error body and return empty.
-    // response.text() reads the raw response body as a string (for error logging).
+    const durationMs = Date.now() - startMs;
+
     if (!response.ok) {
       const errBody = await response.text();
       console.error(`[Tavily] HTTP ${response.status}: ${errBody}`);
+      apiLogger.log({
+        apiName:      "tavily",
+        endpoint:     TAVILY_API_URL,
+        method:       "POST",
+        durationMs,
+        success:      false,
+        statusCode:   response.status,
+        errorMessage: errBody.slice(0, 500),
+        requestHeaders: headers,
+        responseBody: errBody,
+      });
       return [];
     }
 
-    // Parse the response JSON and cast it to our TavilyResponse type.
     const data = (await response.json()) as TavilyResponse;
 
-    // ?? [] ensures we don't crash if `results` is missing from the response.
+    apiLogger.log({
+      apiName:        "tavily",
+      endpoint:       TAVILY_API_URL,
+      method:         "POST",
+      durationMs,
+      success:        true,
+      statusCode:     response.status,
+      requestHeaders: headers,
+      responseBody:   { query: data.query, resultCount: data.results?.length ?? 0 },
+    });
+
+    refreshTavilyQuotaIfStale(apiKey);
+
     const all = data.results ?? [];
-
-    // Post-filter: keep only results relevant to Philippines.
     const phResults = all.filter(isPhRelevant);
-
-    // If we found enough PH-specific results, use them.
-    // Otherwise fall back to all results (better than nothing).
     const final = phResults.length >= MIN_PH_RESULTS ? phResults : all;
 
     console.info(
       `[Tavily] "${phQuery}" → ${all.length} total, ${phResults.length} PH-relevant, using ${final.length}`,
     );
 
-    // Limit to MAX_RESULTS and convert each Tavily result to our SearchResult type.
     return final.slice(0, MAX_RESULTS).map(toSearchResult);
 
   } catch (err) {
-    // Catches network errors (DNS failure, timeout, etc.) and JSON parse errors.
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("[Tavily] Request failed:", err);
-    return []; // Graceful fallback — never throw from this function
+    apiLogger.log({
+      apiName:      "tavily",
+      endpoint:     TAVILY_API_URL,
+      method:       "POST",
+      durationMs:   0,
+      success:      false,
+      errorMessage: msg,
+      requestHeaders: headers,
+    });
+    return [];
   }
 }
