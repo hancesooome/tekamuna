@@ -116,9 +116,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     setError(null);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) {
-      setError(authError.message);
+    const res = await supabase.auth.signInWithPassword({ email, password });
+    console.log("[AuthProvider] signInWithPassword returned:", {
+      success: !res.error,
+      error: res.error?.message,
+      email: res.data?.user?.email,
+      session: !!res.data?.session
+    });
+    if (res.error) {
+      setError(res.error.message);
     }
     // Session update is handled by onAuthStateChange → applySession
   }, []);
