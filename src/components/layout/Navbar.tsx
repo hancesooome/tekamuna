@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Navbar — sticky top bar matching the Figma design.
  *
  * Left:   Logo (mascot circle + "Teka Muna" wordmark + "AI FACT-CHECKER" sub)
@@ -17,9 +17,6 @@ const NAV_ITEMS = [
   { to: "/verify", label: "I-Verify", end: false },
   { to: "/kasaysayan", label: "Kasaysayan", end: false },
   { to: "/tungkol", label: "Tungkol Sa Amin", end: false },
-  ...(import.meta.env.DEV
-    ? [{ to: "/dashboard", label: "Dashboard", end: false } as const]
-    : []),
 ] as const;
 
 export function Navbar() {

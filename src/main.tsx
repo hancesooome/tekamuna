@@ -12,13 +12,8 @@ import { createRoot } from "react-dom/client";
 // The older ReactDOM.render() is deprecated. createRoot enables concurrent features.
 
 import { QueryProvider } from "@/providers/QueryProvider";
-// QueryProvider sets up TanStack Query (React Query) for the entire app.
-// TanStack Query manages server state: fetching, caching, loading/error states.
-// Any component inside this provider can use useQuery/useMutation hooks.
-
+import { AuthProvider }  from "@/providers/AuthProvider";
 import { AppRouter } from "@/router/index";
-// AppRouter is our React Router v7 configuration.
-// It maps URL paths (e.g. "/verify") to page components (e.g. VerifyPage).
 
 import MaintenancePage from "@/pages/MaintenancePage";
 // Standalone full-screen maintenance page — shown only in production when
@@ -78,7 +73,9 @@ createRoot(rootEl).render(
     ) : (
       // Normal app path: all providers and routing are active.
       <QueryProvider>
-        <AppRouter />
+        <AuthProvider>
+          <AppRouter />
+        </AuthProvider>
       </QueryProvider>
     )}
   </StrictMode>,
