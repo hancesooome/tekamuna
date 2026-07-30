@@ -88,6 +88,12 @@ export interface VerifyResult {
   mascotAdvice:          string;    // Teka mascot tip (e.g. "Huwag munang i-share!")
   searchResultsCount:    number;    // How many Tavily results were retrieved
   verifiedAt:            string;    // ISO 8601 timestamp of when verification ran
+  // ── Cache status metadata ──────────────────────────────────────────────────
+  cached?:               boolean;   // True if this result was loaded from cache
+  cacheStatus?:          "fresh" | "expired" | null; // Cache status: fresh, expired or null (miss)
+  expiresAt?:            string;    // ISO 8601 timestamp when cache record expires
+  pipelineVersion?:      number;    // Version of the fact check pipeline used
+  category?:             string;    // Classified category for caching and routing
 }
 
 // ── API error ─────────────────────────────────────────────────────────────────

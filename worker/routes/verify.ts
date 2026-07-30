@@ -17,11 +17,23 @@
 import type { Env } from "../index";
 import { searchWeb }       from "../services/tavily";
 import { analyseEvidence } from "../services/gemini";
-import type { VerifyRequest } from "../../src/types/verify";
+import type { VerifyRequest, VerifyResult } from "../../src/types/verify";
 import { shouldRunVerificationPipeline } from "../../src/utils/intent";
 import { fetchAdminSettings } from "../lib/adminSettings";
+import {
+  normalizeClaim,
+  getCachedClaim,
+  saveCachedClaim,
+  calculateExpiration,
+} from "../services/cache";
 // fetchAdminSettings reads routing config from Supabase (cached 60s per isolate).
 // It determines which Tavily key to use and which AI provider to force.
+
+// ── Pipeline version ──────────────────────────────────────────────────────────
+// Bump this whenever the prompt template, scoring algorithm, or AI model list
+// changes significantly. Incrementing the version automatically invalidates
+// all existing cache entries, forcing a fresh fact-check on next request.
+const CURRENT_PIPELINE_VERSION = 1;
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 
@@ -85,8 +97,6 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
   // || undefined → if category is empty string "", treat as undefined (not set)
   const cleanClaim    = claim.trim();
   const cleanCategory = category?.trim() || undefined;
-  // Optional chaining `category?.trim()`: if category is undefined, returns undefined
-  // instead of throwing "Cannot read properties of undefined".
 
   // ── 1.5 Intent detection ──────────────────────────────────────────────────
   const detection = shouldRunVerificationPipeline(cleanClaim);
@@ -134,7 +144,49 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     return json({ error: "Admin configuration error: Gemini is forced but not configured in the Worker secrets." }, 503);
   }
 
-  // ── 3. Tavily web search ─────────────────────────────────────────────────
+  // ── 3. Normalize claim & check cache ─────────────────────────────────────
+  const normalizedClaim = normalizeClaim(cleanClaim);
+  console.info(`[Verify] Normalized claim: "${normalizedClaim}"`);
+
+  const cacheEntry = await getCachedClaim(env, normalizedClaim);
+
+  if (cacheEntry) {
+    const now = new Date();
+    const expiresAt = new Date(cacheEntry.expires_at);
+    const isFreshVersion = cacheEntry.pipeline_version === CURRENT_PIPELINE_VERSION;
+    const isFreshTime = expiresAt > now;
+
+    if (isFreshVersion && isFreshTime) {
+      // ✅ Cache HIT — return cached result immediately
+      console.info(`[Verify] Cache HIT for normalized claim. Expires: ${cacheEntry.expires_at}`);
+      const cached: VerifyResult = {
+        claim:                 cacheEntry.claim_original,
+        verdict:               cacheEntry.verdict as VerifyResult["verdict"],
+        confidence:            cacheEntry.confidence,
+        explanation:           cacheEntry.summary,
+        truthStatement:        cacheEntry.reasoning,
+        supportingEvidence:    cacheEntry.sources?.supportingEvidence ?? [],
+        contradictingEvidence: cacheEntry.sources?.contradictingEvidence ?? [],
+        reliableSources:       cacheEntry.sources?.reliableSources ?? [],
+        mascotAdvice:          cacheEntry.sources?.mascotAdvice ?? "",
+        searchResultsCount:    cacheEntry.sources?.searchResultsCount ?? 0,
+        verifiedAt:            cacheEntry.created_at,
+        cached:                true,
+        cacheStatus:           "fresh",
+        expiresAt:             cacheEntry.expires_at,
+        pipelineVersion:       cacheEntry.pipeline_version,
+        category:              cacheEntry.category,
+      };
+      return json(cached, 200);
+    }
+
+    // ⚠️ Cache exists but is expired or stale version — run fresh pipeline
+    console.info(`[Verify] Cache STALE — version_ok=${isFreshVersion}, time_ok=${isFreshTime}. Running fresh pipeline.`);
+  } else {
+    console.info(`[Verify] Cache MISS — no prior entry found.`);
+  }
+
+  // ── 4. Tavily web search ─────────────────────────────────────────────────
   // searchWeb accepts the resolved tavilyMode so it never reads from global state.
   const searchResults = await searchWeb(
     cleanClaim,
@@ -143,8 +195,8 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     tavilyMode,
   );
 
-  // ── 4. AI analysis via AIManager ─────────────────────────────────────────
-  const result = await analyseEvidence({
+  // ── 5. AI analysis via AIManager ─────────────────────────────────────────
+  const rawResult = await analyseEvidence({
     claim:             cleanClaim,
     category:          cleanCategory,
     searchResults,
@@ -153,8 +205,44 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     openRouterApiKey2: env.OPENROUTER_API_KEY_2,
     envVars:           env as unknown as Record<string, string | undefined>,
     aiProviderMode,
+  }) as VerifyResult & { _aiModelUsed?: string };
+
+  // ── 6. Save result to cache ───────────────────────────────────────────────
+  const cacheCategory = rawResult.category ?? cleanCategory ?? "evergreen";
+  const expiresAt     = calculateExpiration(cacheCategory).toISOString();
+
+  // Fire-and-forget: don't block the response waiting for cache write
+  void saveCachedClaim(env, {
+    claimOriginal:   cleanClaim,
+    claimNormalized: normalizedClaim,
+    category:        cacheCategory,
+    verdict:         rawResult.verdict,
+    confidence:      rawResult.confidence,
+    summary:         rawResult.explanation,
+    reasoning:       rawResult.truthStatement,
+    sources: {
+      supportingEvidence:    rawResult.supportingEvidence,
+      contradictingEvidence: rawResult.contradictingEvidence,
+      reliableSources:       rawResult.reliableSources,
+      mascotAdvice:          rawResult.mascotAdvice,
+      searchResultsCount:    rawResult.searchResultsCount,
+    },
+    searchProvider: tavilyMode,
+    aiModel:        rawResult._aiModelUsed ?? "unknown",
+    pipelineVersion: CURRENT_PIPELINE_VERSION,
   });
 
-  // ── 5. Return ────────────────────────────────────────────────────────────
-  return json(result, 200);
+  // ── 7. Return result ─────────────────────────────────────────────────────
+  // Strip internal _aiModelUsed field before returning to the client
+  const { _aiModelUsed: _stripped, ...result } = rawResult;
+  const finalResult: VerifyResult = {
+    ...result,
+    cached:          cacheEntry ? false : false,  // Always false for fresh results
+    cacheStatus:     cacheEntry ? "expired" : null, // Inform client if we refreshed a stale record
+    expiresAt,
+    pipelineVersion: CURRENT_PIPELINE_VERSION,
+    category:        cacheCategory,
+  };
+
+  return json(finalResult, 200);
 }

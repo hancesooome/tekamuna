@@ -256,6 +256,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
   // Partial<VerifyResult> means "an object with SOME of VerifyResult's fields".
   // The AI might not return every field perfectly, so Partial is safer than VerifyResult.
   let verdictData: Partial<VerifyResult>;
+  let aiModelUsed = "unknown"; // Tracks which model/provider answered
 
   try {
     // manager.complete() tries each AI provider in order until one succeeds.
@@ -285,6 +286,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       return fallbackResult(input.claim, `JSON parse error from ${response.modelUsed}.`, allSources);
     }
 
+    aiModelUsed = `${response.providerUsed}/${response.modelUsed}`;
     console.info(
       `[analyseEvidence] Success via ${response.providerUsed}/${response.modelUsed} ` +
       `in ${response.latencyMs}ms`,
@@ -365,7 +367,13 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
       verdictData.mascotAdvice ??
       "Ka-Teka! Palaging mag-double check bago maniwala o mag-share.", // Default if AI omits it
     ),
-    searchResultsCount: srcCount,
-    verifiedAt:         new Date().toISOString(), // ISO 8601 timestamp
-  };
+    searchResultsCount:  srcCount,
+    verifiedAt:          new Date().toISOString(), // ISO 8601 timestamp
+    cached:              false,                    // Always false for fresh pipeline results
+    cacheStatus:         null,
+    category:            input.category,
+    pipelineVersion:     undefined,               // Injected by the route handler after save
+    expiresAt:           undefined,               // Injected by the route handler after save
+    _aiModelUsed:        aiModelUsed,             // Internal — stripped before sending to client
+  } as VerifyResult & { _aiModelUsed: string };
 }
