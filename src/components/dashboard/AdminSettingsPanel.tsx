@@ -115,7 +115,7 @@ export function AdminSettingsPanel() {
 
   if (loading) {
     return (
-      <Card className="border-gray-800 bg-[#0c0d0e]/60 backdrop-blur-md">
+      <Card className="border-border/60 bg-card shadow-sm">
         <CardContent className="flex h-48 items-center justify-center">
           <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
         </CardContent>
@@ -124,13 +124,13 @@ export function AdminSettingsPanel() {
   }
 
   return (
-    <Card className="border-gray-800 bg-[#0c0d0e]/60 backdrop-blur-md">
+    <Card className="border-border/60 bg-card shadow-sm">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5 text-emerald-500" />
-          <CardTitle className="text-gray-100">Pipeline Config Panel</CardTitle>
+          <CardTitle className="text-lg font-black flex items-center gap-2">Pipeline Settings</CardTitle>
         </div>
-        <CardDescription className="text-gray-400">
+        <CardDescription className="text-xs text-muted-foreground">
           Control Tavily search key failovers and forced AI providers. Saved settings affect the backend dynamically.
         </CardDescription>
       </CardHeader>
@@ -139,7 +139,7 @@ export function AdminSettingsPanel() {
         {/* Tavily Switcher */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Key className="h-4 w-4 text-emerald-500" />
               Tavily Search Key Routing
             </span>
@@ -147,7 +147,7 @@ export function AdminSettingsPanel() {
               <Badge variant="destructive" className="animate-pulse">Key Not Configured</Badge>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               { id: "auto", label: "Auto Failover", desc: "Try Key 1, then Key 2" },
               { id: "force_key1", label: "Force Key 1", desc: "Only Key 1 (no fallback)" },
@@ -156,17 +156,17 @@ export function AdminSettingsPanel() {
               <button
                 key={opt.id}
                 onClick={() => setTavilyMode(opt.id as TavilyModeOption)}
-                className={`relative flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-all ${
+                className={`relative flex flex-col items-start gap-1.5 p-4 rounded-xl border text-left transition-all ${
                   tavilyMode === opt.id
-                    ? "border-emerald-500 bg-emerald-950/20 text-emerald-400 font-medium"
-                    : "border-gray-800 bg-gray-900/40 hover:bg-gray-900/80 text-gray-400"
+                    ? "border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "border-border/60 bg-muted/20 hover:bg-muted/40 text-muted-foreground"
                 }`}
               >
                 <div className="flex w-full items-center justify-between">
-                  <span className="text-sm">{opt.label}</span>
-                  {tavilyMode === opt.id && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                  <span className="text-sm font-bold">{opt.label}</span>
+                  {tavilyMode === opt.id && <Check className="h-4 w-4 text-emerald-500" />}
                 </div>
-                <span className="text-[10px] text-gray-500 leading-tight">{opt.desc}</span>
+                <span className="text-xs text-muted-foreground/80 leading-normal">{opt.desc}</span>
               </button>
             ))}
           </div>
@@ -175,7 +175,7 @@ export function AdminSettingsPanel() {
         {/* AI Provider Switcher */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Zap className="h-4 w-4 text-emerald-500" />
               AI Model Provider Routing
             </span>
@@ -183,7 +183,7 @@ export function AdminSettingsPanel() {
               <Badge variant="destructive" className="animate-pulse">Key Not Configured</Badge>
             )}
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {[
               { id: "auto", label: "Auto Fallback", desc: "OR 1 → OR 2 → Gemini" },
               { id: "force_openrouter_key1", label: "Force OR 1", desc: "Use OpenRouter Key 1" },
@@ -193,17 +193,17 @@ export function AdminSettingsPanel() {
               <button
                 key={opt.id}
                 onClick={() => setAiProviderMode(opt.id as AiProviderModeOption)}
-                className={`relative flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-all ${
+                className={`relative flex flex-col items-start gap-1.5 p-4 rounded-xl border text-left transition-all ${
                   aiProviderMode === opt.id
-                    ? "border-emerald-500 bg-emerald-950/20 text-emerald-400 font-medium"
-                    : "border-gray-800 bg-gray-900/40 hover:bg-gray-900/80 text-gray-400"
+                    ? "border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "border-border/60 bg-muted/20 hover:bg-muted/40 text-muted-foreground"
                 }`}
               >
                 <div className="flex w-full items-center justify-between">
-                  <span className="text-xs">{opt.label}</span>
-                  {aiProviderMode === opt.id && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                  <span className="text-sm font-bold">{opt.label}</span>
+                  {aiProviderMode === opt.id && <Check className="h-4 w-4 text-emerald-500" />}
                 </div>
-                <span className="text-[9px] text-gray-500 leading-tight mt-1">{opt.desc}</span>
+                <span className="text-xs text-muted-foreground/80 leading-normal">{opt.desc}</span>
               </button>
             ))}
           </div>
@@ -212,10 +212,10 @@ export function AdminSettingsPanel() {
         {/* Status Alerts */}
         {statusMessage && (
           <div
-            className={`p-3 rounded-lg text-xs leading-normal border ${
+            className={`p-4 rounded-xl text-sm leading-normal border ${
               statusMessage.type === "success"
-                ? "bg-emerald-950/20 border-emerald-900 text-emerald-400"
-                : "bg-red-950/20 border-red-900 text-red-400"
+                ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                : "bg-destructive/5 border-destructive/20 text-destructive"
             }`}
           >
             {statusMessage.text}
@@ -223,7 +223,7 @@ export function AdminSettingsPanel() {
         )}
 
         {(isTavilyWarning || isAiWarning) && (
-          <div className="p-3 rounded-lg text-xs leading-normal border bg-amber-950/20 border-amber-900 text-amber-400">
+          <div className="p-4 rounded-xl text-sm leading-normal border bg-amber-500/5 border-amber-500/20 text-amber-600 dark:text-amber-400">
             <strong>Warning:</strong> You have forced a provider that has no configured API key. Verify requests will immediately fail before running the pipeline until you configure the secret or switch back.
           </div>
         )}
@@ -233,7 +233,7 @@ export function AdminSettingsPanel() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-gray-100 font-semibold text-sm transition-all shadow-md"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm transition-all shadow-sm"
           >
             {saving ? (
               <>
