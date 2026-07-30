@@ -86,27 +86,14 @@ export function parseOpenRouterRateLimitHeaders(headers: Headers): QuotaValue | 
 
 // ── Remote quota fetchers ───────────────────────────────────────────────────────
 
-interface OpenRouterKeyData {
-  limit?: number | null;
-  limit_remaining?: number | null;
-  limit_reset?: string | null;
-  usage?: number;
-  usage_daily?: number;
-  is_free_tier?: boolean;
-}
+
 
 interface TavilyUsageKey {
   usage?: number;
   limit?: number | null;
 }
 
-interface TavilyUsageResponse {
-  key?: TavilyUsageKey;
-  account?: {
-    plan_usage?: number;
-    plan_limit?: number;
-  };
-}
+
 
 export interface OpenRouterDetailedUsage {
   configured: boolean;

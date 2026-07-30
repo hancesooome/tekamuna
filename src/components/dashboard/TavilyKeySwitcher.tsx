@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Key, ShieldCheck, Zap, RefreshCw, Check } from "lucide-react";
 import { API_BASE_URL } from "@/constants";
