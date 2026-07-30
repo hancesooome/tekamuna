@@ -101,14 +101,16 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
   // ── 1.5 Intent detection ──────────────────────────────────────────────────
   const detection = shouldRunVerificationPipeline(cleanClaim);
   console.log(
-    `[fact-check-intent] Claim: "${cleanClaim}" | Route: ${detection.shouldVerify ? "PIPELINE" : "NORMAL_CHAT"} | Confidence: ${detection.confidence.toFixed(2)} | Reason: ${detection.reason}`,
+    `[fact-check-intent] Claim: "${cleanClaim}" | Route: ${detection.shouldVerify ? "PIPELINE" : "NORMAL_CHAT"} | Detection Confidence: ${detection.detectionConfidence.toFixed(2)} | Reason: ${detection.reason}`,
   );
   if (!detection.shouldVerify) {
     return json(
       {
         error: detection.reason,
         shouldVerify: false,
-        confidence: detection.confidence,
+        detectionConfidence: detection.detectionConfidence,
+        // Kept for backward compatibility in case any old client expects it
+        confidence: detection.detectionConfidence,
       },
       422,
     );

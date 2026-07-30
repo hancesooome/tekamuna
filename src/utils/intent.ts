@@ -46,7 +46,13 @@
 
 export interface DetectionResult {
   shouldVerify: boolean;
-  confidence: number;
+  /**
+   * Indicates how confidently the claim detector classified the input as a
+   * fact-checkable claim based on routing heuristics and pattern matching.
+   * It is NOT the AI model's confidence in the truthfulness of the claim or
+   * the final verdict.
+   */
+  detectionConfidence: number;
   reason: string;
 }
 
@@ -233,7 +239,7 @@ const VERIFIABLE_INTERROGATIVE_PATTERNS: ClassificationPattern[] = [
 function logClassificationResult(input: string, result: DetectionResult): void {
   const label = result.shouldVerify ? "PIPELINE" : "NORMAL_CHAT";
   console.log(
-    `[ClaimClassifier] Input: "${input}" | Result: ${label} | Confidence: ${result.confidence.toFixed(2)} | Reason: ${result.reason}`,
+    `[ClaimClassifier] Input: "${input}" | Result: ${label} | Detection Confidence: ${result.detectionConfidence.toFixed(2)} | Reason: ${result.reason}`,
   );
 }
 
@@ -244,8 +250,8 @@ export function shouldRunVerificationPipeline(input: string): DetectionResult {
   const rawLower = rawInput.toLowerCase();
   const normalized = normalizeInput(rawInput);
 
-  function emit(shouldVerify: boolean, confidence: number, reason: string): DetectionResult {
-    const res: DetectionResult = { shouldVerify, confidence, reason };
+  function emit(shouldVerify: boolean, detectionConfidence: number, reason: string): DetectionResult {
+    const res: DetectionResult = { shouldVerify, detectionConfidence, reason };
     logClassificationResult(rawInput, res);
     return res;
   }

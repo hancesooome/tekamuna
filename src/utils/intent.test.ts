@@ -6,7 +6,7 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
     it("classifies Tagalog vaccine claim: Libre ang COVID vaccine sa lahat ng Pilipino.", () => {
       const result = shouldRunVerificationPipeline("Libre ang COVID vaccine sa lahat ng Pilipino.");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog metric ranking claim: Ang Pilipinas ay may pinakamataas na unemployment rate sa ASEAN.", () => {
@@ -14,7 +14,7 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
         "Ang Pilipinas ay may pinakamataas na unemployment rate sa ASEAN.",
       );
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog law/ban claim: Ipinagbawal na ang social media para sa mga menor de edad.", () => {
@@ -22,7 +22,7 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
         "Ipinagbawal na ang social media para sa mga menor de edad.",
       );
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog environmental claim: Ang Maynila ay ang pinaka-polluted na lungsod sa buong mundo.", () => {
@@ -30,7 +30,7 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
         "Ang Maynila ay ang pinaka-polluted na lungsod sa buong mundo.",
       );
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog event occurrence claim: May lindol na magnitude 7 sa Mindanao kahapon.", () => {
@@ -38,7 +38,7 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
         "May lindol na magnitude 7 sa Mindanao kahapon.",
       );
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog sports achievement claim: Nanalo si Carlos Yulo ng dalawang Olympic gold medals.", () => {
@@ -46,31 +46,31 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
         "Nanalo si Carlos Yulo ng dalawang Olympic gold medals.",
       );
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Tagalog economic trend claim: Bumaba ang inflation ngayong taon.", () => {
       const result = shouldRunVerificationPipeline("Bumaba ang inflation ngayong taon.");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("detects explicit English verification queries", () => {
       const result = shouldRunVerificationPipeline("Is this news accurate?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThan(0.5);
+      expect(result.detectionConfidence).toBeGreaterThan(0.5);
     });
 
     it("detects sports and transfer rumors as verification-worthy", () => {
       const result = shouldRunVerificationPipeline("Is LeBron James going to Sixers?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThan(0.5);
+      expect(result.detectionConfidence).toBeGreaterThan(0.5);
     });
 
     it("detects Filipino explicit fact-check phrases", () => {
       const result = shouldRunVerificationPipeline("Totoo ba na pinalaya siya?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.5);
     });
 
     it("detects fake news queries", () => {
@@ -81,55 +81,55 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
     it("recognizes English standalone news claims", () => {
       const result = shouldRunVerificationPipeline("Marcos Jr. declared Martial Law again.");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Filipino verifiable death question: patay naba si president bong bong marcos?", () => {
       const result = shouldRunVerificationPipeline("patay naba si president bong bong marcos?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies buhay pa ba question as verifiable", () => {
       const result = shouldRunVerificationPipeline("Buhay pa ba si Cory Aquino?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies English 'is X dead' as verifiable", () => {
       const result = shouldRunVerificationPipeline("Is Fidel Ramos still alive?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies namatay na ba question as verifiable", () => {
       const result = shouldRunVerificationPipeline("Namatay na ba si Erap Estrada?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Totoo bang... style questions as verifiable", () => {
       const result = shouldRunVerificationPipeline("Totoo bang libre ang COVID vaccine?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Na-ban na ba... style questions as verifiable", () => {
       const result = shouldRunVerificationPipeline("Na-ban na ba ang TikTok sa Pilipinas?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies Sinabi ba ni... style questions as verifiable", () => {
       const result = shouldRunVerificationPipeline("Sinabi ba ni Sara Duterte na kaya niyang mag-hire ng gunman ng ₱5,000?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
 
     it("classifies May batas ba... style questions as verifiable", () => {
       const result = shouldRunVerificationPipeline("May batas ba na nagbabawal sa social media para sa menor de edad?");
       expect(result.shouldVerify).toBe(true);
-      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
     });
   });
 
