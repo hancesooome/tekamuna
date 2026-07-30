@@ -88,11 +88,6 @@ export function parseOpenRouterRateLimitHeaders(headers: Headers): QuotaValue | 
 
 
 
-interface TavilyUsageKey {
-  usage?: number;
-  limit?: number | null;
-}
-
 
 
 export interface OpenRouterDetailedUsage {
