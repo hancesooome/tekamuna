@@ -20,8 +20,38 @@ import { AppRouter } from "@/router/index";
 // AppRouter is our React Router v7 configuration.
 // It maps URL paths (e.g. "/verify") to page components (e.g. VerifyPage).
 
+import MaintenancePage from "@/pages/MaintenancePage";
+// Standalone full-screen maintenance page — shown only in production when
+// VITE_MAINTENANCE_MODE is "true". Does not depend on routing or providers.
+
 import "./index.css";
 // Global CSS styles — Tailwind base layers, custom design tokens, and utility classes.
+
+// ── Maintenance mode guard ──────────────────────────────────────────────────
+// Only active in production (import.meta.env.PROD) AND when the env variable
+// VITE_MAINTENANCE_MODE is explicitly set to "true".
+//
+// Local dev (npm run dev):
+//   - import.meta.env.PROD is false, so this guard NEVER activates.
+//   - You can force it locally by temporarily changing this condition,
+//     but that should not be committed.
+//
+// Production (Vercel):
+//   - Set VITE_MAINTENANCE_MODE=true in the Vercel dashboard environment
+//     variables. This gets baked into the build, so it can only be changed
+//     by a new deployment.
+//   - To disable maintenance mode: either remove the env var or set it to
+//     "false" (or any value other than "true"), then redeploy.
+//
+// Why here (main.tsx root) and not in the router:
+//   - This is the earliest decision point in the React tree.
+//   - Providers (QueryClient, StrictMode) are not needed for a static
+//     maintenance page, so we skip them entirely to avoid unnecessary
+//     init logic (API polling, etc.).
+//   - Keeping it here makes removal trivial: delete the guard block and
+//     the import, everything below stays untouched.
+// ─────────────────────────────────────────────────────────────────────────────
+const IS_MAINTENANCE = import.meta.env.PROD && import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
 // ── Mount point ─────────────────────────────────────────────────────────────
 // document.getElementById("root") finds the <div id="root"> in index.html.
@@ -40,8 +70,16 @@ if (!rootEl) throw new Error("Root element #root not found in index.html");
 //   AppRouter   → URL routing + all page components
 createRoot(rootEl).render(
   <StrictMode>
-    <QueryProvider>
-      <AppRouter />
-    </QueryProvider>
+    {IS_MAINTENANCE ? (
+      // Production maintenance mode: render the static page only.
+      // No QueryProvider, no AppRouter — nothing that could trigger
+      // API calls or route navigation.
+      <MaintenancePage />
+    ) : (
+      // Normal app path: all providers and routing are active.
+      <QueryProvider>
+        <AppRouter />
+      </QueryProvider>
+    )}
   </StrictMode>,
 );
