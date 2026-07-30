@@ -105,7 +105,7 @@ function jsonResponse(body: unknown, status: number): Response {
 // Cloudflare Workers requires a default export with a `fetch` method.
 // Every HTTP request to your Worker domain triggers this function.
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     // Parse the URL once so we can check pathname and search params.
     const url = new URL(request.url);
     // e.g. url.pathname = "/api/verify", url.search = "?q=marcos"
@@ -121,7 +121,7 @@ export default {
     // ── POST /api/verify ───────────────────────────────────────────────────
     // The main fact-checking endpoint. Runs: Tavily search → AI analysis → verdict.
     if (url.pathname === "/api/verify" && request.method === "POST") {
-      return handleVerify(request, env);
+      return handleVerify(request, env, ctx);
     }
 
     // ── GET /api/search?q=... ──────────────────────────────────────────────

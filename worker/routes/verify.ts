@@ -61,7 +61,7 @@ function json(data: unknown, status = 200): Response {
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export async function handleVerify(request: Request, env: Env): Promise<Response> {
+export async function handleVerify(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 
   // ── 1. Parse & validate ─────────────────────────────────────────────────
   // request.json() parses the HTTP request body as JSON.
@@ -211,8 +211,11 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
   const cacheCategory = rawResult.category ?? cleanCategory ?? "evergreen";
   const expiresAt     = calculateExpiration(cacheCategory).toISOString();
 
-  // Fire-and-forget: don't block the response waiting for cache write
-  void saveCachedClaim(env, {
+  // Fire-and-forget via ctx.waitUntil so Cloudflare keeps the isolate alive
+  // until the cache write completes AFTER the response has been returned.
+  // Without ctx.waitUntil, the Worker terminates immediately on return and
+  // the Supabase HTTP request gets cancelled before it can complete.
+  ctx.waitUntil(saveCachedClaim(env, {
     claimOriginal:   cleanClaim,
     claimNormalized: normalizedClaim,
     category:        cacheCategory,
@@ -230,7 +233,7 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     searchProvider: tavilyMode,
     aiModel:        rawResult._aiModelUsed ?? "unknown",
     pipelineVersion: CURRENT_PIPELINE_VERSION,
-  });
+  })); // double-close: inner saveCachedClaim({...}) + outer ctx.waitUntil(...)
 
   // ── 7. Return result ─────────────────────────────────────────────────────
   // Strip internal _aiModelUsed field before returning to the client
