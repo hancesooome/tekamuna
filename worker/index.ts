@@ -55,6 +55,7 @@ import { handleStats }        from "./routes/stats";        // GET  /api/stats/*
 export interface Env {
   // ── Required ──────────────────────────────────────────────────────────────
   TAVILY_API_KEY: string;         // Required for web search (Tavily)
+  TAVILY_API_KEY_2?: string;       // Secondary Tavily key (fallback if primary hits quota)
 
   // ── AI providers (at least one required) ──────────────────────────────────
   OPENROUTER_API_KEY?:   string;  // Primary OpenRouter key (free models available)
@@ -80,7 +81,7 @@ export interface Env {
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin":  "*",          // Allow all origins
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS", // Allowed HTTP methods
-  "Access-Control-Allow-Headers": "Content-Type",       // Allowed request headers
+  "Access-Control-Allow-Headers": "Content-Type, x-tavily-preference", // Allowed request headers
 };
 
 // ── Helper: create a JSON response ───────────────────────────────────────────
@@ -130,8 +131,8 @@ export default {
       return handleAnalyzeImage(request, env);
     }
 
-    // ── GET /api/stats/* ───────────────────────────────────────────────────
-    if (url.pathname.startsWith("/api/stats") && request.method === "GET") {
+    // ── /api/stats/* (GET, POST) ─────────────────────────────────────────────
+    if (url.pathname.startsWith("/api/stats")) {
       return handleStats(request, env);
     }
 

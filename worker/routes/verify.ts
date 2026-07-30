@@ -28,6 +28,10 @@ import type { VerifyRequest } from "../../src/types/verify";
 // VerifyRequest = { claim: string; category?: string }
 // The shape of the JSON body we expect from the frontend.
 import { shouldRunVerificationPipeline } from "../../src/utils/intent";
+import { apiLogger } from "../lib/apiLogger";
+// apiLogger — used to apply the per-request Tavily key preference forwarded
+// via the x-tavily-preference header. Workers are stateless so we cannot rely
+// on a previously-stored preference surviving across requests.
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 
@@ -111,9 +115,23 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
   }
 
   // ── 2. Tavily web search ─────────────────────────────────────────────────
+  // Workers are stateless — each request is a fresh isolate. We cannot rely
+  // on a previously-stored Tavily preference surviving from a prior request.
+  // The frontend forwards the user's preference as the x-tavily-preference
+  // header on every verify call, so we read and apply it here each time.
+  const tavilyPrefHeader = request.headers.get("x-tavily-preference");
+  if (tavilyPrefHeader === "key1" || tavilyPrefHeader === "key2" || tavilyPrefHeader === "auto") {
+    apiLogger.setTavilyPreference(tavilyPrefHeader);
+    console.log(`[Tavily] Preference set from header: ${tavilyPrefHeader}`);
+  }
+
   // searchWeb returns an array of SearchResult objects (up to 10).
   // If Tavily fails or the key is missing, it returns [] (empty array) — never throws.
-  const searchResults = await searchWeb(cleanClaim, env.TAVILY_API_KEY);
+  const searchResults = await searchWeb(
+    cleanClaim,
+    env.TAVILY_API_KEY,
+    env.TAVILY_API_KEY_2,
+  );
 
   // ── 3. AI analysis via AIManager ─────────────────────────────────────────
   // analyseEvidence orchestrates:

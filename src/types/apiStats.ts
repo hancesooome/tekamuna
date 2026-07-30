@@ -3,7 +3,7 @@
  * Mirrors worker/lib/apiLogger.ts response shapes.
  */
 
-export type ApiName = "tavily" | "openrouter" | "openrouter2" | "gemini";
+export type ApiName = "tavily" | "tavily2" | "openrouter" | "openrouter2" | "gemini";
 
 export type ApiHealthStatus = "healthy" | "slow" | "offline" | "disabled";
 

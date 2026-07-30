@@ -10,7 +10,7 @@
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type ApiName = "tavily" | "openrouter" | "openrouter2" | "gemini";
+export type ApiName = "tavily" | "tavily2" | "openrouter" | "openrouter2" | "gemini";
 
 export type ApiHealthStatus = "healthy" | "slow" | "offline" | "disabled";
 
@@ -61,6 +61,7 @@ export interface TimelinePoint {
 
 export interface ApiConfigStatus {
   tavily: boolean;
+  tavily2: boolean;
   openrouter: boolean;
   openrouter2: boolean;
   gemini: boolean;
@@ -73,13 +74,14 @@ const SLOW_THRESHOLD_MS = 1500;
 const OFFLINE_FAILURE_STREAK = 3;
 
 const API_DISPLAY_NAMES: Record<ApiName, string> = {
-  tavily:      "Tavily",
+  tavily:      "Tavily (Key 1)",
+  tavily2:     "Tavily (Key 2)",
   openrouter:  "OpenRouter",
   openrouter2: "OpenRouter (Key 2)",
   gemini:      "Gemini API",
 };
 
-const ALL_APIS: ApiName[] = ["tavily", "openrouter", "openrouter2", "gemini"];
+const ALL_APIS: ApiName[] = ["tavily", "tavily2", "openrouter", "openrouter2", "gemini"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -249,8 +251,18 @@ class ApiLogger {
     ];
   }
 
+  private tavilyPreference: "auto" | "key1" | "key2" = "auto";
+
   setConfigStatus(status: ApiConfigStatus): void {
     this.configStatus = status;
+  }
+
+  getTavilyPreference(): "auto" | "key1" | "key2" {
+    return this.tavilyPreference;
+  }
+
+  setTavilyPreference(pref: "auto" | "key1" | "key2"): void {
+    this.tavilyPreference = pref;
   }
 
   /** Store quota from a provider API poll or inline response headers. */

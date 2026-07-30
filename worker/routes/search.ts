@@ -40,7 +40,11 @@ export async function handleSearch(request: Request, env: Env): Promise<Response
     return json({ error: "Query param `q` must not exceed 500 characters." }, 422);
   }
 
-  const results = await searchWeb(query, env.TAVILY_API_KEY);
+  const results = await searchWeb(
+    query,
+    env.TAVILY_API_KEY,
+    env.TAVILY_API_KEY_2,
+  );
 
   const payload: SearchResponse = {
     query,

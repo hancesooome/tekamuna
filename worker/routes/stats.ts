@@ -28,6 +28,7 @@ function jsonResponse(body: unknown, status: number): Response {
 function syncConfigFromEnv(env: Env): void {
   apiLogger.setConfigStatus({
     tavily:      Boolean(env.TAVILY_API_KEY?.trim()),
+    tavily2:     Boolean(env.TAVILY_API_KEY_2?.trim()),
     openrouter:  Boolean(env.OPENROUTER_API_KEY?.trim()),
     openrouter2: Boolean(env.OPENROUTER_API_KEY_2?.trim()),
     gemini:      Boolean(env.GEMINI_API_KEY?.trim()),
@@ -45,6 +46,27 @@ export async function handleStats(request: Request, env: Env): Promise<Response>
   // Refresh live quota from provider APIs before returning aggregate stats
   if (path === "/api/stats/summary" || path === "/api/stats/apis") {
     await refreshQuotasFromEnv(env);
+  }
+
+  if (path === "/api/stats/tavily-config") {
+    if (request.method === "POST") {
+      try {
+        const body = (await request.json()) as { preferredKey?: "auto" | "key1" | "key2" };
+        if (body.preferredKey && ["auto", "key1", "key2"].includes(body.preferredKey)) {
+          apiLogger.setTavilyPreference(body.preferredKey);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return jsonResponse(
+      {
+        preferredKey: apiLogger.getTavilyPreference(),
+        key1Configured: Boolean(env.TAVILY_API_KEY?.trim()),
+        key2Configured: Boolean(env.TAVILY_API_KEY_2?.trim()),
+      },
+      200,
+    );
   }
 
   if (path === "/api/stats/summary") {

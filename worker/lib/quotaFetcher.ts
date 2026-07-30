@@ -202,6 +202,9 @@ export async function refreshQuotasFromEnv(env: Env): Promise<void> {
   if (env.TAVILY_API_KEY?.trim()) {
     tasks.push(fetchTavilyQuota(env.TAVILY_API_KEY.trim()));
   }
+  if (env.TAVILY_API_KEY_2?.trim()) {
+    tasks.push(fetchTavilyQuota(env.TAVILY_API_KEY_2.trim()));
+  }
   if (env.OPENROUTER_API_KEY?.trim()) {
     tasks.push(fetchOpenRouterQuota(env.OPENROUTER_API_KEY.trim(), "key1"));
   }

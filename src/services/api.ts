@@ -59,11 +59,14 @@ export class ApiServiceError extends Error {
 //   endpoint → URL path suffix (e.g. "/verify")
 //   body     → any JS value that will be JSON-serialised as the request body
 //   returns  → Promise<T> — T is whatever type we expect back from the server
-async function post<T>(endpoint: string, body: unknown): Promise<T> {
+async function post<T>(endpoint: string, body: unknown, extraHeaders?: Record<string, string>): Promise<T> {
   // fetch() sends an HTTP request. We construct the full URL from BASE_URL + endpoint.
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" }, // tells the server we're sending JSON
+    headers: {
+      "Content-Type": "application/json", // tells the server we're sending JSON
+      ...extraHeaders,
+    },
     body: JSON.stringify(body), // convert the JS object to a JSON string
   });
 
@@ -94,9 +97,16 @@ async function post<T>(endpoint: string, body: unknown): Promise<T> {
  * @throws {ApiServiceError} on network failure or non-2xx response
  */
 export async function verifyClaim(payload: VerifyRequest): Promise<VerifyResult> {
-  // Delegates to the generic post() helper.
-  // "/verify" → becomes BASE_URL + "/api/verify" when proxied.
-  return post<VerifyResult>("/verify", payload);
+  // Read the Tavily key preference stored by TavilyKeySwitcher and forward it
+  // as a request header. Cloudflare Workers are stateless — the POST to
+  // /api/stats/tavily-config sets preference in a different worker isolate than
+  // the one handling /api/verify, so we must re-send it on every verify call.
+  const tavilyPref =
+    (localStorage.getItem("teka_tavily_preferred_key") as "auto" | "key1" | "key2" | null) ?? "auto";
+
+  return post<VerifyResult>("/verify", payload, {
+    "x-tavily-preference": tavilyPref,
+  });
 }
 
 /**

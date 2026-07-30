@@ -83,6 +83,30 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
       expect(result.shouldVerify).toBe(true);
       expect(result.confidence).toBeGreaterThanOrEqual(0.7);
     });
+
+    it("classifies Filipino verifiable death question: patay naba si president bong bong marcos?", () => {
+      const result = shouldRunVerificationPipeline("patay naba si president bong bong marcos?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies buhay pa ba question as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Buhay pa ba si Cory Aquino?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies English 'is X dead' as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Is Fidel Ramos still alive?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies namatay na ba question as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Namatay na ba si Erap Estrada?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
   });
 
   describe("MUST return FALSE (Normal Chat)", () => {

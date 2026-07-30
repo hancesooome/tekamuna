@@ -15,6 +15,7 @@ import {
   useApiStatsTimeline,
   useApiStatsErrors,
 } from "@/hooks/useApiStats";
+import { TavilyKeySwitcher } from "@/components/dashboard/TavilyKeySwitcher";
 import { isMockStatsEnabled, apiStats } from "@/services/apiStats";
 import type { ApiName, TimelineRange } from "@/types/apiStats";
 
@@ -74,6 +75,8 @@ export default function DashboardPage() {
       )}
 
       <ApiStats summary={summaryQuery.data} isLoading={summaryQuery.isLoading} />
+
+      <TavilyKeySwitcher />
 
       <ApiTable
         apis={apisQuery.data}

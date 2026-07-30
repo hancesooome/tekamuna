@@ -165,12 +165,24 @@ function isPhRelevant(result: TavilyRawResult): boolean {
 export async function searchWeb(
   query: string,
   apiKey: string | undefined,
+  fallbackApiKey?: string | undefined,
 ): Promise<SearchResult[]> {
+  const pref = apiLogger.getTavilyPreference();
+  let orderedKeys: (string | undefined)[];
+  if (pref === "key2") {
+    orderedKeys = [fallbackApiKey ?? apiKey, apiKey];
+  } else if (pref === "key1") {
+    orderedKeys = [apiKey];
+  } else {
+    orderedKeys = [apiKey, fallbackApiKey];
+  }
 
-  // Guard: don't attempt search if the API key is missing.
-  // ?. = optional chaining; .trim() removes whitespace; if falsy → skip.
-  if (!apiKey?.trim()) {
-    console.warn("[Tavily] TAVILY_API_KEY not configured — skipping web search.");
+  const keysToTry = Array.from(
+    new Set(orderedKeys.filter((k): k is string => Boolean(k?.trim()))),
+  );
+
+  if (keysToTry.length === 0) {
+    console.warn("[Tavily] No Tavily API keys configured — skipping web search.");
     apiLogger.log({
       apiName:      "tavily",
       endpoint:     TAVILY_API_URL,
@@ -183,95 +195,115 @@ export async function searchWeb(
   }
 
   // Append "Philippines" to bias Tavily's ranking toward PH content.
-  // Unless the query already mentions Philippines/Pilipinas (to avoid redundancy).
-  // /philipp|pilipinas|pilipino/i → case-insensitive regex test
   const phQuery =
     /philipp|pilipinas|pilipino/i.test(query)
-      ? query                        // already has PH keyword → use as-is
-      : `${query} Philippines`;      // add Philippines to the end
+      ? query
+      : `${query} Philippines`;
 
-  // Build the Tavily API request body.
   const requestBody = {
     query:               phQuery,
-    search_depth:        "advanced",   // "advanced" → Tavily does deeper crawling
+    search_depth:        "advanced",
     topic:               "general",
-    include_answer:      false,        // We don't need Tavily's AI-generated summary
-    include_raw_content: false,        // Don't include full page HTML (saves bandwidth)
+    include_answer:      false,
+    include_raw_content: false,
     max_results:         MAX_RESULTS,
-    include_domains:     [],           // [] = no domain whitelist
-    exclude_domains:     [],           // [] = no domain blacklist
+    include_domains:     [],
+    exclude_domains:     [],
   };
 
-  const headers = {
-    "Content-Type":  "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
+  for (let i = 0; i < keysToTry.length; i++) {
+    const currentKey = keysToTry[i];
+    // Determine which key this actually is by VALUE, not by index.
+    // When pref==="key2", the fallback key is placed at index 0 — so i>0 would
+    // incorrectly label it as "TAVILY_API_KEY". Comparing values is always correct.
+    const isKey2    = Boolean(fallbackApiKey?.trim()) && currentKey === fallbackApiKey!.trim();
+    const keyLabel  = isKey2 ? "TAVILY_API_KEY_2" : "TAVILY_API_KEY";
+    const apiName   = isKey2 ? ("tavily2" as const) : ("tavily" as const);
 
-  try {
-    const startMs = Date.now();
+    const headers = {
+      "Content-Type":  "application/json",
+      Authorization: `Bearer ${currentKey}`,
+    };
 
-    const response = await fetch(TAVILY_API_URL, {
-      method:  "POST",
-      headers,
-      body:    JSON.stringify(requestBody),
-    });
+    try {
+      const startMs = Date.now();
 
-    const durationMs = Date.now() - startMs;
+      const response = await fetch(TAVILY_API_URL, {
+        method:  "POST",
+        headers,
+        body:    JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      console.error(`[Tavily] HTTP ${response.status}: ${errBody}`);
+      const durationMs = Date.now() - startMs;
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        console.error(`[Tavily] HTTP ${response.status} (${keyLabel}): ${errBody}`);
+        apiLogger.log({
+          apiName,
+          endpoint:     TAVILY_API_URL,
+          method:       "POST",
+          durationMs,
+          success:      false,
+          statusCode:   response.status,
+          errorMessage: `[${keyLabel}] ${errBody.slice(0, 400)}`,
+          requestHeaders: headers,
+          responseBody: errBody,
+        });
+
+        // If another key is available, try it
+        if (i < keysToTry.length - 1) {
+          console.warn(`[Tavily] Key ${keyLabel} failed (${response.status}). Retrying with secondary Tavily API key...`);
+          continue;
+        }
+        return [];
+      }
+
+      const data = (await response.json()) as TavilyResponse;
+
       apiLogger.log({
-        apiName:      "tavily",
+        apiName,
+        endpoint:       TAVILY_API_URL,
+        method:         "POST",
+        durationMs,
+        success:        true,
+        statusCode:     response.status,
+        requestHeaders: headers,
+        responseBody:   { query: data.query, resultCount: data.results?.length ?? 0, keyUsed: keyLabel },
+      });
+
+      refreshTavilyQuotaIfStale(currentKey);
+
+      const all = data.results ?? [];
+      const phResults = all.filter(isPhRelevant);
+      const final = phResults.length >= MIN_PH_RESULTS ? phResults : all;
+
+      console.info(
+        `[Tavily] "${phQuery}" (${keyLabel}) → ${all.length} total, ${phResults.length} PH-relevant, using ${final.length}`,
+      );
+
+      return final.slice(0, MAX_RESULTS).map(toSearchResult);
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[Tavily] Request failed (${keyLabel}):`, err);
+      apiLogger.log({
+        apiName,
         endpoint:     TAVILY_API_URL,
         method:       "POST",
-        durationMs,
+        durationMs:   0,
         success:      false,
-        statusCode:   response.status,
-        errorMessage: errBody.slice(0, 500),
+        errorMessage: `[${keyLabel}] ${msg}`,
         requestHeaders: headers,
-        responseBody: errBody,
       });
+
+      if (i < keysToTry.length - 1) {
+        console.warn(`[Tavily] Key ${keyLabel} error. Retrying with secondary Tavily API key...`);
+        continue;
+      }
       return [];
     }
-
-    const data = (await response.json()) as TavilyResponse;
-
-    apiLogger.log({
-      apiName:        "tavily",
-      endpoint:       TAVILY_API_URL,
-      method:         "POST",
-      durationMs,
-      success:        true,
-      statusCode:     response.status,
-      requestHeaders: headers,
-      responseBody:   { query: data.query, resultCount: data.results?.length ?? 0 },
-    });
-
-    refreshTavilyQuotaIfStale(apiKey);
-
-    const all = data.results ?? [];
-    const phResults = all.filter(isPhRelevant);
-    const final = phResults.length >= MIN_PH_RESULTS ? phResults : all;
-
-    console.info(
-      `[Tavily] "${phQuery}" → ${all.length} total, ${phResults.length} PH-relevant, using ${final.length}`,
-    );
-
-    return final.slice(0, MAX_RESULTS).map(toSearchResult);
-
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[Tavily] Request failed:", err);
-    apiLogger.log({
-      apiName:      "tavily",
-      endpoint:     TAVILY_API_URL,
-      method:       "POST",
-      durationMs:   0,
-      success:      false,
-      errorMessage: msg,
-      requestHeaders: headers,
-    });
-    return [];
   }
+
+  return [];
 }
