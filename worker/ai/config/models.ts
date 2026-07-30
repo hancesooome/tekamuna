@@ -60,7 +60,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "google/gemma-4-31b-it:free",            // Google Gemma 4 31B — free
     "deepseek/deepseek-chat:free",           // DeepSeek — strong reasoning, free
     "qwen/qwen3-32b:free",                   // Qwen 3 32B — free
-    "nvidia/nemotron-3-super-120b-a12b:free",// Nvidia 120B — free
+    // nvidia/nemotron-3-super-120b-a12b:free removed — unreliable JSON output
     "mistralai/mistral-small:free",          // Mistral Small — free fallback
     "gemini-2.0-flash",                      // Gemini direct — final fallback
     "gemini-1.5-flash",                      // Gemini 1.5 — last resort

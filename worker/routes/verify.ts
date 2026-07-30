@@ -27,6 +27,7 @@ import { analyseEvidence } from "../services/gemini";
 import type { VerifyRequest } from "../../src/types/verify";
 // VerifyRequest = { claim: string; category?: string }
 // The shape of the JSON body we expect from the frontend.
+import { isFactCheckingQuery } from "../../src/utils/intent";
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 
@@ -92,6 +93,18 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
   const cleanCategory = category?.trim() || undefined;
   // Optional chaining `category?.trim()`: if category is undefined, returns undefined
   // instead of throwing "Cannot read properties of undefined".
+
+  // ── 1.5 Intent detection ──────────────────────────────────────────────────
+  const detection = isFactCheckingQuery(cleanClaim);
+  console.debug(
+    `[fact-check-intent] ${detection.reason} (confidence=${detection.confidence.toFixed(2)})`,
+  );
+  if (!detection.isFactCheck) {
+    return json(
+      { error: detection.reason },
+      422,
+    );
+  }
 
   // ── 2. Tavily web search ─────────────────────────────────────────────────
   // searchWeb returns an array of SearchResult objects (up to 10).

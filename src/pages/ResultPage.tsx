@@ -1,5 +1,5 @@
 /**
- * ResultPage — redesigned to match Figma screenshots.
+ * ResultPage â€” redesigned to match Figma screenshots.
  *
  * Layout:
  *   Breadcrumb
@@ -20,7 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
-import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
+import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate } from "@/utils/sources";
 import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
@@ -188,15 +188,15 @@ function SuccessView({ result }: { result: VerifyResult }) {
       </nav>
 
       {/* -- Claim banner -- */}
-      <div className="flex items-center gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-6 py-6 mb-6 shadow-sm">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+      <div className="flex items-start gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 mb-6 shadow-sm">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 mt-0.5">
           <FileText className="h-4 w-4 text-primary" />
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
             Sinuri na Claim
           </p>
-          <p className="text-sm font-bold text-foreground leading-snug truncate">
+          <p className="text-sm font-bold text-foreground leading-snug break-words">
             {result.claim}
           </p>
         </div>
@@ -237,9 +237,9 @@ function SuccessView({ result }: { result: VerifyResult }) {
               const url = buildShareUrl(result.claim);
               if (navigator.share) {
                 try {
-                  await navigator.share({ title: "Teka Muna — Fact Check", text: `${label}: ${result.claim}`, url });
+                  await navigator.share({ title: "Teka Muna â€” Fact Check", text: `${label}: ${result.claim}`, url });
                   return;
-                } catch { /* user cancelled — fall through */ }
+                } catch { /* user cancelled â€” fall through */ }
               }
               try {
                 await navigator.clipboard.writeText(url);
@@ -337,17 +337,31 @@ function SuccessView({ result }: { result: VerifyResult }) {
           <div className="flex flex-col gap-6">
             {/* Metadata grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { label: "Pinagmulan ng Claim", value: "Web Search" },
-                { label: "Napatunayan noong", value: `${verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} · ${verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}` },
-                { label: "Kategorya", value: "General" },
-                { label: "Nakaraang Verdict", value: "—" },
-              ].map(({ label: l, value }) => (
-                <div key={l} className="rounded-2xl bg-white/55 px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">{l}</p>
-                  <p className="text-sm font-semibold text-foreground">{value}</p>
+              <div className="rounded-2xl bg-white/55 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Pinagmulan ng Claim</p>
+                <p className="text-sm font-semibold text-foreground">Web Search</p>
+              </div>
+              <div className="rounded-2xl bg-white/55 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Napatunayan noong</p>
+                <p className="text-sm font-semibold text-foreground">{verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} Â· {verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}</p>
+              </div>
+              <div className="rounded-2xl bg-white/55 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Kategorya</p>
+                <p className="text-sm font-semibold text-foreground">General</p>
+              </div>
+              {/* Verdict card â€” replaces the empty "Nakaraang Verdict" placeholder */}
+              <div className={cn("rounded-2xl bg-white/55 px-4 py-3 flex items-center gap-3", cfg.bg)}>
+                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.iconBg)}>
+                  <Icon className="h-4 w-4 text-white" />
                 </div>
-              ))}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Hatol</p>
+                  <p className={cn("text-sm font-black", cfg.label)}>{label}</p>
+                </div>
+                <div className="ml-auto text-xs font-bold tabular-nums text-muted-foreground">
+                  {result.confidence}% confidence
+                </div>
+              </div>
             </div>
 
             {/* Summary */}
@@ -358,19 +372,22 @@ function SuccessView({ result }: { result: VerifyResult }) {
 
             {/* Truth statement */}
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-xs font-black text-amber-800 mb-2">? Ano ang Totoo</p>
+              <p className="flex items-center gap-1.5 text-xs font-black text-amber-800 mb-2">
+                <HelpCircle className="h-3.5 w-3.5" />
+                Ano ang Totoo
+              </p>
               <p className="text-sm text-amber-900 leading-relaxed">{result.truthStatement}</p>
             </div>
 
-            {/* Related claims placeholder */}
+            {/* Related claims */}
             {(result.supportingEvidence.length > 0 || result.contradictingEvidence.length > 0) && (
               <div>
                 <h3 className="text-sm font-black text-foreground mb-3">Mga Katulad na Claim</h3>
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {[...result.supportingEvidence, ...result.contradictingEvidence].slice(0, 4).map((s, i) => {
+                  {uniqueEvidenceSources(result).slice(0, 4).map((s) => {
                     const stance = stanceOf(s, result);
                     return (
-                      <a key={i} href={s.url} target="_blank" rel="noreferrer"
+                      <a key={s.url} href={s.url} target="_blank" rel="noreferrer"
                         className="shrink-0 w-56 rounded-2xl border border-border bg-white p-4 hover:shadow-md transition-shadow flex flex-col gap-2">
                         <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{s.title}</p>
                         <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
@@ -462,7 +479,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                     <p className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">{source.title || source.sourceName}</p>
                     <p className="text-[10px] sm:text-[11px] text-muted-foreground">{source.sourceName}</p>
                   </div>
-                  {/* Stance — always visible */}
+                  {/* Stance â€” always visible */}
                   <div className="shrink-0">
                     <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
                   </div>

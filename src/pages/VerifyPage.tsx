@@ -15,6 +15,7 @@ import { Button }         from "@/components/ui/button";
 import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
+import { isFactCheckingQuery } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import thinkImage from "../assets/think.png";
@@ -337,6 +338,7 @@ export default function VerifyPage() {
     checkSocialMedia:  false,
     includeHistorical: true,
   });
+  const [intentError, setIntentError]           = useState<string | null>(null);
 
   const { mutate, isPending, error, reset } = useVerify();
 
@@ -350,7 +352,13 @@ export default function VerifyPage() {
       window.history.replaceState({}, "");
       // Auto-submit if the home page Suriin button was clicked
       if (state.autoSubmit && filled.trim().length >= 10) {
-        mutate({ claim: filled.trim(), category: undefined });
+        const detection = isFactCheckingQuery(filled);
+        if (detection.isFactCheck) {
+          setIntentError(null);
+          mutate({ claim: filled.trim(), category: undefined });
+        } else {
+          setIntentError(detection.reason);
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -362,6 +370,14 @@ export default function VerifyPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+
+    const detection = isFactCheckingQuery(claim.trim());
+    if (!detection.isFactCheck) {
+      setIntentError(detection.reason);
+      return;
+    }
+
+    setIntentError(null);
     reset();
     mutate({ claim: claim.trim(), category: selectedCategory ?? undefined });
   };
@@ -420,6 +436,19 @@ export default function VerifyPage() {
           </div>
         )}
 
+        {intentError && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-5">
+            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-800">Hindi ito mukhang fact-check</p>
+              <p className="text-xs text-amber-900 mt-0.5">{intentError}</p>
+            </div>
+            <button type="button" onClick={() => setIntentError(null)} className="text-amber-500 hover:text-amber-700 shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* ── Two-column layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_268px] gap-6">
 
@@ -436,7 +465,10 @@ export default function VerifyPage() {
                 <Textarea
                   value={claim}
                   onChange={(e) => {
-                    if (e.target.value.length <= MAX_CHARS) setClaim(e.target.value);
+                    if (e.target.value.length <= MAX_CHARS) {
+                      setClaim(e.target.value);
+                      if (intentError) setIntentError(null);
+                    }
                   }}
                   rows={7}
                   disabled={isPending}

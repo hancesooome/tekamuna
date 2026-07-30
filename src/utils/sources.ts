@@ -33,6 +33,45 @@ import { getCredibility } from "@/lib/credibility";
 // getCredibility(url) → returns { score: number, category: string }
 // Score 0–100: higher = more credible (e.g. gov.ph = 95, unknown blog = 30)
 
+function normalizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url.trim());
+    const hostname = parsed.hostname.replace(/^www\./, "").toLowerCase();
+    const pathname = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/+$/, "");
+    const params = new URLSearchParams(parsed.searchParams);
+    const normalizedParams = new URLSearchParams();
+    const ignoredParam = /^(utm_|fbclid|gclid|mc_cid|mc_eid|ref|ref_src|_gl|_ga|_hs_enc)$/i;
+
+    Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([key, value]) => {
+        if (!ignoredParam.test(key)) {
+          normalizedParams.append(key, value);
+        }
+      });
+
+    const query = normalizedParams.toString();
+    return `https://${hostname}${pathname}${query ? `?${query}` : ""}`;
+  } catch {
+    return url.trim();
+  }
+}
+
+function uniqueSources(sources: Source[]): Source[] {
+  const seen = new Set<string>();
+  const out: Source[] = [];
+
+  for (const source of sources) {
+    const key = normalizeUrl(source.url);
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(source);
+    }
+  }
+
+  return out;
+}
+
 // ── Source stance ─────────────────────────────────────────────────────────────
 
 // A union type: SourceStance can only be one of these three string values.
@@ -48,13 +87,25 @@ export type SourceStance = "Supports" | "Contradicts" | "Neutral";
  * @returns       "Supports", "Contradicts", or "Neutral".
  */
 export function stanceOf(source: Source, result: VerifyResult): SourceStance {
-  // .some() returns true if at least one element in the array matches the condition.
-  // We check if the source's URL appears in the supportingEvidence array.
-  // Using URL as the unique ID because titles can vary (e.g. shortened vs full).
-  if (result.supportingEvidence.some((s) => s.url === source.url))    return "Supports";
-  if (result.contradictingEvidence.some((s) => s.url === source.url)) return "Contradicts";
-  // If it's in neither array, it's a reliable source that the AI cited but
-  // didn't specifically classify as supporting or contradicting.
+  const normalizedSourceUrl = normalizeUrl(source.url);
+
+  // AI-explicitly classified sources take priority. Compare normalized URLs
+  // so small tracking / query string differences don't split the same article.
+  if (result.supportingEvidence.some((s) => normalizeUrl(s.url) === normalizedSourceUrl)) {
+    return "Supports";
+  }
+  if (result.contradictingEvidence.some((s) => normalizeUrl(s.url) === normalizedSourceUrl)) {
+    return "Contradicts";
+  }
+
+  // Source was in reliableSources but the AI didn't explicitly classify it.
+  // Infer stance from the overall verdict — a source present in the results
+  // for a "true" verdict is likely supporting; for "false", likely contradicting.
+  if (result.verdict === "true") return "Supports";
+  if (result.verdict === "false") return "Contradicts";
+
+  // For "misleading" or "unverified": the source's relationship is genuinely
+  // ambiguous, so "Neutral" is correct.
   return "Neutral";
 }
 
@@ -71,32 +122,21 @@ export function stanceOf(source: Source, result: VerifyResult): SourceStance {
  * @returns       Deduplicated, credibility-sorted array of Source objects.
  */
 export function allSourcesMerged(result: VerifyResult): Source[] {
-  // Set is a data structure that stores unique values.
-  // We use it to track which URLs we've already added (to deduplicate).
-  const seen = new Set<string>();
-  const out: Source[] = [];
-
-  // Spread all three arrays into one big array and loop through them.
-  // The order matters: reliableSources first → their URL "wins" the dedup check.
-  for (const s of [
+  // Deduplicate all sources by normalized URL, preserving order priority.
+  const merged = uniqueSources([
     ...result.reliableSources,
     ...result.supportingEvidence,
     ...result.contradictingEvidence,
-  ]) {
-    // If we haven't seen this URL yet, add it to the result.
-    if (!seen.has(s.url)) {
-      seen.add(s.url);  // mark as seen
-      out.push(s);      // add to output array
-    }
-    // If seen.has(s.url) is true, skip this source (it's a duplicate).
-  }
+  ]);
 
   // Sort by credibility score, descending (highest score first).
-  // .sort() uses a comparator function: negative = a before b, positive = b before a.
-  // getCredibility(b.url).score - getCredibility(a.url).score → descending order.
-  return out.sort(
+  return merged.sort(
     (a, b) => getCredibility(b.url).score - getCredibility(a.url).score,
   );
+}
+
+export function uniqueEvidenceSources(result: VerifyResult): Source[] {
+  return uniqueSources([...result.supportingEvidence, ...result.contradictingEvidence]);
 }
 
 // ── Date formatting ───────────────────────────────────────────────────────────
