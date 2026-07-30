@@ -107,6 +107,30 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
       expect(result.shouldVerify).toBe(true);
       expect(result.confidence).toBeGreaterThanOrEqual(0.7);
     });
+
+    it("classifies Totoo bang... style questions as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Totoo bang libre ang COVID vaccine?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies Na-ban na ba... style questions as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Na-ban na ba ang TikTok sa Pilipinas?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies Sinabi ba ni... style questions as verifiable", () => {
+      const result = shouldRunVerificationPipeline("Sinabi ba ni Sara Duterte na kaya niyang mag-hire ng gunman ng ₱5,000?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it("classifies May batas ba... style questions as verifiable", () => {
+      const result = shouldRunVerificationPipeline("May batas ba na nagbabawal sa social media para sa menor de edad?");
+      expect(result.shouldVerify).toBe(true);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
   });
 
   describe("MUST return FALSE (Normal Chat)", () => {
