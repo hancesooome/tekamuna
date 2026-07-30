@@ -70,13 +70,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Otherwise sign the user out immediately and set an error message.
    */
   const applySession = useCallback(async (sess: Session | null) => {
+    console.log("[AuthProvider] applySession called with email:", sess?.user?.email);
     if (sess && !isAdminEmail(sess)) {
+      console.warn("[AuthProvider] Access denied for email:", sess.user.email, "Expected admin email:", ADMIN_EMAIL);
       // Wrong account — sign out and refuse access
       await supabase.auth.signOut();
       setSession(null);
       setError("Access denied. This account is not authorised to access the admin area.");
       return;
     }
+    console.log("[AuthProvider] Setting session to:", sess ? "active" : "null");
     setSession(sess);
     setError(null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -87,14 +90,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Restore any existing session from localStorage
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      console.log("[AuthProvider] getSession returned email:", data.session?.user?.email);
       void applySession(data.session).finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          console.log("[AuthProvider] getSession finished, setting loading to false");
+          setLoading(false);
+        }
       });
     });
 
     // 2. Keep state in sync for future sign-ins / sign-outs / token refreshes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       if (!mounted) return;
+      console.log("[AuthProvider] onAuthStateChange fired event:", event, "with email:", sess?.user?.email);
       void applySession(sess);
     });
 
