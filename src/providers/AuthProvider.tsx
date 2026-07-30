@@ -91,6 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       console.log("[AuthProvider] getSession returned email:", data.session?.user?.email);
+      // Log storage keys
+      const sbKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
+      console.log("[AuthProvider] Current localStorage sb- keys:", sbKeys);
       void applySession(data.session).finally(() => {
         if (mounted) {
           console.log("[AuthProvider] getSession finished, setting loading to false");
@@ -103,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       if (!mounted) return;
       console.log("[AuthProvider] onAuthStateChange fired event:", event, "with email:", sess?.user?.email);
+      const sbKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
+      console.log("[AuthProvider] onAuthStateChange localStorage sb- keys:", sbKeys);
       void applySession(sess);
     });
 
