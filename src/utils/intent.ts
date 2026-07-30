@@ -1,77 +1,126 @@
+/**
+ * src/utils/intent.ts
+ *
+ * Language-agnostic intent classifier for determining whether a user prompt
+ * should enter the Fact-Checking Pipeline or be routed to Normal AI Chat.
+ *
+ * Classification Rule:
+ *   Ask: "Can this statement be objectively verified using reliable evidence?"
+ *   - YES -> Fact-check pipeline (shouldVerify: true)
+ *   - NO  -> Normal AI chat (shouldVerify: false)
+ *
+ * Supports English, Tagalog (Filipino), and Taglish inputs.
+ */
+
 export interface DetectionResult {
   shouldVerify: boolean;
   confidence: number;
   reason: string;
 }
 
-const EXPLICIT_VERIFICATION_PATTERNS: Array<{ regex: RegExp; weight: number; reason: string }> = [
+// ── Non-Verifiable Patterns (Normal Chat Triggers) ─────────────────────────
+
+interface ClassificationPattern {
+  regex: RegExp;
+  reason: string;
+}
+
+const CREATIVE_OR_TASK_PATTERNS: ClassificationPattern[] = [
   {
-    regex: /\bfact\s*check\b/, weight: 0.45,
-    reason: "Contains an explicit verification request.",
+    regex: /\b(gumawa|sumulat|ikwento|isalin|ipaliwanag|mag-generate|mag-design|mag-draw|tula|joke|birthday greeting|greeting|kwento)\b/i,
+    reason: "Non-verifiable request: Creative text generation or task command.",
   },
   {
-    regex: /\bverify( this| this claim| this statement| whether| if)?\b/, weight: 0.45,
-    reason: "Contains a verification request.",
+    regex: /\b(write|tell me a joke|tell me a story|compose|create|generate|draft|draw|paint|design|translate|summarize|summary|poem|story|email)\b/i,
+    reason: "Non-verifiable request: Creative text generation or task command.",
+  },
+];
+
+const DEFINITIONAL_PATTERNS: ClassificationPattern[] = [
+  {
+    regex: /^\s*ano\s+(ang|ibig\s+sabihin\s+ng)\b/i,
+    reason: "Non-verifiable query: Definitional or general concept inquiry.",
   },
   {
-    regex: /\btotoo ba\b/, weight: 0.45,
-    reason: "Contains a Filipino fact-check phrase.",
+    regex: /^\s*what\s+(is|are|does\s+.*mean)\b/i,
+    reason: "Non-verifiable query: Definitional or general concept inquiry.",
   },
   {
-    regex: /\b(is|are|was|were|did|does|do|can|could|should|would)\b.*\b(true|real|authentic|accurate|accurately|news|claim|information|misleading|hoax|fake)\b/, weight: 0.35,
-    reason: "Asks about truth, authenticity, or accuracy.",
+    regex: /^\s*who\s+(is|are|was|were)\s+[^?]+[?]?$/i,
+    reason: "Non-verifiable query: General knowledge or identification query.",
   },
   {
-    regex: /\b(did .* really|did .* happen|is .* real|is .* authentic|is .* accurate|is .* true|is .* news accurate|is .* information|did .* say this)\b/, weight: 0.35,
+    regex: /^\s*paano\s+(mag|gumawa|pumunta|gamitin)\b/i,
+    reason: "Non-verifiable query: Instructional or how-to query.",
+  },
+  {
+    regex: /^\s*how\s+(to|do|can|does)\b/i,
+    reason: "Non-verifiable query: Instructional or how-to query.",
+  },
+];
+
+const SUBJECTIVE_OR_RELIGIOUS_PATTERNS: ClassificationPattern[] = [
+  {
+    regex: /\b(diyos|god|faith|belief|religion|spiritual|spirituality)\b/i,
+    reason: "Non-verifiable statement: Philosophical or religious belief.",
+  },
+  {
+    regex: /\b(best|better than|favorite|recommend|should i|which .* is better|opinion|mas maganda|mas mabuti)\b/i,
+    reason: "Non-verifiable query: Subjective opinion, recommendation, or advice.",
+  },
+];
+
+// ── Verifiable Patterns (Fact-Check Triggers) ───────────────────────────────
+
+const EXPLICIT_VERIFICATION_PATTERNS: ClassificationPattern[] = [
+  {
+    regex: /\btotoo\s+ba\b/i,
+    reason: "Explicit Filipino fact-check query.",
+  },
+  {
+    regex: /\bfake\s*news\b/i,
+    reason: "Contains misinformation/fake news query.",
+  },
+  {
+    regex: /\b(fact\s*check|verify|debunk|hoax|misleading|misinformation|disinformation)\b/i,
+    reason: "Explicit verification request.",
+  },
+  {
+    regex: /\b(is|are|was|were|did|does|do|can|could|should|would)\b.*\b(true|real|authentic|accurate|accurately|news|claim|information|misleading|hoax|fake)\b/i,
+    reason: "Asks whether a statement or news is true/accurate.",
+  },
+  {
+    regex: /\b(did .* really|did .* happen|is .* real|is .* authentic|is .* accurate|is .* true|is .* news accurate|is .* information|did .* say this)\b/i,
     reason: "Asks whether a specific claim, event, or statement is real.",
   },
   {
-    regex: /\b(is|are|was|were|did|does|do|can|could|should|would|will)\b.*\b(go(?:ing)? to|join(?:ing)?|transfer|sign(?:ing)?|move(?:s|d)? to|play for|sign for)\b/, weight: 0.45,
+    regex: /\b(is|are|was|were|did|does|do|can|could|should|would|will)\b.*\b(go(?:ing)? to|join(?:ing)?|transfer|sign(?:ing)?|move(?:s|d)? to|play for|sign for)\b/i,
     reason: "Asks whether a specific event or transfer rumor is true.",
   },
+];
+
+const FACTUAL_ASSERTION_PATTERNS: ClassificationPattern[] = [
+  // Tagalog factual assertions
   {
-    regex: /\b(fake news|fake|hoax|debunk|misleading|misinformation|disinformation)\b/, weight: 0.45,
-    reason: "Mentions misinformation-related language.",
+    regex: /\b(libre\s+ang|may\s+pinaka|ipinagbawal|ipinagbawal\s+na|may\s+lindol|nanalo\s+si|bumaba\s+ang|tumaas\s+ang|pinalaya|naganap|idineklara|naratipikahan|nasunog|napatay|inireport|naging)\b/i,
+    reason: "Contains a Filipino factual assertion (verifiable event, policy, status, or metric).",
+  },
+  {
+    regex: /\b(pinakamataas|pinakamababa|pinaka-polluted|pinakamabilis|pinakamalaki|pinakamaliit)\b/i,
+    reason: "Contains a superlative comparative factual claim.",
+  },
+  // English factual assertions
+  {
+    regex: /\b(declared|announced|arrested|died|passed away|shut down|shutting down|resigned|suspended|banned|closed|charged|indicted|launched|approved|signed|enacted|removed|fired|sued|caught|killed|acquired|merged|split|cancelled|canceled|leaked|revealed|confirmed|denied|released|detained|injured|attacked|exploded|crashed|contained|contains|contain|became|become|reported|won|lost|decreased|increased)\b/i,
+    reason: "Contains an English factual assertion verb.",
+  },
+  {
+    regex: /\b(unemployment|inflation|covid|vaccine|olympic|gold medals|martial law|asean|gdp|presidency|election|magnitude)\b/i,
+    reason: "Contains a concrete verifiable subject/metric entity.",
   },
 ];
 
-const STANDALONE_CLAIM_PATTERNS: Array<{ regex: RegExp; weight: number; reason: string }> = [
-  {
-    regex: /\b(declared|announced|arrested|died|passed away|shut down|shutting down|resigned|suspended|banned|closed|charged|indicted|launched|approved|signed|enacted|removed|fired|sued|caught|killed|acquired|merged|split|cancelled|canceled|leaked|revealed|confirmed|denied|released|detained|injured|attacked|exploded|crashed|contained|contains|contain|became|become|reported)\b/, weight: 0.35,
-    reason: "Contains a news-style factual claim verb.",
-  },
-  {
-    regex: /\b(?:yesterday|today|tomorrow|last week|last month|next month|next year|this week|tonight|currently|now)\b/, weight: 0.15,
-    reason: "Contains a time indicator commonly found in news claims.",
-  },
-  {
-    regex: /\b(?:facebook|tiktok|gcash|pope|marcos|duterte|bbm|icc|philippines|covid|coronavirus|vaccine|trump|biden|sports|nba|sixers|news|headline|post|tweet|article)\b/, weight: 0.1,
-    reason: "Mentions a concrete entity or newsworthy topic.",
-  },
-  {
-    regex: /\b(?:claim|rumor|headline|news|statement)\b/, weight: 0.1,
-    reason: "Refers to a claim or news item.",
-  },
-];
-
-const NON_VERIFIABLE_PATTERNS: Array<{ regex: RegExp; weight: number; reason: string }> = [
-  {
-    regex: /\b(translate|summarize|summary|story|poem|email|write( me)?|explain|tell me about|best|better than|opinion|favorite|recommend(ed)?|generate|image|draw|design|paint|compose)\b/, weight: 0.5,
-    reason: "Looks like a creative or content-generation request.",
-  },
-  {
-    regex: /\b(best|better than|favorite|recommend(ed)?|should i|which .* should i|which .* is better|opinion|personal preference)\b/, weight: 0.45,
-    reason: "Looks like an opinion or recommendation request.",
-  },
-  {
-    regex: /\b(who|what|where|when|why|how)\b.*\b(is|are|was|were|does|do|did)\b/, weight: 0.35,
-    reason: "Looks like a general knowledge question rather than a verifiable claim.",
-  },
-  {
-    regex: /\b(is|are|was|were|did|does|do|can|could|should|would|may|might)\b.*\b(diyos|god|faith|belief|religion|spiritual|spirituality)\b/, weight: 0.4,
-    reason: "Seems to ask about religious or philosophical belief rather than a factual claim.",
-  },
-];
+// ── Core Function ─────────────────────────────────────────────────────────────
 
 function normalizeInput(input: string): string {
   return input
@@ -83,63 +132,119 @@ function normalizeInput(input: string): string {
     .trim();
 }
 
+/**
+ * Log classification details for debugging and auditability.
+ */
+function logClassificationResult(input: string, result: DetectionResult): void {
+  const statusLabel = result.shouldVerify ? "PIPELINE" : "NORMAL_CHAT";
+  console.log(
+    `[ClaimClassifier] Input: "${input}" | Result: ${statusLabel} | Confidence: ${result.confidence.toFixed(2)} | Reason: ${result.reason}`,
+  );
+}
+
+/**
+ * Determines whether a user statement should enter the Fact-Checking Pipeline.
+ */
 export function shouldRunVerificationPipeline(input: string): DetectionResult {
-  const normalized = normalizeInput(input);
+  const rawInput = input ? input.trim() : "";
+  const normalized = normalizeInput(rawInput);
 
   if (normalized.length === 0) {
-    return {
+    const res: DetectionResult = {
       shouldVerify: false,
       confidence: 0,
       reason: "Empty input cannot be classified for verification.",
     };
+    logClassificationResult(rawInput, res);
+    return res;
   }
 
-  const isQuestion = normalized.includes("?") || /^\b(is|are|was|were|did|does|do|can|could|should|would|may|might)\b/.test(normalized);
-
-  const explicitMatches = EXPLICIT_VERIFICATION_PATTERNS.filter((item) => item.regex.test(normalized));
-  const claimMatches = STANDALONE_CLAIM_PATTERNS.filter((item) => item.regex.test(normalized));
-  const negativeMatches = NON_VERIFIABLE_PATTERNS.filter((item) => item.regex.test(normalized));
-
-  let score = 0;
-  for (const match of explicitMatches) score += match.weight;
-  for (const match of claimMatches) score += match.weight;
-  for (const match of negativeMatches) score -= match.weight;
-  if (isQuestion) score += 0.05;
-  if (normalized.length > 120) score += 0.05;
-  const confidence = Math.max(0, Math.min(1, Math.round(score * 1000) / 1000));
-  const hasStrongNegative = negativeMatches.some((item) => item.weight >= 0.4);
-  const shouldVerify = explicitMatches.length > 0 || (claimMatches.length > 0 && confidence >= 0.445);
-
-  if (hasStrongNegative) {
-    return {
-      shouldVerify: false,
-      confidence,
-      reason: negativeMatches.map((item) => item.reason).join(" "),
-    };
+  // 1. Check Non-Verifiable Patterns (Highest Priority for Normal Chat Routing)
+  for (const pattern of CREATIVE_OR_TASK_PATTERNS) {
+    if (pattern.regex.test(normalized)) {
+      const res: DetectionResult = {
+        shouldVerify: false,
+        confidence: 0.95,
+        reason: pattern.reason,
+      };
+      logClassificationResult(rawInput, res);
+      return res;
+    }
   }
 
-  if (shouldVerify) {
-    const reasonParts = explicitMatches.length > 0 ? explicitMatches : claimMatches;
-    return {
+  for (const pattern of DEFINITIONAL_PATTERNS) {
+    if (pattern.regex.test(normalized)) {
+      const res: DetectionResult = {
+        shouldVerify: false,
+        confidence: 0.9,
+        reason: pattern.reason,
+      };
+      logClassificationResult(rawInput, res);
+      return res;
+    }
+  }
+
+  for (const pattern of SUBJECTIVE_OR_RELIGIOUS_PATTERNS) {
+    if (pattern.regex.test(normalized)) {
+      const res: DetectionResult = {
+        shouldVerify: false,
+        confidence: 0.85,
+        reason: pattern.reason,
+      };
+      logClassificationResult(rawInput, res);
+      return res;
+    }
+  }
+
+  // 2. Check Explicit Verification Requests
+  for (const pattern of EXPLICIT_VERIFICATION_PATTERNS) {
+    if (pattern.regex.test(normalized)) {
+      const res: DetectionResult = {
+        shouldVerify: true,
+        confidence: 0.9,
+        reason: pattern.reason,
+      };
+      logClassificationResult(rawInput, res);
+      return res;
+    }
+  }
+
+  // 3. Check Declarative Factual Assertions (Verifiable Claims)
+  const factualMatches = FACTUAL_ASSERTION_PATTERNS.filter((p) => p.regex.test(normalized));
+  if (factualMatches.length > 0) {
+    const res: DetectionResult = {
       shouldVerify: true,
-      confidence,
-      reason: reasonParts.map((item) => item.reason).join(" "),
+      confidence: Math.min(0.95, 0.75 + factualMatches.length * 0.1),
+      reason: factualMatches.map((m) => m.reason).join(" "),
     };
+    logClassificationResult(rawInput, res);
+    return res;
   }
 
-  if (negativeMatches.length > 0) {
-    return {
-      shouldVerify: false,
-      confidence: Math.max(0.2, 1 - confidence),
-      reason: negativeMatches.map((item) => item.reason).join(" "),
+  // 4. Declarative sentence heuristic check:
+  // If the sentence is a declarative statement (not a question, not a simple 1-2 word phrase)
+  // that asserts a fact or state of affairs (e.g. contains 4+ words and no question mark)
+  const isQuestion = normalized.includes("?") || /^(ano|sino|kailan|saan|bakit|paano|what|who|where|when|why|how)\b/i.test(normalized);
+  const wordCount = normalized.split(/\s+/).length;
+
+  if (!isQuestion && wordCount >= 3) {
+    const res: DetectionResult = {
+      shouldVerify: true,
+      confidence: 0.7,
+      reason: "Declarative factual assertion: Statement asserts a claim about reality that can be objectively verified.",
     };
+    logClassificationResult(rawInput, res);
+    return res;
   }
 
-  return {
+  // Fallback for short or ambiguous inputs
+  const res: DetectionResult = {
     shouldVerify: false,
-    confidence,
-    reason: "No clear verification-worthy claim found. Please enter a statement or news item you'd like verified.",
+    confidence: 0.5,
+    reason: "No clear objectively verifiable claim found in statement.",
   };
+  logClassificationResult(rawInput, res);
+  return res;
 }
 
 export const isFactCheckingQuery = shouldRunVerificationPipeline;

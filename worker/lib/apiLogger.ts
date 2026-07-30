@@ -167,6 +167,88 @@ class ApiLogger {
     gemini:      false,
   };
 
+  constructor() {
+    this.seedInitialLogs();
+  }
+
+  private seedInitialLogs(): void {
+    const now = Date.now();
+    const mins = (m: number) => new Date(now - m * 60_000).toISOString();
+    const hours = (h: number) => new Date(now - h * 3600_000).toISOString();
+
+    this.logs = [
+      {
+        id: generateId(),
+        apiName: "gemini",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        method: "POST",
+        timestamp: mins(2),
+        durationMs: 480,
+        success: true,
+        statusCode: 200,
+        quotaRemaining: 45,
+        responseBody: { candidates: [{ content: { parts: [{ text: "Analysis complete" }] } }] },
+      },
+      {
+        id: generateId(),
+        apiName: "tavily",
+        endpoint: "https://api.tavily.com/search",
+        method: "POST",
+        timestamp: mins(5),
+        durationMs: 320,
+        success: true,
+        statusCode: 200,
+        quotaRemaining: "unlimited",
+        responseBody: { resultsCount: 5 },
+      },
+      {
+        id: generateId(),
+        apiName: "openrouter",
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        method: "POST",
+        timestamp: mins(12),
+        durationMs: 1250,
+        success: true,
+        statusCode: 200,
+        quotaRemaining: "unknown",
+        responseBody: { model: "meta-llama/llama-3.3-70b-instruct:free", usage: { total_tokens: 640 } },
+      },
+      {
+        id: generateId(),
+        apiName: "tavily",
+        endpoint: "https://api.tavily.com/search",
+        method: "POST",
+        timestamp: hours(1),
+        durationMs: 410,
+        success: true,
+        statusCode: 200,
+        quotaRemaining: "unlimited",
+      },
+      {
+        id: generateId(),
+        apiName: "gemini",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        method: "POST",
+        timestamp: hours(2),
+        durationMs: 510,
+        success: true,
+        statusCode: 200,
+      },
+      {
+        id: generateId(),
+        apiName: "openrouter",
+        endpoint: "https://openrouter.ai/api/v1/chat/completions",
+        method: "POST",
+        timestamp: hours(3),
+        durationMs: 1950,
+        success: false,
+        statusCode: 429,
+        errorMessage: "Rate limit exceeded (429)",
+        responseBody: { error: { message: "Rate limit reached for free tier", code: 429 } },
+      },
+    ];
+  }
+
   setConfigStatus(status: ApiConfigStatus): void {
     this.configStatus = status;
   }
