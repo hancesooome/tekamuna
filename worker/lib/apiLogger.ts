@@ -53,6 +53,16 @@ export interface StatsSummary {
   errorsToday: number;
 }
 
+export interface GeminiUsageStats {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  lastRequestTimestamp: string | null;
+}
+
 export interface TimelinePoint {
   time: string;
   label: string;
@@ -164,9 +174,21 @@ class ApiLogger {
   private quotaCache = new Map<ApiName, QuotaValue>();
   private configStatus: ApiConfigStatus = {
     tavily:      false,
+    tavily2:     false,
     openrouter:  false,
     openrouter2: false,
     gemini:      false,
+  };
+
+  /** Persistent Gemini usage counters — survives log buffer rotation. */
+  private geminiStats: GeminiUsageStats = {
+    totalRequests:      0,
+    successfulRequests: 0,
+    failedRequests:     0,
+    inputTokens:        0,
+    outputTokens:       0,
+    totalTokens:        0,
+    lastRequestTimestamp: null,
   };
 
   constructor() {
@@ -291,6 +313,43 @@ class ApiLogger {
     if (this.logs.length > MAX_LOGS) {
       this.logs.shift();
     }
+
+    // ── Accumulate Gemini internal usage stats ──────────────────────────
+    if (entry.apiName === "gemini") {
+      this.geminiStats.totalRequests++;
+      if (entry.success) {
+        this.geminiStats.successfulRequests++;
+      } else {
+        this.geminiStats.failedRequests++;
+      }
+      this.geminiStats.lastRequestTimestamp = entry.timestamp;
+
+      // Extract token counts from responseBody
+      const body = entry.responseBody as Record<string, unknown> | null | undefined;
+      let pTokens = 0;
+      let cTokens = 0;
+
+      if (body) {
+        // Format 1: AIManager wraps usage as { usage: { promptTokens, completionTokens, totalTokens } }
+        const usage = body.usage as Record<string, number> | undefined;
+        if (usage) {
+          pTokens = Number(usage.promptTokens ?? usage.prompt_tokens ?? 0);
+          cTokens = Number(usage.completionTokens ?? usage.completion_tokens ?? 0);
+        }
+
+        // Format 2: Raw Gemini response has usageMetadata directly
+        const meta = body.usageMetadata as Record<string, number> | undefined;
+        if (!pTokens && !cTokens && meta) {
+          pTokens = Number(meta.promptTokenCount ?? 0);
+          cTokens = Number(meta.candidatesTokenCount ?? 0);
+        }
+      }
+
+      this.geminiStats.inputTokens  += pTokens;
+      this.geminiStats.outputTokens += cTokens;
+      this.geminiStats.totalTokens  += (pTokens + cTokens);
+    }
+
     return entry;
   }
 
@@ -360,6 +419,10 @@ class ApiLogger {
 
       throw err;
     }
+  }
+
+  getGeminiUsageStats(): GeminiUsageStats {
+    return { ...this.geminiStats };
   }
 
   getLogById(id: string): ApiLogEntry | undefined {

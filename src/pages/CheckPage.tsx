@@ -285,7 +285,7 @@ function ResultView({ result }: { result: VerifyResult }) {
 
         {/* Confidence panel */}
         <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 flex flex-col items-center gap-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start">AI Confidence</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start">Detection Confidence</p>
           <div className="flex flex-row items-center gap-4 w-full sm:flex-col sm:items-center">
             <ConfidenceDonut value={result.confidence} color={cfg.arc} />
             <div className="flex flex-col gap-1 sm:text-center sm:items-center">
@@ -297,6 +297,9 @@ function ResultView({ result }: { result: VerifyResult }) {
               </div>
             </div>
           </div>
+          <p className="text-[10px] text-muted-foreground leading-relaxed border-t border-border/60 pt-2 w-full">
+            <strong>Detection Confidence</strong> indicates how confidently the claim detector classified the input as a fact-checkable claim based on routing heuristics and pattern matching. It is <strong>not</strong> the AI model's confidence in the truthfulness of the claim or the final verdict.
+          </p>
           <div className="w-full space-y-2.5 border-t border-border pt-3">
             {[
               { label: "Factual accuracy", value: factualAccuracy },

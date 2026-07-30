@@ -10,7 +10,11 @@ import {
   type ApiName,
   type TimelineRange,
 } from "../lib/apiLogger";
-import { refreshQuotasFromEnv } from "../lib/quotaFetcher";
+import {
+  refreshQuotasFromEnv,
+  fetchTavilyDetailedUsage,
+  fetchOpenRouterDetailedUsage,
+} from "../lib/quotaFetcher";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin":  "*",
@@ -67,6 +71,30 @@ export async function handleStats(request: Request, env: Env): Promise<Response>
       },
       200,
     );
+  }
+
+  if (path === "/api/stats/tavily-usage" && request.method === "GET") {
+    const [key1Data, key2Data] = await Promise.all([
+      fetchTavilyDetailedUsage(env.TAVILY_API_KEY),
+      fetchTavilyDetailedUsage(env.TAVILY_API_KEY_2),
+    ]);
+    return jsonResponse({ key1: key1Data, key2: key2Data }, 200);
+  }
+
+  if (path === "/api/stats/openrouter-usage" && request.method === "GET") {
+    const [key1Data, key2Data] = await Promise.all([
+      fetchOpenRouterDetailedUsage(env.OPENROUTER_API_KEY, "key1"),
+      fetchOpenRouterDetailedUsage(env.OPENROUTER_API_KEY_2, "key2"),
+    ]);
+    return jsonResponse({ key1: key1Data, key2: key2Data }, 200);
+  }
+
+  if (path === "/api/stats/gemini-usage" && request.method === "GET") {
+    const stats = apiLogger.getGeminiUsageStats();
+    return jsonResponse({
+      configured: Boolean(env.GEMINI_API_KEY?.trim()),
+      ...stats,
+    }, 200);
   }
 
   if (path === "/api/stats/summary") {

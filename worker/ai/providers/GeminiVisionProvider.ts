@@ -22,6 +22,11 @@ interface GeminiResponse {
     finishReason?: string;
   }>;
   error?: { message: string; code: number };
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
 }
 
 export class GeminiVisionProvider implements VisionProvider {
@@ -81,16 +86,46 @@ export class GeminiVisionProvider implements VisionProvider {
       apiLogger.setQuotaCache("gemini", quotaRemaining);
     }
 
+    const durationMs = Date.now() - startMs;
+
     if (!response.ok) {
       const msg = data.error?.message ?? `HTTP ${response.status}`;
       const retryable =
         response.status === 429 ||
         response.status >= 500 ||
         msg.toLowerCase().includes("quota");
+
+      // Log failed vision request so Gemini stats track failures
+      apiLogger.log({
+        apiName:      "gemini",
+        endpoint:     `${GEMINI_BASE_URL}/${GEMINI_VISION_MODEL}:generateContent`,
+        method:       "POST",
+        durationMs,
+        success:      false,
+        statusCode:   response.status,
+        errorMessage: msg,
+        quotaRemaining,
+      });
+
       throw new VisionProviderError(msg, retryable, response.status);
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    // Log successful vision request with token usage metadata
+    apiLogger.log({
+      apiName:      "gemini",
+      endpoint:     `${GEMINI_BASE_URL}/${GEMINI_VISION_MODEL}:generateContent`,
+      method:       "POST",
+      durationMs,
+      success:      true,
+      statusCode:   response.status,
+      quotaRemaining,
+      responseBody: data.usageMetadata
+        ? { usageMetadata: data.usageMetadata }
+        : undefined,
+    });
+
     if (!text) {
       throw new VisionProviderError("Gemini vision returned empty text.", false);
     }
@@ -98,7 +133,7 @@ export class GeminiVisionProvider implements VisionProvider {
     return {
       content:   text,
       modelUsed: GEMINI_VISION_MODEL,
-      latencyMs: Date.now() - startMs,
+      latencyMs: durationMs,
     };
   }
 }

@@ -108,51 +108,280 @@ interface TavilyUsageResponse {
   };
 }
 
+export interface OpenRouterDetailedUsage {
+  configured: boolean;
+  totalCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+  percentage: number;
+  lastUpdated: string;
+}
+
+interface OpenRouterCreditsResponse {
+  data?: {
+    total_credits?: number;
+    total_usage?: number;
+  };
+}
+
+interface OpenRouterKeyResponse {
+  data?: {
+    limit?: number | null;
+    usage?: number;
+    limit_remaining?: number | null;
+  };
+}
+
+const orDetailedCache = new Map<string, { value: OpenRouterDetailedUsage; fetchedAt: number }>();
+const OR_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes cache
+
+export async function fetchOpenRouterDetailedUsage(
+  apiKey: string | undefined,
+  cacheSuffix: string,
+): Promise<OpenRouterDetailedUsage> {
+  if (!apiKey?.trim()) {
+    return {
+      configured: false,
+      totalCredits: 0,
+      usedCredits: 0,
+      remainingCredits: 0,
+      percentage: 0,
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
+  const cleanKey = apiKey.trim();
+  const cacheKey = `detailed:${cacheSuffix}`;
+  const cached = orDetailedCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.fetchedAt < OR_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  // Fallback data helper
+  const makeFallback = (limit = 0, usage = 0, remaining = 0) => {
+    const total = limit;
+    const remainingVal = remaining;
+    const pct = total > 0 ? Math.round((remainingVal / total) * 100) : 0;
+    return {
+      configured: true,
+      totalCredits: total,
+      usedCredits: usage,
+      remainingCredits: remainingVal,
+      percentage: pct,
+      lastUpdated: new Date().toISOString(),
+    };
+  };
+
+  try {
+    // 1. Try GET /credits (Primary Account balance)
+    const creditsResponse = await fetch("https://openrouter.ai/api/v1/credits", {
+      headers: { Authorization: `Bearer ${cleanKey}` },
+    });
+
+    if (creditsResponse.ok) {
+      const data = (await creditsResponse.json()) as OpenRouterCreditsResponse;
+      if (data?.data) {
+        const total = data.data.total_credits ?? 0;
+        const used = data.data.total_usage ?? 0;
+        const remaining = Math.max(0, total - used);
+        const percentage = total > 0 ? Math.round((remaining / total) * 100) : 0;
+
+        const result: OpenRouterDetailedUsage = {
+          configured: true,
+          totalCredits: total,
+          usedCredits: used,
+          remainingCredits: remaining,
+          percentage,
+          lastUpdated: new Date().toISOString(),
+        };
+
+        orDetailedCache.set(cacheKey, { value: result, fetchedAt: Date.now() });
+
+        // Update standard cache
+        setCached(
+          `openrouter:${cacheSuffix}`,
+          total > 0 ? Math.max(0, Math.min(100, Math.round((remaining / total) * 100))) : "unlimited",
+        );
+
+        return result;
+      }
+    }
+
+    // 2. Fallback to GET /key (Key specific limits)
+    const keyResponse = await fetch("https://openrouter.ai/api/v1/key", {
+      headers: { Authorization: `Bearer ${cleanKey}` },
+    });
+
+    if (keyResponse.ok) {
+      const data = (await keyResponse.json()) as OpenRouterKeyResponse;
+      if (data?.data) {
+        const limit = data.data.limit ?? 0;
+        const usage = data.data.usage ?? 0;
+        const remaining = data.data.limit_remaining ?? Math.max(0, limit - usage);
+
+        const result = makeFallback(limit, usage, remaining);
+        orDetailedCache.set(cacheKey, { value: result, fetchedAt: Date.now() });
+
+        setCached(
+          `openrouter:${cacheSuffix}`,
+          limit > 0 ? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100))) : "unlimited",
+        );
+
+        return result;
+      }
+    }
+
+    throw new Error("Both credits and key API checks failed");
+  } catch (err) {
+    console.error(`[OpenRouter] Failed to fetch usage for ${cacheSuffix}:`, err);
+    if (cached) return cached.value;
+    return {
+      configured: true,
+      totalCredits: 0,
+      usedCredits: 0,
+      remainingCredits: 0,
+      percentage: 0,
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+}
+
 export async function fetchOpenRouterQuota(apiKey: string, cacheSuffix: string): Promise<QuotaValue> {
   const cacheKey = `openrouter:${cacheSuffix}`;
   const cached = getCached(cacheKey, CACHE_TTL_MS.openrouter);
   if (cached !== null) return cached;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/key", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-
-    if (!response.ok) return "unknown";
-
-    const json = (await response.json()) as { data?: OpenRouterKeyData };
-    const data = json.data;
-    if (!data) return "unknown";
-
-    // Per-key credit cap → show as percent
-    if (data.limit != null && data.limit > 0 && data.limit_remaining != null) {
-      return setCached(
-        cacheKey,
-        Math.max(0, Math.min(100, Math.round((data.limit_remaining / data.limit) * 100))),
-      );
-    }
-
-    // Remaining credits without a configured cap
-    if (data.limit_remaining != null && data.limit == null) {
-      return setCached(cacheKey, {
-        label: `$${data.limit_remaining.toFixed(2)} credits left`,
-      });
-    }
-
-    // Unlimited credit cap (paid, no spending limit on key)
-    if (data.limit === null && data.limit_remaining === null && !data.is_free_tier) {
-      return setCached(cacheKey, "unlimited");
-    }
-
-    // Free-tier daily request budget for :free models
-    const dailyLimit = data.is_free_tier ? 50 : 1000;
-    const usedToday  = data.usage_daily ?? 0;
-    const remaining  = Math.max(0, dailyLimit - usedToday);
-    return setCached(cacheKey, {
-      label: `${remaining}/${dailyLimit} free req today`,
-    });
+    const detailed = await fetchOpenRouterDetailedUsage(apiKey, cacheSuffix);
+    if (!detailed.configured) return "unknown";
+    return detailed.totalCredits > 0 ? detailed.percentage : "unlimited";
   } catch {
     return "unknown";
+  }
+}
+
+export interface TavilyDetailedUsage {
+  configured: boolean;
+  plan: string;
+  usage: number;
+  limit: number;
+  remaining: number;
+  percentage: number;
+  breakdown: {
+    search: number;
+    extract: number;
+    crawl: number;
+    map: number;
+    research: number;
+  };
+  lastUpdated: string;
+}
+
+interface TavilyOfficialUsageResponse {
+  key?: {
+    usage?: number;
+    limit?: number | null;
+    search_usage?: number;
+    extract_usage?: number;
+    crawl_usage?: number;
+    map_usage?: number;
+    research_usage?: number;
+  };
+  account?: {
+    current_plan?: string;
+    plan_usage?: number;
+    plan_limit?: number;
+  };
+}
+
+const detailedCache = new Map<string, { value: TavilyDetailedUsage; fetchedAt: number }>();
+const DETAILED_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+export async function fetchTavilyDetailedUsage(apiKey: string | undefined): Promise<TavilyDetailedUsage> {
+  if (!apiKey?.trim()) {
+    return {
+      configured: false,
+      plan: "N/A",
+      usage: 0,
+      limit: 0,
+      remaining: 0,
+      percentage: 0,
+      breakdown: { search: 0, extract: 0, crawl: 0, map: 0, research: 0 },
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
+  const cleanKey = apiKey.trim();
+  const cacheKey = `detailed:${cleanKey.slice(-8)}`;
+  const cached = detailedCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.fetchedAt < DETAILED_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  try {
+    const response = await fetch("https://api.tavily.com/usage", {
+      headers: { Authorization: `Bearer ${cleanKey}` },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    const data = (await response.json()) as TavilyOfficialUsageResponse;
+    const key = data.key;
+    const account = data.account;
+
+    if (!key) {
+      throw new Error("Invalid response format: missing key info");
+    }
+
+    const limit = key.limit ?? 0;
+    const usage = key.usage ?? 0;
+    const remaining = Math.max(0, limit - usage);
+    const percentage = limit > 0 ? Math.round((usage / limit) * 100) : 0;
+
+    const result: TavilyDetailedUsage = {
+      configured: true,
+      plan: account?.current_plan ?? "Free",
+      usage,
+      limit,
+      remaining,
+      percentage,
+      breakdown: {
+        search: key.search_usage ?? 0,
+        extract: key.extract_usage ?? 0,
+        crawl: key.crawl_usage ?? 0,
+        map: key.map_usage ?? 0,
+        research: key.research_usage ?? 0,
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    detailedCache.set(cacheKey, { value: result, fetchedAt: Date.now() });
+
+    // Also update the simple quota percentage cache for standard apiLogger
+    const simpleCacheKey = `tavily:${cleanKey.slice(-8)}`;
+    setCached(simpleCacheKey, limit > 0 ? Math.max(0, Math.min(100, Math.round(((limit - usage) / limit) * 100))) : "unlimited");
+
+    return result;
+  } catch (err) {
+    console.error("[Tavily] Failed to fetch detailed usage:", err);
+    // Return stale cache if available, otherwise a fallback object
+    if (cached) {
+      return cached.value;
+    }
+    return {
+      configured: true,
+      plan: "Unknown",
+      usage: 0,
+      limit: 0,
+      remaining: 0,
+      percentage: 0,
+      breakdown: { search: 0, extract: 0, crawl: 0, map: 0, research: 0 },
+      lastUpdated: new Date().toISOString(),
+    };
   }
 }
 
@@ -162,27 +391,9 @@ export async function fetchTavilyQuota(apiKey: string): Promise<QuotaValue> {
   if (cached !== null) return cached;
 
   try {
-    const response = await fetch("https://api.tavily.com/usage", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-
-    if (!response.ok) return "unknown";
-
-    const data = (await response.json()) as TavilyUsageResponse;
-    const key  = data.key;
-
-    if (!key) return "unknown";
-
-    if (key.limit == null) {
-      return setCached(cacheKey, "unlimited");
-    }
-
-    const usage = key.usage ?? 0;
-    const limit = key.limit;
-    if (limit <= 0) return setCached(cacheKey, "unlimited");
-
-    const remainingPct = Math.max(0, Math.min(100, Math.round(((limit - usage) / limit) * 100)));
-    return setCached(cacheKey, remainingPct);
+    const detailed = await fetchTavilyDetailedUsage(apiKey);
+    if (!detailed.configured) return "unknown";
+    return detailed.limit > 0 ? detailed.percentage : "unlimited";
   } catch {
     return "unknown";
   }
@@ -192,7 +403,7 @@ export async function fetchTavilyQuota(apiKey: string): Promise<QuotaValue> {
 export function refreshTavilyQuotaIfStale(apiKey: string): void {
   const cacheKey = `tavily:${apiKey.slice(-8)}`;
   if (getCached(cacheKey, CACHE_TTL_MS.tavily) !== null) return;
-  void fetchTavilyQuota(apiKey);
+  void fetchTavilyDetailedUsage(apiKey);
 }
 
 /** Refresh all configured API quotas (called by stats endpoints). */
