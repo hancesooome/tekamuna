@@ -35,6 +35,12 @@ export interface AIRequest {
   temperature?: number;
   /** Caller-supplied identifier for logging (e.g. claim fingerprint). */
   requestId?: string;
+  /**
+   * If set, skip all other providers and use only this one.
+   * Matches the provider ID registered in AIManager: 'openrouter' | 'openrouter2' | 'gemini'.
+   * Used by admin settings (ai_provider_mode) to force a specific provider.
+   */
+  forcedProvider?: string;
 }
 
 export interface AIResponse {

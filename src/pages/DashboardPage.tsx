@@ -15,7 +15,7 @@ import {
   useApiStatsTimeline,
   useApiStatsErrors,
 } from "@/hooks/useApiStats";
-import { TavilyKeySwitcher } from "@/components/dashboard/TavilyKeySwitcher";
+import { AdminSettingsPanel } from "@/components/dashboard/AdminSettingsPanel";
 import { OpenRouterUsageCard } from "@/components/dashboard/OpenRouterUsageCard";
 import { GeminiUsageCard } from "@/components/dashboard/GeminiUsageCard";
 import { isMockStatsEnabled, apiStats } from "@/services/apiStats";
@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
       <ApiStats summary={summaryQuery.data} isLoading={summaryQuery.isLoading} />
 
-      <TavilyKeySwitcher />
+      <AdminSettingsPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <OpenRouterUsageCard />

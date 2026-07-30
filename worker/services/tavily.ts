@@ -21,6 +21,7 @@
  */
 
 import type { SearchResult } from "../../src/types/verify";
+import type { TavilyMode } from "../lib/adminSettings";
 import { apiLogger } from "../lib/apiLogger";
 import { refreshTavilyQuotaIfStale } from "../lib/quotaFetcher";
 // SearchResult is our internal type (not Tavily's raw format).
@@ -158,22 +159,27 @@ function isPhRelevant(result: TavilyRawResult): boolean {
 /**
  * Searches the web via Tavily and returns up to MAX_RESULTS SearchResults.
  *
- * @param query   The claim text to search for.
- * @param apiKey  The Tavily API key from environment variables.
- * @returns       Array of SearchResult objects (may be empty on failure).
+ * @param query          The claim text to search for.
+ * @param apiKey         The primary Tavily API key.
+ * @param fallbackApiKey The secondary Tavily API key (optional).
+ * @param tavilyMode     Routing mode from admin settings. Defaults to 'auto'.
+ * @returns              Array of SearchResult objects (may be empty on failure).
  */
 export async function searchWeb(
   query: string,
   apiKey: string | undefined,
   fallbackApiKey?: string | undefined,
+  tavilyMode: TavilyMode = "auto",
 ): Promise<SearchResult[]> {
-  const pref = apiLogger.getTavilyPreference();
   let orderedKeys: (string | undefined)[];
-  if (pref === "key2") {
-    orderedKeys = [fallbackApiKey ?? apiKey, apiKey];
-  } else if (pref === "key1") {
+  if (tavilyMode === "force_key2") {
+    // Use only Key 2 — no fallback
+    orderedKeys = [fallbackApiKey];
+  } else if (tavilyMode === "force_key1") {
+    // Use only Key 1 — no fallback
     orderedKeys = [apiKey];
   } else {
+    // Auto: try Key 1 first, then Key 2 if Key 1 fails
     orderedKeys = [apiKey, fallbackApiKey];
   }
 

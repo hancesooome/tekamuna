@@ -202,6 +202,11 @@ export class AIManager {
       ];
 
       for (const { healthKey, providerId } of attempts) {
+        // Respect forcedProvider setting if provided
+        if (request.forcedProvider && request.forcedProvider !== providerId) {
+          continue;
+        }
+
         // Skip this slot if the provider isn't registered (no API key for it).
         if (!this.providers.has(providerId)) continue;
 

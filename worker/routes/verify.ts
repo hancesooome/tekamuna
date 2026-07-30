@@ -15,23 +15,13 @@
  */
 
 import type { Env } from "../index";
-// Env is the TypeScript interface defining all available environment variables/secrets.
-// Importing `type` means this import is erased at compile time — zero runtime cost.
-
 import { searchWeb }       from "../services/tavily";
-// searchWeb(query, apiKey) → hits Tavily's search API, returns SearchResult[]
-
 import { analyseEvidence } from "../services/gemini";
-// analyseEvidence(input) → runs the AI verdict pipeline, returns VerifyResult
-
 import type { VerifyRequest } from "../../src/types/verify";
-// VerifyRequest = { claim: string; category?: string }
-// The shape of the JSON body we expect from the frontend.
 import { shouldRunVerificationPipeline } from "../../src/utils/intent";
-import { apiLogger } from "../lib/apiLogger";
-// apiLogger — used to apply the per-request Tavily key preference forwarded
-// via the x-tavily-preference header. Workers are stateless so we cannot rely
-// on a previously-stored preference surviving across requests.
+import { fetchAdminSettings } from "../lib/adminSettings";
+// fetchAdminSettings reads routing config from Supabase (cached 60s per isolate).
+// It determines which Tavily key to use and which AI provider to force.
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 
@@ -116,34 +106,44 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     );
   }
 
-  // ── 2. Tavily web search ─────────────────────────────────────────────────
-  // Workers are stateless — each request is a fresh isolate. We cannot rely
-  // on a previously-stored Tavily preference surviving from a prior request.
-  // The frontend forwards the user's preference as the x-tavily-preference
-  // header on every verify call, so we read and apply it here each time.
-  const tavilyPrefHeader = request.headers.get("x-tavily-preference");
-  if (tavilyPrefHeader === "key1" || tavilyPrefHeader === "key2" || tavilyPrefHeader === "auto") {
-    apiLogger.setTavilyPreference(tavilyPrefHeader);
-    console.log(`[Tavily] Preference set from header: ${tavilyPrefHeader}`);
+  // ── 2. Load admin settings & determine routing ──────────────────────────
+  // Settings are fetched from Supabase and cached for 60 seconds per isolate.
+  // Falls back to 'auto' defaults if Supabase is unreachable.
+  const adminSettings = await fetchAdminSettings(env);
+  const { tavilyMode, aiProviderMode } = adminSettings;
+
+  console.info(
+    `[Verify] Routing: tavily_mode=${tavilyMode} | ai_provider_mode=${aiProviderMode}`,
+  );
+
+  // Safety check: if a forced provider is selected but its key is missing,
+  // reject the request before wasting quota on the search step.
+  if (tavilyMode === "force_key1" && !env.TAVILY_API_KEY?.trim()) {
+    return json({ error: "Admin configuration error: Tavily Key 1 is forced but not configured in the Worker secrets." }, 503);
+  }
+  if (tavilyMode === "force_key2" && !env.TAVILY_API_KEY_2?.trim()) {
+    return json({ error: "Admin configuration error: Tavily Key 2 is forced but not configured in the Worker secrets." }, 503);
+  }
+  if (aiProviderMode === "force_openrouter_key1" && !env.OPENROUTER_API_KEY?.trim()) {
+    return json({ error: "Admin configuration error: OpenRouter Key 1 is forced but not configured in the Worker secrets." }, 503);
+  }
+  if (aiProviderMode === "force_openrouter_key2" && !env.OPENROUTER_API_KEY_2?.trim()) {
+    return json({ error: "Admin configuration error: OpenRouter Key 2 is forced but not configured in the Worker secrets." }, 503);
+  }
+  if (aiProviderMode === "force_gemini" && !env.GEMINI_API_KEY?.trim()) {
+    return json({ error: "Admin configuration error: Gemini is forced but not configured in the Worker secrets." }, 503);
   }
 
-  // searchWeb returns an array of SearchResult objects (up to 10).
-  // If Tavily fails or the key is missing, it returns [] (empty array) — never throws.
+  // ── 3. Tavily web search ─────────────────────────────────────────────────
+  // searchWeb accepts the resolved tavilyMode so it never reads from global state.
   const searchResults = await searchWeb(
     cleanClaim,
     env.TAVILY_API_KEY,
     env.TAVILY_API_KEY_2,
+    tavilyMode,
   );
 
-  // ── 3. AI analysis via AIManager ─────────────────────────────────────────
-  // analyseEvidence orchestrates:
-  //   - Credibility scoring of all Tavily results
-  //   - Building the AI prompt from the top-ranked sources
-  //   - Calling the AI (OpenRouter → Gemini fallback if rate-limited)
-  //   - Assembling the final VerifyResult
-  //
-  // We pass `env as unknown as Record<string, string | undefined>` so AIManager
-  // can read MODELS_* env vars at runtime without knowing the exact Env type.
+  // ── 4. AI analysis via AIManager ─────────────────────────────────────────
   const result = await analyseEvidence({
     claim:             cleanClaim,
     category:          cleanCategory,
@@ -152,10 +152,9 @@ export async function handleVerify(request: Request, env: Env): Promise<Response
     openRouterApiKey:  env.OPENROUTER_API_KEY,
     openRouterApiKey2: env.OPENROUTER_API_KEY_2,
     envVars:           env as unknown as Record<string, string | undefined>,
+    aiProviderMode,
   });
 
-  // ── 4. Return ────────────────────────────────────────────────────────────
-  // Send the VerifyResult as a 200 JSON response.
-  // The frontend's verifyClaim() in src/services/api.ts reads this.
+  // ── 5. Return ────────────────────────────────────────────────────────────
   return json(result, 200);
 }

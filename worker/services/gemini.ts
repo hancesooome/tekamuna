@@ -57,6 +57,7 @@ export interface AnalyseInput {
   openRouterApiKey?: string | undefined; // Primary OpenRouter key
   openRouterApiKey2?:string | undefined; // Second OpenRouter key (used when first is rate-limited)
   envVars?:          Record<string, string | undefined>; // All env vars for MODELS_* overrides
+  aiProviderMode?:   string;             // Mapped forced provider from admin settings
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -259,12 +260,19 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
   try {
     // manager.complete() tries each AI provider in order until one succeeds.
     // task: "VERDICT" → tells AIManager which model list to use for this task.
+    // Map routing mode to internal AIManager provider identifier
+    let forcedProvider: string | undefined;
+    if (input.aiProviderMode === "force_openrouter_key1") forcedProvider = "openrouter";
+    else if (input.aiProviderMode === "force_openrouter_key2") forcedProvider = "openrouter2";
+    else if (input.aiProviderMode === "force_gemini") forcedProvider = "gemini";
+
     const response = await manager.complete({
       task:        "VERDICT",
       messages:    [systemMsg, userMsg],
       maxTokens:   1200,      // Limit output tokens to keep responses focused
       temperature: 0.1,       // Low temperature (0–1) = more deterministic, less creative
       requestId:   `verify_${Date.now()}`, // Unique ID for logging
+      forcedProvider,
     });
 
     // response.content is the raw text from the AI.

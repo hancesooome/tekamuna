@@ -47,6 +47,7 @@ import { handleVerify }       from "./routes/verify";       // POST /api/verify
 import { handleSearch }       from "./routes/search";       // GET  /api/search
 import { handleAnalyzeImage } from "./routes/analyzeImage"; // POST /api/analyze-image
 import { handleStats }        from "./routes/stats";        // GET  /api/stats/*
+import { handleAdminConfig }  from "./routes/adminConfig";  // GET/POST /api/admin/settings
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -72,6 +73,11 @@ export interface Env {
   MODELS_SUMMARY?:             string;
   MODELS_SEARCH_QUERY?:        string;
   MODELS_TRANSLATION?:         string;
+
+  // ── Supabase (admin settings) ─────────────────────────────────────────────
+  // Used by adminSettings.ts to read routing config from the admin_settings table.
+  SUPABASE_URL?:      string;  // e.g. https://xxx.supabase.co
+  SUPABASE_ANON_KEY?: string;  // Supabase anon key — safe for server-side reads
 }
 
 // ── CORS headers ──────────────────────────────────────────────────────────────
@@ -79,9 +85,9 @@ export interface Env {
 // "*" means any website can call our API — appropriate for a public fact-checker.
 // Without these headers, the browser blocks frontend → Worker API calls.
 const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin":  "*",          // Allow all origins
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS", // Allowed HTTP methods
-  "Access-Control-Allow-Headers": "Content-Type, x-tavily-preference", // Allowed request headers
+  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-tavily-preference",
 };
 
 // ── Helper: create a JSON response ───────────────────────────────────────────
@@ -134,6 +140,12 @@ export default {
     // ── /api/stats/* (GET, POST) ─────────────────────────────────────────────
     if (url.pathname.startsWith("/api/stats")) {
       return handleStats(request, env);
+    }
+
+    // ── /api/admin/settings (GET, POST) ───────────────────────────────────────
+    // Admin routing configuration — reads/writes the Supabase admin_settings table.
+    if (url.pathname.startsWith("/api/admin")) {
+      return handleAdminConfig(request, env);
     }
 
     // ── GET /api/health ────────────────────────────────────────────────────
