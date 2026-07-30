@@ -75,6 +75,9 @@ const NON_VERIFIABLE_QUESTION_PATTERNS: ClassificationPattern[] = [
   // Filipino: "Ano ang X?" / "Ano ba ang X?" / "Anong X?" → definitional
   { regex: /^\s*(ano\s+(ba\s+)?(ang|ibig\s+sabihin(\s+ng)?)|anong)\b/i,
     reason: "Non-verifiable query: Definitional question (Ano ang...)." },
+  // Open-ended questions without specific checkable propositions (e.g., "ano nangyari", "what happened")
+  { regex: /^\s*(ano\s+nangyari|anong\s+nangyari|what\s+happened|whats\s+happening|what\s+is\s+happening)\b/i,
+    reason: "Non-verifiable query: Broad, open-ended question requesting general status/news summary." },
   // Filipino: "Sino si X?" / "Sino ang X?" → identity
   { regex: /^\s*sino\s+(si|ang|ba)\b/i,
     reason: "Non-verifiable query: Identity question (Sino si...)." },
@@ -132,6 +135,12 @@ const SUBJECTIVE_OR_RELIGIOUS_PATTERNS: ClassificationPattern[] = [
     reason: "Non-verifiable statement: Philosophical or religious content." },
   { regex: /\b(favorite|recommend|should\s+i|opinion|mas\s+maganda|mas\s+mabuti)\b/i,
     reason: "Non-verifiable query: Subjective opinion or recommendation." },
+  // Non-specific vague commentary or general labels ("fake news yan", "that's fake news") without referencing any proposition
+  { regex: /^\s*(fake\s*news\s*(yan|ito|na\s*man|lang|at\s*iba\s*pa)|that\s*is\s*fake\s*news|its\s*fake\s*news)\s*$/i,
+    reason: "Non-verifiable statement: Broad label or commentary without specifying any claim/proposition." },
+  // Intimate, sensitive, private personal attributes, body parts, sexual matters, or gossip-oriented terms
+  { regex: /\b(titi|puki|pepe|pake|dede|boobs|breast|breasts|penis|vagina|sex\s+life|jowa|gf|bf|boyfriend|girlfriend|anatom|dick|cock|pussy|sexual\s+orientation|gay|lesbian|homosexual|biyahe\s+ng\s+pribado|scandal|leak|butt|wet|ass|kantot|kantutan|sex|nude)\b/i,
+    reason: "Non-verifiable query: Intimate, sensitive, or private personal attribute, body part, or gossip-oriented matter." },
 ];
 
 // ── Step 4: Explicit Fact-Check Triggers ─────────────────────────────────────

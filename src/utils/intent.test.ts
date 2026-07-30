@@ -196,5 +196,29 @@ describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classi
       expect(result.shouldVerify).toBe(false);
       expect(result.reason).toContain("Definitional");
     });
+
+    it("blocks vague 'fake news yan' style comments without specified propositions", () => {
+      const result = shouldRunVerificationPipeline("fake news yan");
+      expect(result.shouldVerify).toBe(false);
+      expect(result.reason.toLowerCase()).toContain("broad label or commentary");
+    });
+
+    it("blocks open-ended questions like 'ano nangyari?' without checkable propositions", () => {
+      const result = shouldRunVerificationPipeline("ano nangyari?");
+      expect(result.shouldVerify).toBe(false);
+      expect(result.reason.toLowerCase()).toContain("broad, open-ended question");
+    });
+
+    it("blocks intimate, sensitive, or private attributes of individual person", () => {
+      const result = shouldRunVerificationPipeline("malaki ba ang titi ni jason yap");
+      expect(result.shouldVerify).toBe(false);
+      expect(result.reason.toLowerCase()).toContain("intimate, sensitive, or private");
+    });
+
+    it("blocks intimate/sensitive gossip attributes of public figures", () => {
+      const result = shouldRunVerificationPipeline("malaki ba ang boobs ni anne curtis");
+      expect(result.shouldVerify).toBe(false);
+      expect(result.reason.toLowerCase()).toContain("intimate, sensitive, or private");
+    });
   });
 });
