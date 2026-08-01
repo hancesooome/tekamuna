@@ -10,8 +10,8 @@
  * Redesigned to perfectly match the public interface theme.
  */
 
-import React, { useState, useRef, useEffect } from "react";
-import { Download, Loader2, Image, ChevronDown, Check } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Download, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL, VERDICT_LABELS } from "@/constants";
 import { getPublicUrl } from "@/lib/storageUtils";
@@ -113,7 +113,7 @@ const DEFAULT_TEMPLATES: Record<TemplatePlatform, { width: number; height: numbe
 
 // ── Rendering helper inside the hidden canvas ─────────────────────────────────
 
-function RenderCanvasField({ field, result, theme }: { field: TemplateField; result: VerifyResult; theme: VerdictTheme }) {
+function RenderCanvasField({ field, result }: { field: TemplateField; result: VerifyResult; theme?: VerdictTheme }) {
   if (field.type === "image" || field.type === "logo") {
     return field.imageUrl ? (
       <img
@@ -165,16 +165,14 @@ function RenderCanvasField({ field, result, theme }: { field: TemplateField; res
     case "list":
       text = result.explanation;
       break;
-    case "sources":
-      const mergedSources = [
-        ...(result.primarySources || []),
-        ...(result.supportingSources || []),
-      ];
+    case "sources": {
+      const mergedSources = result.reliableSources ?? [];
       text = mergedSources
         .slice(0, 3)
-        .map((s, i) => `${i + 1}. ${s.siteName || new URL(s.url).hostname}`)
+        .map((s, i) => `${i + 1}. ${s.sourceName || new URL(s.url).hostname}`)
         .join("\n");
       break;
+    }
     default:
       text = "";
   }

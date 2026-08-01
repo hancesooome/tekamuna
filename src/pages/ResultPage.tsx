@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FileText, XCircle, CheckCircle, AlertTriangle, HelpCircle,
-  ThumbsUp, ThumbsDown, Share2, Download, BarChart2, Search,
+  ThumbsUp, ThumbsDown, Share2, BarChart2, Search,
   ExternalLink, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
