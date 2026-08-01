@@ -82,7 +82,6 @@ export function calculateExpiration(category: string, now: Date = new Date()): D
  */
 export async function getCachedClaim(env: Env, normalizedClaim: string): Promise<CacheRow | null> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    console.warn("[Cache] Supabase env variables not configured — skipping cache read.");
     return null;
   }
 
@@ -117,7 +116,6 @@ export async function getCachedClaim(env: Env, normalizedClaim: string): Promise
  */
 export async function saveCachedClaim(env: Env, input: SaveCacheInput): Promise<void> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    console.warn("[Cache] Supabase env variables not configured — skipping cache write.");
     return;
   }
 
@@ -154,8 +152,6 @@ export async function saveCachedClaim(env: Env, input: SaveCacheInput): Promise<
     if (!res.ok) {
       const errText = await res.text();
       console.error(`[Cache] Supabase returned HTTP ${res.status} on save: ${errText}`);
-    } else {
-      console.info(`[Cache] Successfully cached claim: "${input.claimOriginal.slice(0, 50)}..."`);
     }
   } catch (err) {
     console.error("[Cache] Failed to save claim to cache:", err);

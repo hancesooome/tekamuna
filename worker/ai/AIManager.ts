@@ -506,8 +506,9 @@ export class AIManager {
   // ── Logging ─────────────────────────────────────────────────────────────────
 
   /** Writes a log line to console (visible in Cloudflare Workers log tail). */
-  private log(msg: string): void {
-    console.info(msg);
+  private log(_msg: string): void {
+    // Intentionally silent in production.
+    // Re-enable for debugging: console.info(_msg);
   }
 
   /** Appends a structured log entry and trims the buffer to 100 entries. */

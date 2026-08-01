@@ -70,7 +70,6 @@ export async function fetchAdminSettings(env: Env): Promise<AdminSettings> {
 
   // Supabase not configured — silently use defaults
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    console.warn("[AdminSettings] SUPABASE_URL or SUPABASE_ANON_KEY not configured — using defaults.");
     return DEFAULTS;
   }
 
@@ -107,10 +106,6 @@ export async function fetchAdminSettings(env: Env): Promise<AdminSettings> {
     cachedSettings  = settings;
     cacheExpiresAt  = Date.now() + CACHE_TTL_MS;
 
-    console.info(
-      `[AdminSettings] Loaded: tavily_mode=${settings.tavilyMode} | ai_provider_mode=${settings.aiProviderMode}`,
-    );
-
     return settings;
 
   } catch (err) {
@@ -127,7 +122,6 @@ export async function fetchAdminSettings(env: Env): Promise<AdminSettings> {
 export function invalidateAdminSettingsCache(): void {
   cachedSettings = null;
   cacheExpiresAt = 0;
-  console.info("[AdminSettings] Cache invalidated.");
 }
 
 // ── Validators ────────────────────────────────────────────────────────────────

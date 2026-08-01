@@ -168,12 +168,6 @@ async function callOCRSpace(
     ? parseInt(data.ProcessingTimeInMilliseconds, 10)
     : 0;
 
-  console.info(
-    `[OCR] ${label}: ${elapsed.toFixed(0)}ms total` +
-    (serverMs ? ` (server ${serverMs}ms, upload ~${Math.max(0, elapsed - serverMs).toFixed(0)}ms)` : "") +
-    ` — ${(blob.size / 1024).toFixed(1)} KB — ${text.length} chars`,
-  );
-
   return { text, processingTimeMs: elapsed };
 }
 
@@ -249,8 +243,6 @@ function mergeRegionTexts(texts: string[]): string {
 export async function extractTextFromImageBrowser(
   file: File,
 ): Promise<OCRServiceResult> {
-  const T_START = performance.now();
-
   // ── 0. Guard: API key ─────────────────────────────────────────────────────
   if (!API_KEY) {
     return {
@@ -279,16 +271,12 @@ export async function extractTextFromImageBrowser(
   const ext = mime === "image/png" ? "PNG" : mime === "image/webp" ? "WEBP" : "JPG";
 
   // ── 2. Preprocess: detect platform + crop regions ─────────────────────────
-  const T_PRE_START = performance.now();
   const preprocess = await preprocessScreenshot(file);
-  const T_PRE_END   = performance.now();
-  const preprocessMs = T_PRE_END - T_PRE_START;
 
   const useRegions =
     preprocess.platform !== "unknown" && preprocess.regions.length > 0;
 
   // ── 3. OCR ────────────────────────────────────────────────────────────────
-  const T_OCR_START = performance.now();
   const rawTexts: string[] = [];
   let ocrError: string | undefined;
 
@@ -299,7 +287,6 @@ export async function extractTextFromImageBrowser(
     for (const region of preprocess.regions as CroppedRegion[]) {
       const result = await callOCRSpace(region.blob, region.label, "JPG");
       if (result.error) {
-        console.warn(`[OCR] Region "${region.label}" failed: ${result.error}`);
         // Non-fatal — continue with other regions
       } else if (result.text) {
         rawTexts.push(result.text);
@@ -308,20 +295,16 @@ export async function extractTextFromImageBrowser(
 
     if (rawTexts.length === 0) {
       // All regions failed — fall back to full image
-      console.warn("[OCR] All regions failed. Falling back to full-image OCR.");
       const fallback = await callOCRSpace(file, "full-image-fallback", ext);
       if (fallback.text) rawTexts.push(fallback.text);
       else ocrError = fallback.error;
     }
   } else {
-    // No preprocessing — send the original file
     const result = await callOCRSpace(file, "full-image", ext);
     if (result.text) rawTexts.push(result.text);
     else ocrError = result.error;
   }
 
-  const T_OCR_END = performance.now();
-  const ocrMs = T_OCR_END - T_OCR_START;
 
   // ── 4. Early exit on total OCR failure ───────────────────────────────────
   if (rawTexts.length === 0) {
@@ -332,43 +315,9 @@ export async function extractTextFromImageBrowser(
   }
 
   // ── 5. Merge + clean + extract ────────────────────────────────────────────
-  const T_POST_START = performance.now();
-
   const merged  = mergeRegionTexts(rawTexts);
   const cleaned = cleanOCRText(merged);
   const { claim: suggestedClaim, score: claimScore } = extractClaim(cleaned);
-
-  const T_POST_END = performance.now();
-  const postMs = T_POST_END - T_POST_START;
-
-  // ── 6. Timing report ──────────────────────────────────────────────────────
-  const totalMs = performance.now() - T_START;
-  const regionCount = useRegions ? preprocess.regions.length : 1;
-  const totalBlobKB = useRegions
-    ? (preprocess.regions as CroppedRegion[])
-        .reduce((sum, r) => sum + r.blob.size, 0) / 1024
-    : file.size / 1024;
-
-  console.info(
-    `[OCR] ── Pipeline report ────────────────────────────────────\n` +
-    `  Input file:          ${(file.size / 1024).toFixed(1)} KB  (${file.type})\n` +
-    `  Platform detected:   ${preprocess.platform}\n` +
-    `  Regions:             ${regionCount} ` +
-      (useRegions
-        ? `(${(preprocess.regions as CroppedRegion[]).map((r) => r.label).join(", ")})\n`
-        : "(full image)\n") +
-    `  Total blob sent:     ${totalBlobKB.toFixed(1)} KB` +
-      (useRegions ? `  [${((1 - totalBlobKB / (file.size / 1024)) * 100).toFixed(0)}% smaller than full image]` : "") + `\n` +
-    `  ──────────────────────────────────────────────────────────\n` +
-    `  Preprocess (crop):   ${preprocessMs.toFixed(0)}ms\n` +
-    `  OCR.Space (all):     ${ocrMs.toFixed(0)}ms  (${regionCount} call${regionCount > 1 ? "s" : ""})\n` +
-    `  Merge + clean:       ${postMs.toFixed(0)}ms\n` +
-    `  Total wall-clock:    ${totalMs.toFixed(0)}ms\n` +
-    `  ──────────────────────────────────────────────────────────\n` +
-    `  Claim score:         ${claimScore}\n` +
-    `  Suggested claim:     "${suggestedClaim.slice(0, 80)}${suggestedClaim.length > 80 ? "…" : ""}"\n` +
-    `────────────────────────────────────────────────────────────`,
-  );
 
   return {
     success: true,

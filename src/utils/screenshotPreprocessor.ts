@@ -275,9 +275,6 @@ export async function preprocessScreenshot(file: File): Promise<PreprocessResult
   const detector = PLATFORM_DETECTORS.find((d) => d.detect(img));
 
   if (!detector) {
-    console.info(
-      `[Preprocess] No platform detected for ${W}×${H} image. Using full-image OCR.`,
-    );
     return {
       platform: "unknown", regions: [],
       imageWidth: W, imageHeight: H,
@@ -285,13 +282,10 @@ export async function preprocessScreenshot(file: File): Promise<PreprocessResult
     };
   }
 
-  console.info(`[Preprocess] Detected platform: ${detector.name}  (${W}×${H})`);
-
   // ── 3. Get content regions ────────────────────────────────────────────────
   const rawRegions = detector.getRegions(img);
 
   if (rawRegions.length === 0) {
-    console.warn(`[Preprocess] ${detector.name}: no regions returned. Falling back.`);
     return {
       platform: detector.name, regions: [],
       imageWidth: W, imageHeight: H,
@@ -304,11 +298,6 @@ export async function preprocessScreenshot(file: File): Promise<PreprocessResult
     (a, b) => a.priority - b.priority || a.y - b.y,
   );
 
-  console.info(
-    `[Preprocess] ${detector.name}: ${sortedRegions.length} region(s): ` +
-    sortedRegions.map((r) => `${r.label}(${r.width}×${r.height})`).join(", "),
-  );
-
   // ── 4. Crop each region ───────────────────────────────────────────────────
   const croppedRegions: CroppedRegion[] = [];
 
@@ -316,19 +305,12 @@ export async function preprocessScreenshot(file: File): Promise<PreprocessResult
     try {
       const cropped = await cropRegion(img, region);
       croppedRegions.push(cropped);
-      console.info(
-        `[Preprocess]   ✓ ${region.label}: ` +
-        `src ${region.width}×${region.height}px → ` +
-        `blob ${cropped.width}×${cropped.height}px, ` +
-        `${(cropped.blob.size / 1024).toFixed(1)} KB`,
-      );
-    } catch (err) {
-      console.warn(`[Preprocess]   ✗ ${region.label}: ${String(err)}`);
+    } catch {
+      // Skip regions that fail to crop — others will still be used
     }
   }
 
   const preprocessingMs = performance.now() - t0;
-  console.info(`[Preprocess] Done in ${preprocessingMs.toFixed(0)}ms — ${croppedRegions.length} usable region(s).`);
 
   return {
     platform: detector.name,

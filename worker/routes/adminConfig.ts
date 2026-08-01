@@ -128,7 +128,7 @@ export async function handleAdminConfig(request: Request, env: Env): Promise<Res
         console.error(`[AdminConfig] Failed to save ${key}: HTTP ${res.status} — ${errText}`);
         errors.push(`${key}: HTTP ${res.status}`);
       } else {
-        console.info(`[AdminConfig] Saved ${key}=${value}`);
+        // saved successfully
       }
     }
 

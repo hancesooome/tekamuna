@@ -236,11 +236,8 @@ const VERIFIABLE_INTERROGATIVE_PATTERNS: ClassificationPattern[] = [
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 
-function logClassificationResult(input: string, result: DetectionResult): void {
-  const label = result.shouldVerify ? "PIPELINE" : "NORMAL_CHAT";
-  console.log(
-    `[ClaimClassifier] Input: "${input}" | Result: ${label} | Detection Confidence: ${result.detectionConfidence.toFixed(2)} | Reason: ${result.reason}`,
-  );
+function logClassificationResult(_input: string, _result: DetectionResult): void {
+  // Intentionally silent in production.
 }
 
 // ── Main Classifier ───────────────────────────────────────────────────────────

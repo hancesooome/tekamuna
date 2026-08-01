@@ -100,9 +100,6 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
 
   // ── 1.5 Intent detection ──────────────────────────────────────────────────
   const detection = shouldRunVerificationPipeline(cleanClaim);
-  console.log(
-    `[fact-check-intent] Claim: "${cleanClaim}" | Route: ${detection.shouldVerify ? "PIPELINE" : "NORMAL_CHAT"} | Detection Confidence: ${detection.detectionConfidence.toFixed(2)} | Reason: ${detection.reason}`,
-  );
   if (!detection.shouldVerify) {
     return json(
       {
@@ -121,10 +118,6 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
   // Falls back to 'auto' defaults if Supabase is unreachable.
   const adminSettings = await fetchAdminSettings(env);
   const { tavilyMode, aiProviderMode } = adminSettings;
-
-  console.info(
-    `[Verify] Routing: tavily_mode=${tavilyMode} | ai_provider_mode=${aiProviderMode}`,
-  );
 
   // Safety check: if a forced provider is selected but its key is missing,
   // reject the request before wasting quota on the search step.
@@ -146,7 +139,6 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
 
   // ── 3. Normalize claim & check cache ─────────────────────────────────────
   const normalizedClaim = normalizeClaim(cleanClaim);
-  console.info(`[Verify] Normalized claim: "${normalizedClaim}"`);
 
   const cacheEntry = await getCachedClaim(env, normalizedClaim);
 
@@ -158,7 +150,6 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
 
     if (isFreshVersion && isFreshTime) {
       // ✅ Cache HIT — return cached result immediately
-      console.info(`[Verify] Cache HIT for normalized claim. Expires: ${cacheEntry.expires_at}`);
       const cached: VerifyResult = {
         claim:                 cacheEntry.claim_original,
         verdict:               cacheEntry.verdict as VerifyResult["verdict"],
@@ -181,9 +172,8 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     }
 
     // ⚠️ Cache exists but is expired or stale version — run fresh pipeline
-    console.info(`[Verify] Cache STALE — version_ok=${isFreshVersion}, time_ok=${isFreshTime}. Running fresh pipeline.`);
   } else {
-    console.info(`[Verify] Cache MISS — no prior entry found.`);
+    // Cache MISS
   }
 
   // ── 4. Tavily web search ─────────────────────────────────────────────────

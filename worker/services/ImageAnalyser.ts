@@ -194,18 +194,12 @@ export async function analyseImage(
 
   for (const provider of providers) {
     try {
-      console.info(`[ImageAnalyser] Trying provider: ${provider.id}`);
-
       const visionResponse = await provider.analyse({
         imageBase64: base64,
         mimeType:    input.mimeType,
         prompt:      USER_PROMPT,
         maxTokens:   500,
       });
-
-      console.info(
-        `[ImageAnalyser] ${provider.id} responded in ${visionResponse.latencyMs}ms`,
-      );
 
       const extracted = extractVisionJson(visionResponse.content);
 

@@ -119,13 +119,6 @@ export async function handleOCRExtract(
   // ── 4. Extract claim ──────────────────────────────────────────────────────
   const { claim: suggestedClaim, score: claimScore } = extractClaim(cleaned);
 
-  console.info(
-    `[OCRExtract] text-only mode — input: ${raw.length} chars, ` +
-    `cleaned: ${cleaned.length} chars, ` +
-    `claim: "${suggestedClaim.slice(0, 60)}${suggestedClaim.length > 60 ? "…" : ""}" ` +
-    `(score ${claimScore})`,
-  );
-
   // ── 5. Return ─────────────────────────────────────────────────────────────
   return json(
     {

@@ -126,12 +126,7 @@ function getManager(input: AnalyseInput): AIManager {
       },
       input.envVars ?? {}, // Pass env vars so AIManager can read MODELS_* overrides
     );
-    _managerKeys = keyFingerprint; // Update the stored fingerprint
-    console.info(
-      `[Pipeline] AIManager singleton created. ` +
-      `Providers: OR1=${!!input.openRouterApiKey} OR2=${!!input.openRouterApiKey2} Gemini=${!!input.geminiApiKey?.startsWith("AIza")}`,
-      // !! converts any value to boolean: !!undefined = false, !!"key" = true
-    );
+    _managerKeys = keyFingerprint;
   }
   return _manager;
 }
@@ -287,10 +282,6 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
     }
 
     aiModelUsed = `${response.providerUsed}/${response.modelUsed}`;
-    console.info(
-      `[analyseEvidence] Success via ${response.providerUsed}/${response.modelUsed} ` +
-      `in ${response.latencyMs}ms`,
-    );
 
   } catch (err) {
     // AIExhaustedError is thrown when every AI provider failed.

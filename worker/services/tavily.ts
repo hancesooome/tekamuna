@@ -284,10 +284,6 @@ export async function searchWeb(
       const phResults = all.filter(isPhRelevant);
       const final = phResults.length >= MIN_PH_RESULTS ? phResults : all;
 
-      console.info(
-        `[Tavily] "${phQuery}" (${keyLabel}) → ${all.length} total, ${phResults.length} PH-relevant, using ${final.length}`,
-      );
-
       return final.slice(0, MAX_RESULTS).map(toSearchResult);
 
     } catch (err) {
