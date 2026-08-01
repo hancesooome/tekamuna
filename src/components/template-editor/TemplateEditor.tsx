@@ -150,6 +150,65 @@ const DYNAMIC_FIELDS = (Object.entries(FIELD_CATALOGUE) as [FieldType, FieldDef]
 const STATIC_FIELDS  = (Object.entries(FIELD_CATALOGUE) as [FieldType, FieldDef][])
   .filter(([, d]) => d.category === "static").map(([type, def]) => ({ type, ...def }));
 
+// ── Persistent field defaults (Supabase via Worker API) ──────────────────────
+//
+// When you save a template, the current style properties of each field type
+// are stored in admin_settings (key: "field_defaults") via the Worker.
+// Next time you open the editor from any device, those defaults are loaded
+// and merged on top of the hardcoded catalogue defaults when adding fields.
+
+/** Properties that should NOT be saved as defaults (they are per-template/per-field). */
+const NON_DEFAULT_PROPS = new Set([
+  "id", "type", "label", "x", "y", "zIndex", "visible",
+  "locked", "staticValue", "rotation", "opacity",
+]);
+
+type FieldDefaultsMap = Partial<Record<FieldType, Partial<TemplateField>>>;
+
+async function fetchFieldDefaults(token: string | null): Promise<FieldDefaultsMap> {
+  if (!token) return {};
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/field-defaults`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return {};
+    const data = await res.json() as { defaults?: FieldDefaultsMap };
+    return data.defaults ?? {};
+  } catch {
+    return {};
+  }
+}
+
+async function persistFieldDefaults(
+  fields: TemplateField[],
+  token: string | null,
+  existing: FieldDefaultsMap,
+): Promise<void> {
+  if (!token) return;
+  const updated = { ...existing };
+  for (const field of fields) {
+    const style: Partial<TemplateField> = {};
+    for (const [k, v] of Object.entries(field)) {
+      if (!NON_DEFAULT_PROPS.has(k)) {
+        (style as Record<string, unknown>)[k] = v;
+      }
+    }
+    updated[field.type] = { ...updated[field.type], ...style };
+  }
+  try {
+    await fetch(`${API_BASE_URL}/admin/field-defaults`, {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        Authorization:   `Bearer ${token}`,
+      },
+      body: JSON.stringify({ defaults: updated }),
+    });
+  } catch {
+    // fail silently — non-critical
+  }
+}
+
 // ── Small UI helpers ──────────────────────────────────────────────────────────
 
 function PropLabel({ children }: { children: React.ReactNode }) {
@@ -661,6 +720,15 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
   const [scale,       setScale]       = useState(1);
   const [hasChanges,  setHasChanges]  = useState(false);
 
+  // Saved field style defaults — loaded from Supabase on mount
+  const [fieldDefaults, setFieldDefaults] = useState<FieldDefaultsMap>({});
+
+  useEffect(() => {
+    if (token) {
+      void fetchFieldDefaults(token).then(setFieldDefaults);
+    }
+  }, [token]);
+
   // Polish state tokens
   const [snapToGrid,  setSnapToGrid]  = useState(true);
   const [gridSize,    setGridSize]    = useState(10);
@@ -755,18 +823,15 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
   // ── Add field ─────────────────────────────────────────────────────────────
 
   const addField = (type: FieldType) => {
-    const def = FIELD_CATALOGUE[type];
-    const id  = `${type}_${Date.now()}`;
+    const def           = FIELD_CATALOGUE[type];
+    const id            = `${type}_${Date.now()}`;
 
-    // For verdict fields, override the default background/text colors
-    // to match the template's actual verdict so the canvas looks correct immediately.
     const verdictOverrides: Partial<TemplateField> = {};
     if (type === "verdict") {
       const vc = VERDICT_COLORS[template.verdict];
       if (vc) {
         verdictOverrides.backgroundColor = vc.bg;
         verdictOverrides.color           = vc.text;
-        // Also set a preview staticValue so the label is visible on the canvas
         verdictOverrides.staticValue     = vc.label;
       }
     }
@@ -777,7 +842,9 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
       width:  def.defaults.width  ?? 200,
       height: def.defaults.height ?? 80,
       visible: true, zIndex: fields.length + 1,
+      // hardcoded defaults → saved user defaults → verdict overrides
       ...def.defaults,
+      ...(fieldDefaults[type] ?? {}),
       ...verdictOverrides,
     };
     updateFieldsWithHistory(prev => [...prev, newField]);
@@ -998,6 +1065,11 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
       setHasChanges(false);
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 3000);
+      // Persist the current field styles as defaults for next time (server-side)
+      void persistFieldDefaults(fields, token, fieldDefaults).then(() => {
+        // Update local state so addField picks up the new defaults immediately
+        fetchFieldDefaults(token).then(setFieldDefaults);
+      });
       onSaveSuccess();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Error saving");
