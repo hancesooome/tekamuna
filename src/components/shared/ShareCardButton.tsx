@@ -11,7 +11,8 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { Download, Loader2, ChevronDown } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Download, Loader2, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadPng } from "@/lib/utils";
 import { API_BASE_URL, VERDICT_LABELS } from "@/constants";
@@ -219,9 +220,116 @@ async function toDataUrl(url: string): Promise<string> {
   }
 }
 
+// ── iOS detection ─────────────────────────────────────────────────────────────
+
+function isIOS(): boolean {
+  return (
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+  );
+}
+
+// ── Preview modal ─────────────────────────────────────────────────────────────
+// Receives the already-generated dataUrl — no re-generation happens here.
+
+function CardPreviewModal({
+  dataUrl,
+  filename,
+  onClose,
+}: {
+  dataUrl:  string;
+  filename: string;
+  onClose:  () => void;
+}) {
+  const ios = isIOS();
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  function handleDownload() {
+    downloadPng(dataUrl, filename);
+  }
+
+  return createPortal(
+    /* Backdrop */
+    <div
+      className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      {/* Modal card — sizes to content, not the viewport */}
+      <div
+        className="bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full max-w-lg"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <p className="font-semibold text-sm">Share Card Preview</p>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Image — constrained height so portrait cards don't fill the screen */}
+        <div className="bg-muted/30 flex items-center justify-center p-3">
+          <img
+            src={dataUrl}
+            alt="Share card preview"
+            draggable
+            className="block w-full rounded-lg object-contain"
+            style={{ maxHeight: "75vh" }}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t border-border px-4 py-3 bg-background">
+          {ios ? (
+            /* iOS Safari: programmatic download is blocked.
+               Show the image above so the user can long-press → Save to Photos. */
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-foreground">Long-press the image</span> above,
+                then tap <span className="font-semibold text-foreground">"Add to Photos"</span> or use the Share menu.
+              </p>
+              <Button variant="outline" size="sm" onClick={onClose} className="shrink-0">
+                <X className="h-3.5 w-3.5 mr-1" />Close
+              </Button>
+            </div>
+          ) : (
+            /* Desktop / Android: standard download */
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={onClose}>
+                <X className="h-3.5 w-3.5 mr-1.5" />Close
+              </Button>
+              <Button size="sm" onClick={handleDownload} className="gap-1.5">
+                <Download className="h-3.5 w-3.5" />I-download
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function ShareCardButton({ result }: ShareCardButtonProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ dataUrl: string; filename: string } | null>(null);
   const dropdownRef               = useRef<HTMLDivElement>(null);
   const hiddenCanvasRef           = useRef<HTMLDivElement>(null);
   const [activeTemplate, setActiveTemplate] = useState<{
@@ -314,7 +422,9 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
       });
       const dataUrl = canvas.toDataURL("image/png");
 
-      downloadPng(dataUrl, `teka-muna_${platform}_${result.verdict}.png`);
+      // Open preview modal — user downloads from inside it.
+      // This works on all platforms including iOS Safari.
+      setPreview({ dataUrl, filename: `teka-muna_${platform}_${result.verdict}.png` });
     } catch (err) {
       console.error("Failed to generate export share card:", err);
       alert("Naging sanhi ng error ang pag-download. Subukan muli.");
@@ -325,6 +435,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
   };
 
   return (
+    <>
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <Button
         variant="outline"
@@ -468,5 +579,13 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
         </div>
       )}
     </div>
+    {preview && (
+      <CardPreviewModal
+        dataUrl={preview.dataUrl}
+        filename={preview.filename}
+        onClose={() => setPreview(null)}
+      />
+    )}
+    </>
   );
 }
