@@ -26,6 +26,13 @@ const RANGES: { value: TimelineRange; label: string }[] = [
 ];
 
 export function ApiChart({ points, range, onRangeChange, isLoading }: ApiChartProps) {
+  // Sanitize — ensure every point has a numeric `requests` value.
+  // recharts internally calls .toLocaleString() on axis tick values;
+  // if `requests` is undefined it throws "Cannot read properties of undefined".
+  const safePoints = (points ?? []).map(p => ({
+    ...p,
+    requests: p.requests ?? 0,
+  }));
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -52,7 +59,7 @@ export function ApiChart({ points, range, onRangeChange, isLoading }: ApiChartPr
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={points ?? []} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+              <LineChart data={safePoints} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(26,86,219,0.08)" />
                 <XAxis
                   dataKey="label"
@@ -66,6 +73,7 @@ export function ApiChart({ points, range, onRangeChange, isLoading }: ApiChartPr
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
+                  tickFormatter={(v) => (v == null ? "0" : String(v))}
                 />
                 <Tooltip
                   contentStyle={{
@@ -74,7 +82,7 @@ export function ApiChart({ points, range, onRangeChange, isLoading }: ApiChartPr
                     boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
                     fontSize: "13px",
                   }}
-                  formatter={(value) => [value, "Requests"]}
+                  formatter={(value) => [value ?? 0, "Requests"]}
                 />
                 <Line
                   type="monotone"
