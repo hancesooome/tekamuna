@@ -26,8 +26,8 @@ export default defineConfig({
           "vendor-supabase": ["@supabase/supabase-js"],
           // TanStack Query
           "vendor-query": ["@tanstack/react-query"],
-          // Heavy canvas/image libs — only loaded on admin pages
-          "vendor-canvas": ["html-to-image", "qrcode.react"],
+          // Heavy canvas/image libs — only loaded on share card export
+          "vendor-canvas": ["html2canvas", "html-to-image", "qrcode.react"],
         },
       },
     },

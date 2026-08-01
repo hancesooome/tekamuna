@@ -19,7 +19,7 @@ import { getPublicUrl } from "@/lib/storageUtils";
 import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import type { PostTemplate, TemplateField, TemplatePlatform } from "@/types/postTemplate";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 import { QRCodeSVG } from "qrcode.react";
 
 interface ShareCardButtonProps {
@@ -303,17 +303,16 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
         throw new Error("Offscreen canvas not rendered in DOM.");
       }
 
-      const dataUrl = await toPng(hiddenCanvasRef.current, {
+      const canvas = await html2canvas(hiddenCanvasRef.current, {
         width,
         height,
-        pixelRatio: 1,
-        cacheBust:  true,   // force cache-bust to avoid stale cached cross-origin responses
-        includeQueryParams: true,
-        style: {
-          transform: "scale(1)",
-          transformOrigin: "top left",
-        },
+        scale:           1,
+        useCORS:         true,   // fetch cross-origin images with CORS headers
+        allowTaint:      false,  // don't allow tainted canvas — fail cleanly instead
+        backgroundColor: null,   // preserve transparency
+        logging:         false,
       });
+      const dataUrl = canvas.toDataURL("image/png");
 
       downloadPng(dataUrl, `teka-muna_${platform}_${result.verdict}.png`);
     } catch (err) {
@@ -378,18 +377,16 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
       )}
 
       {/* ── Offscreen Rendering Canvas Container ── */}
-      {/* opacity:0 + pointerEvents:none keeps it invisible but still rendered.   */}
-      {/* Negative top/left or display:none causes html-to-image to capture blank. */}
+      {/* Positioned off-screen (not hidden/opacity:0/z:-1) so Safari paints it. */}
+      {/* zIndex:-1 or opacity:0 on Safari causes html-to-image to get blank canvas. */}
       {activeTemplate && (
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            opacity: 0,
+            position:      "fixed",
+            top:           "-99999px",
+            left:          "-99999px",
             pointerEvents: "none",
-            zIndex: -1,
-            overflow: "hidden",
+            overflow:      "visible",
           }}
         >
           <div
