@@ -196,9 +196,15 @@ export class AIManager {
       //   1. Primary key (openrouter provider)
       //   2. Key2 slot (openrouter2 provider, same model — different API key)
       // This doubles our effective quota for free-tier models.
+      // NOTE: the key2 slot is only valid for openrouter models — Gemini (and
+      // any future non-OpenRouter provider) must not be sent to openrouter2.
       const attempts: Array<{ healthKey: string; providerId: string }> = [
-        { healthKey: modelId,            providerId: descriptor.providerId },  // Primary key
-        { healthKey: `${modelId}__key2`, providerId: "openrouter2" },          // Second key
+        { healthKey: modelId, providerId: descriptor.providerId }, // Primary key
+        // Only add the key2 slot when the model actually belongs to OpenRouter.
+        // Sending "gemini-2.0-flash" to openrouter2 causes a 400 invalid-model error.
+        ...(descriptor.providerId === "openrouter"
+          ? [{ healthKey: `${modelId}__key2`, providerId: "openrouter2" }]
+          : []),
       ];
 
       for (const { healthKey, providerId } of attempts) {

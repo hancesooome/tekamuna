@@ -119,21 +119,16 @@ export async function verifyClaim(payload: VerifyRequest): Promise<VerifyResult>
  * @throws {ApiServiceError} only on network/HTTP errors (not AI failures)
  */
 export async function analyzeImage(file: File): Promise<ImageAnalysisResult> {
-  // FormData is the browser's built-in way to send files over HTTP.
-  // It creates a multipart/form-data encoded body automatically.
   const formData = new FormData();
-  formData.append("image", file); // "image" is the field name the Worker expects
+  formData.append("image", file);
 
   const response = await fetch(`${BASE_URL}/analyze-image`, {
     method: "POST",
     body:   formData,
-    // Do NOT set Content-Type — browser sets it with boundary automatically.
-    // If you manually set "multipart/form-data", the boundary is missing and the server breaks.
   });
 
   const data: unknown = await response.json();
 
-  // Same error handling as post() above
   if (!response.ok) {
     const message = isApiError(data) ? data.error : `HTTP ${response.status}`;
     throw new ApiServiceError(message, response.status);

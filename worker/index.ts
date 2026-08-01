@@ -46,6 +46,7 @@
 import { handleVerify }       from "./routes/verify";       // POST /api/verify
 import { handleSearch }       from "./routes/search";       // GET  /api/search
 import { handleAnalyzeImage } from "./routes/analyzeImage"; // POST /api/analyze-image
+import { handleOCRExtract }   from "./routes/ocrExtract";   // POST /api/ocr-extract
 import { handleStats }        from "./routes/stats";        // GET  /api/stats/*
 import { handleAdminConfig }  from "./routes/adminConfig";  // GET/POST /api/admin/settings
 
@@ -73,6 +74,9 @@ export interface Env {
   MODELS_SUMMARY?:             string;
   MODELS_SEARCH_QUERY?:        string;
   MODELS_TRANSLATION?:         string;
+
+  // ── OCR ───────────────────────────────────────────────────────────────────
+  OCR_SPACE_API_KEY?: string;  // OCR.Space API key — used by /api/ocr-extract
 
   // ── Supabase (admin settings) ─────────────────────────────────────────────
   // Used by adminSettings.ts to read routing config from the admin_settings table.
@@ -137,6 +141,13 @@ export default {
       return handleAnalyzeImage(request, env);
     }
 
+    // ── POST /api/ocr-extract ──────────────────────────────────────────────
+    // Accepts a multipart image upload, runs OCR.Space, returns cleaned text.
+    // Cheaper than analyze-image (no AI) — lets the user review text before verify.
+    if (url.pathname === "/api/ocr-extract" && request.method === "POST") {
+      return handleOCRExtract(request, env);
+    }
+
     // ── /api/stats/* (GET, POST) ─────────────────────────────────────────────
     if (url.pathname.startsWith("/api/stats")) {
       return handleStats(request, env);
@@ -162,6 +173,7 @@ export default {
             openrouter:  env.OPENROUTER_API_KEY   ? "configured" : "missing",
             openrouter2: env.OPENROUTER_API_KEY_2 ? "configured" : "missing",
             gemini:      env.GEMINI_API_KEY       ? "configured" : "missing",
+            ocr:         env.OCR_SPACE_API_KEY    ? "configured" : "missing",
           },
           modelOverrides: {
             // ?? "default" → use "default" if the env var is undefined/null

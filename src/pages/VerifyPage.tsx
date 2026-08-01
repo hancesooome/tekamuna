@@ -9,12 +9,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
-  Search, ImagePlus, X, Loader2, AlertCircle, Sparkles, ChevronDown,
+  Search, ImagePlus, X, Loader2, AlertCircle, ChevronDown,
+  ScanText, CheckCircle2,
 } from "lucide-react";
 import { Button }         from "@/components/ui/button";
 import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
+import { extractTextFromImageBrowser, OCR_MAX_FILE_BYTES, OCR_ALLOWED_MIME } from "@/services/ocrService";
 import { shouldRunVerificationPipeline } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
@@ -24,8 +26,9 @@ import thinkImage from "../assets/think.png";
 
 const MAX_CHARS = 500;
 
-const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_FILE_MB  = 10;
+const ALLOWED_MIME = OCR_ALLOWED_MIME as readonly string[];
+// OCR.Space free tier cap is 1 MB
+const MAX_FILE_MB  = OCR_MAX_FILE_BYTES / (1024 * 1024);
 
 const CATEGORIES = [
   "Pulitika", "Kalusugan", "Ekonomiya", "Teknolohiya",
@@ -116,29 +119,22 @@ function Checkbox({
   );
 }
 
-// ── Image Upload Card (AI Vision — coming soon) ───────────────────────────────
-//
-// AI Vision analysis is temporarily disabled to preserve free-tier API quota.
-// The upload UI is kept so users can see the feature is planned.
-// When a paid vision quota is available, re-enable by setting VISION_ENABLED=true
-// and restoring the analyzeImage() call in processFile().
-
-const VISION_COMING_SOON_MSG =
-  "Ang AI Vision ay kasalukuyang nasa beta pa. " +
-  "Sa ngayon, i-type o i-paste na lang ang claim mula sa larawan. " +
-  "Malapit na ang full release!";
+// ── Image Upload Card (OCR-powered text extraction) ───────────────────────────
 
 interface ImageUploadProps {
   disabled: boolean;
   onClaim:  (claim: string) => void;
 }
 
-function ImageUploadCard({ disabled }: ImageUploadProps) {
-  const inputRef                      = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging]       = useState(false);
-  const [preview, setPreview]         = useState<string | null>(null);
-  const [fileName, setFileName]       = useState<string | null>(null);
-  const [fileSize, setFileSize]       = useState<string | null>(null);
+function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
+  const inputRef                            = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging]             = useState(false);
+  const [preview, setPreview]               = useState<string | null>(null);
+  const [fileName, setFileName]             = useState<string | null>(null);
+  const [fileSize, setFileSize]             = useState<string | null>(null);
+  const [isExtracting, setIsExtracting]     = useState(false);
+  const [ocrError, setOcrError]             = useState<string | null>(null);
+  const [ocrSuccess, setOcrSuccess]         = useState(false);
 
   useEffect(() => {
     return () => { if (preview) URL.revokeObjectURL(preview); };
@@ -149,22 +145,58 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
       ? `${(bytes / 1024).toFixed(0)} KB`
       : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-  const processFile = useCallback((file: File) => {
+  const processFile = useCallback(async (file: File) => {
     if (disabled) return;
+    if (!ALLOWED_MIME.includes(file.type.toLowerCase())) {
+      setOcrError("Hindi supportado ang format na ito. Gamitin ang JPG, PNG, o WebP.");
+      return;
+    }
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setOcrError(`File ay masyadong malaki (${formatSize(file.size)}). Maximum ay ${MAX_FILE_MB} MB para sa OCR.`);
+      return;
+    }
 
-    if (!ALLOWED_MIME.includes(file.type.toLowerCase())) return;
-    if (file.size > MAX_FILE_MB * 1024 * 1024) return;
-
+    // Show preview immediately
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
     setFileName(file.name);
     setFileSize(formatSize(file.size));
-    // NOTE: AI Vision call intentionally omitted — re-enable when quota allows
-  }, [disabled, preview]);
+    setOcrError(null);
+    setOcrSuccess(false);
+
+    // Run OCR + claim extraction directly in the browser (no Worker round-trip)
+    setIsExtracting(true);
+    try {
+      const result = await extractTextFromImageBrowser(file);
+      if (result.success) {
+        const fill = (result.suggestedClaim?.trim() || result.text?.trim()) ?? "";
+        if (fill) {
+          onClaim(fill);
+          setOcrSuccess(true);
+        } else {
+          setOcrError("Walang nahanap na teksto sa larawan. Subukan ang mas malinaw na screenshot.");
+        }
+      } else {
+        setOcrError(
+          result.error ??
+          "Hindi nakuha ang teksto mula sa larawan. Subukan ang ibang larawan o i-type na lang ang claim.",
+        );
+      }
+    } catch (err) {
+      setOcrError(
+        err instanceof Error
+          ? err.message
+          : "Hindi ma-konekta sa OCR service. Subukang muli.",
+      );
+    } finally {
+      setIsExtracting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled, preview, onClaim]);
 
   const handleFiles = useCallback((list: FileList | null) => {
     if (!list || list.length === 0) return;
-    processFile(list[0]);
+    void processFile(list[0]);
   }, [processFile]);
 
   const handleRemove = () => {
@@ -172,10 +204,12 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
     setPreview(null);
     setFileName(null);
     setFileSize(null);
+    setOcrError(null);
+    setOcrSuccess(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  // ── Dropzone (no image yet) ─────────────────────────────────────────────
+  // ── Dropzone (no image yet) ──────────────────────────────────────────────
   if (!preview) {
     return (
       <div className="flex flex-col gap-3">
@@ -202,24 +236,23 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
             "h-11 w-11 rounded-xl flex items-center justify-center transition-colors",
             dragging ? "bg-primary/15" : "bg-muted",
           )}>
-            <ImagePlus className={cn("h-5 w-5", dragging ? "text-primary" : "text-muted-foreground")} />
+            <ScanText className={cn("h-5 w-5", dragging ? "text-primary" : "text-muted-foreground")} />
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
               I-drag &amp; drop o mag-<span className="text-primary underline">click</span> para pumili
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              JPG, PNG, WebP · max 10 MB · isang larawan lamang
-            </p>
-          </div>
+              JPG, PNG, WebP · max {MAX_FILE_MB} MB · isang larawan lamang
+            </p>          </div>
         </button>
 
-        {/* Coming-soon notice */}
-        <div className="flex items-start gap-2.5 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-          <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800 leading-relaxed">
-            <span className="font-bold">AI Vision — Coming Soon.</span>{" "}
-            {VISION_COMING_SOON_MSG}
+        {/* OCR info notice */}
+        <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
+          <ScanText className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-800 leading-relaxed">
+            <span className="font-bold">OCR Text Extraction.</span>{" "}
+            Awtomatikong mababasa ang teksto mula sa larawan o screenshot at ilalagay sa claim box para ma-edit mo bago suriin.
           </p>
         </div>
 
@@ -234,10 +267,11 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
     );
   }
 
-  // ── Image preview (uploaded, not yet analysed) ──────────────────────────
+  // ── Image preview (uploaded) ─────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-xl border-2 border-border overflow-hidden">
+
         {/* Preview row */}
         <div className="flex items-center gap-4 p-4 bg-muted/30">
           <img
@@ -248,11 +282,29 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-foreground truncate">{fileName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{fileSize}</p>
-            <p className="text-xs text-muted-foreground mt-1.5 italic">
-              I-type na lang ang claim mula sa larawang ito sa textbox sa itaas.
-            </p>
+
+            {/* Status line below file info */}
+            {isExtracting && (
+              <div className="flex items-center gap-1.5 mt-2">
+                <Loader2 className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
+                <p className="text-xs text-primary font-medium">Binabasa ang teksto...</p>
+              </div>
+            )}
+            {!isExtracting && ocrSuccess && (
+              <div className="flex items-center gap-1.5 mt-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <p className="text-xs text-emerald-700 font-medium">Nakuha ang teksto — makikita sa claim box.</p>
+              </div>
+            )}
+            {!isExtracting && !ocrSuccess && !ocrError && (
+              <p className="text-xs text-muted-foreground mt-1.5 italic">
+                Naghihintay ng OCR result...
+              </p>
+            )}
           </div>
-          {!disabled && (
+
+          {/* Remove button — disabled while OCR is running */}
+          {!disabled && !isExtracting && (
             <button
               type="button"
               onClick={handleRemove}
@@ -264,13 +316,32 @@ function ImageUploadCard({ disabled }: ImageUploadProps) {
           )}
         </div>
 
-        {/* Coming-soon strip */}
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-t border-amber-200">
-          <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-          <p className="text-xs text-amber-800">
-            <span className="font-bold">AI Vision coming soon</span> — awtomatikong makukuha ng AI ang claim mula sa larawan.
-          </p>
-        </div>
+        {/* OCR error strip */}
+        {ocrError && (
+          <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border-t border-red-200">
+            <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-red-800 leading-relaxed">{ocrError}</p>
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="mt-1.5 text-xs font-bold text-red-600 hover:underline"
+              >
+                Subukan ang ibang larawan
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success strip */}
+        {ocrSuccess && (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-t border-emerald-200">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            <p className="text-xs text-emerald-800">
+              <span className="font-bold">Tagumpay!</span> I-edit ang teksto sa claim box kung kinakailangan, pagkatapos ay pindutin ang Suriin.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -301,9 +372,9 @@ function ImageUploadCollapsible({
             Mag-upload ng Larawan o Screenshot{" "}
             <span className="font-normal text-muted-foreground">(opsyonal)</span>
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-            <Sparkles className="h-2.5 w-2.5" />
-            Beta
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+            <ScanText className="h-2.5 w-2.5" />
+            OCR
           </span>
         </div>
         <ChevronDown

@@ -6,7 +6,7 @@
  *  2. Mission/Vision — two cards (blue + amber)
  *  3. Process       — "Paano Namin Sinusuri" — 6 numbered step cards
  *  4. Team          — "Ang Aming Koponan" — 6 avatar cards
- *  5. Partners      — "Mga Kasosyo" — pill grid
+ *  5. Partners      — "Trusted Sources" — logo grid grouped by category
  *  6. Awards        — "Mga Parangal at Pagkilala" — blue banner
  */
 
@@ -72,15 +72,36 @@ const TEAM_MEMBERS = [
   { initials: "CM", name: "Carlo Mendoza", role: "Policy Advisor", color: "bg-orange-500" },
 ] as const;
 
-const PARTNERS = [
-  "Philippine Statistics Authority",
-  "DICT Philippines",
-  "Vera Files",
-  "Rappler",
-  "ABS-CBN News",
-  "Philippine Daily Inquirer",
-  "Ateneo de Manila University",
-  "UP Diliman",
+const TRUSTED_SOURCES = [
+  {
+    group: "Fact-Checking",
+    items: [
+      { name: "Vera Files",         logo: "/logos/verafiles.svg",         url: "https://verafiles.org",              alt: "Vera Files — Philippine fact-checking organization" },
+      { name: "Rappler Fact Check", logo: "/logos/rappler.svg",           url: "https://www.rappler.com/factcheck",  alt: "Rappler — Philippine digital news and fact-checking outlet" },
+      { name: "AFP Fact Check",     logo: "/logos/afp.png",               url: "https://factcheck.afp.com",          alt: "AFP Fact Check — Agence France-Presse global fact-checking" },
+      { name: "FactCheck.org",      logo: "/logos/fact-check-org.png",    url: "https://www.factcheck.org",          alt: "FactCheck.org — non-partisan fact-checking by Annenberg Public Policy Center" },
+    ],
+  },
+  {
+    group: "Philippine Government",
+    items: [
+      { name: "Official Gazette",   logo: "/logos/Official_Gazette.png",  url: "https://www.officialgazette.gov.ph", alt: "Official Gazette of the Republic of the Philippines" },
+      { name: "COMELEC",            logo: "/logos/comelec.svg",           url: "https://www.comelec.gov.ph",         alt: "Commission on Elections (COMELEC)" },
+      { name: "PSA",                logo: "/logos/psa.svg",               url: "https://www.psa.gov.ph",             alt: "Philippine Statistics Authority (PSA)" },
+      { name: "DOH",                logo: "/logos/doh.svg",               url: "https://www.doh.gov.ph",             alt: "Department of Health Philippines (DOH)" },
+      { name: "DICT",               logo: "/logos/dict.svg",              url: "https://www.dict.gov.ph",            alt: "Department of Information and Communications Technology (DICT)" },
+    ],
+  },
+  {
+    group: "Reputable News Media",
+    items: [
+      { name: "GMA News",                logo: "/logos/gmanews.svg",          url: "https://www.gmanetwork.com/news",    alt: "GMA News — Philippine television and online news network" },
+      { name: "ABS-CBN News",            logo: "/logos/abscbn.svg",           url: "https://news.abs-cbn.com",           alt: "ABS-CBN News — Philippine broadcast media" },
+      { name: "Philippine Daily Inquirer",logo: "/logos/pdi.svg",             url: "https://www.inquirer.net",           alt: "Philippine Daily Inquirer — Philippine broadsheet newspaper" },
+      { name: "Manila Bulletin",         logo: "/logos/manila_bulletin.svg",  url: "https://mb.com.ph",                  alt: "Manila Bulletin — Philippine newspaper" },
+      { name: "The Philippine Star",     logo: "/logos/philippine_star.png",  url: "https://www.philstar.com",           alt: "The Philippine Star — Philippine broadsheet newspaper" },
+    ],
+  },
 ] as const;
 
 const AWARDS = [
@@ -224,23 +245,59 @@ function TeamSection() {
   );
 }
 
-function PartnersSection() {
+function TrustedSourcesSection() {
   return (
     <div className="mb-14 sm:mb-16">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Mga Kasosyo</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Mga pinagkakatiwalaang organisasyon na nagbibigay ng datos at suporta
-        </p>
+      {/* Heading — centered */}
+      <div className="text-center mb-3">
+        <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Trusted Sources</h2>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {PARTNERS.map((partner) => (
-          <div
-            key={partner}
-            className="rounded-xl border border-[#d9e4ff] bg-[#f8faff] px-4 py-3 text-center text-xs font-bold text-foreground hover:border-primary/50 hover:bg-primary/5 hover:shadow-md transition-all duration-300"
-          >
-            {partner}
+      {/* Disclaimer — centered */}
+      <p className="text-sm text-muted-foreground text-center max-w-2xl mx-auto mb-10 leading-relaxed">
+        These are some of the trusted sources Teka Muna may reference during the verification
+        process. Their inclusion does not imply any official partnership or endorsement.
+      </p>
+
+      {/* Groups */}
+      <div className="flex flex-col gap-10">
+        {TRUSTED_SOURCES.map((group) => (
+          <div key={group.group}>
+            {/* Group label — centered with flanking lines */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground shrink-0">
+                {group.group}
+              </span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Logos — no box, just the image with hover effects */}
+            <div className="flex flex-wrap justify-center gap-6">
+              {group.items.map((source) => (
+                <a
+                  key={source.name}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={source.name}
+                  className="group flex items-center justify-center h-14 w-36 transition-all duration-300"
+                >
+                  <img
+                    src={source.logo}
+                    alt={source.alt}
+                    className={[
+                      "max-h-10 w-auto max-w-full object-contain",
+                      // Grayscale by default, full colour on hover
+                      "filter grayscale opacity-60",
+                      "transition-all duration-300",
+                      "group-hover:grayscale-0 group-hover:opacity-100",
+                    ].join(" ")}
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -282,7 +339,7 @@ export default function AboutPage() {
       <MissionVisionSection />
       <ProcessSection />
       {/* <TeamSection /> */}
-      <PartnersSection />
+      <TrustedSourcesSection />
       {/* <AwardsSection /> */}
     </PageContainer>
   );
