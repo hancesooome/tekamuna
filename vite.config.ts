@@ -12,11 +12,25 @@ export default defineConfig({
     },
   },
   build: {
-    // Cloudflare Pages serves static assets — target modern browsers
     target: "es2022",
     outDir: "dist",
-    // Inline assets smaller than 4kb to reduce round-trips
     assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime — cached independently, almost never changes
+          "vendor-react": ["react", "react-dom"],
+          // Router
+          "vendor-router": ["react-router-dom"],
+          // Supabase client
+          "vendor-supabase": ["@supabase/supabase-js"],
+          // TanStack Query
+          "vendor-query": ["@tanstack/react-query"],
+          // Heavy canvas/image libs — only loaded on admin pages
+          "vendor-canvas": ["html-to-image", "qrcode.react"],
+        },
+      },
+    },
   },
   server: {
     port: 5173,

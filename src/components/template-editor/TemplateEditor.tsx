@@ -1005,21 +1005,23 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
       const currentSelected = selectedId;
       setSelectedId(null);
 
-      await new Promise(resolve => setTimeout(resolve, 120));
+      // Wait for React to deselect fields and for the background img to load
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const dataUrl = await toPng(canvasDOMRef.current, {
-        width: template.canvas_width,
-        height: template.canvas_height,
+        width:      template.canvas_width,
+        height:     template.canvas_height,
+        pixelRatio: 1,
+        cacheBust:  true,
         style: {
-          transform: "scale(1)",
+          transform:       "scale(1)",
           transformOrigin: "top left",
-          left: "0px",
-          top: "0px",
+          left:            "0px",
+          top:             "0px",
         },
       });
 
       setSelectedId(currentSelected);
-
       downloadPng(dataUrl, `${template.name}_preview.png`);
     } catch (error) {
       console.error("Failed to generate preview PNG:", error);
@@ -1029,8 +1031,27 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
     }
   };
 
-  const sel   = fields.find(f => f.id === selectedId);
-  const bgUrl = template.storage_path ? getPublicUrl(template.storage_path) : "";
+  const sel      = fields.find(f => f.id === selectedId);
+  const rawBgUrl = template.storage_path ? getPublicUrl(template.storage_path) : "";
+
+  // Pre-fetch the background as a data URL so html-to-image and <img> never
+  // hit a CORS-tainted canvas on Safari / production.
+  const [bgUrl, setBgUrl] = useState(rawBgUrl);
+  useEffect(() => {
+    if (!rawBgUrl) { setBgUrl(""); return; }
+    let cancelled = false;
+    fetch(rawBgUrl)
+      .then(r => r.blob())
+      .then(blob => new Promise<string>((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = () => res(reader.result as string);
+        reader.onerror = rej;
+        reader.readAsDataURL(blob);
+      }))
+      .then(dataUrl => { if (!cancelled) setBgUrl(dataUrl); })
+      .catch(() => { if (!cancelled) setBgUrl(rawBgUrl); }); // fallback to URL
+    return () => { cancelled = true; };
+  }, [rawBgUrl]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -1207,16 +1228,31 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
             id="template-canvas-stage"
             className="relative shadow-2xl overflow-hidden border border-slate-700 transition-transform duration-75"
             style={{
-              width:             template.canvas_width,
-              height:            template.canvas_height,
-              transform:         `scale(${scale})`,
-              transformOrigin:   "center center",
-              backgroundImage:   bgUrl ? `url(${bgUrl})` : "none",
-              backgroundSize:    "cover",
-              backgroundPosition:"center",
-              backgroundColor:   bgUrl ? undefined : "#1e293b",
+              width:           template.canvas_width,
+              height:          template.canvas_height,
+              transform:       `scale(${scale})`,
+              transformOrigin: "center center",
+              backgroundColor: bgUrl ? undefined : "#1e293b",
             }}
           >
+            {/* Background rendered as <img> — CSS backgroundImage is not captured
+                by html-to-image on Safari/production (canvas CORS taint). */}
+            {bgUrl && (
+              <img
+                src={bgUrl}
+                alt=""
+                crossOrigin="anonymous"
+                style={{
+                  position:  "absolute",
+                  inset:     0,
+                  width:     "100%",
+                  height:    "100%",
+                  objectFit: "cover",
+                  zIndex:    0,
+                  display:   "block",
+                }}
+              />
+            )}
             {fields.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
                 <Layout className="h-14 w-14 text-slate-700" />

@@ -120,6 +120,7 @@ function RenderCanvasField({ field, result }: { field: TemplateField; result: Ve
       <img
         src={field.imageUrl}
         alt={field.label}
+        crossOrigin="anonymous"
         className="w-full h-full pointer-events-none"
         style={{ objectFit: field.objectFit ?? "contain" }}
       />
@@ -197,7 +198,26 @@ function RenderCanvasField({ field, result }: { field: TemplateField; result: Ve
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+/**
+ * Fetch an image URL and return a base64 data URL.
+ * This bypasses CORS canvas-taint issues in production — a data: URL
+ * is treated as same-origin so the canvas never becomes tainted.
+ * Falls back to the original URL if the fetch fails (e.g. in dev).
+ */
+async function toDataUrl(url: string): Promise<string> {
+  try {
+    const res  = await fetch(url);
+    const blob = await res.blob();
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url; // fallback — may still work if server sends CORS headers
+  }
+}
 
 export default function ShareCardButton({ result }: ShareCardButtonProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -239,10 +259,19 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
 
       if (res.ok) {
         const t = (await res.json()) as PostTemplate;
-        width = t.canvas_width;
+        width  = t.canvas_width;
         height = t.canvas_height;
         fields = t.config_json || [];
-        bgUrl = t.storage_path ? getPublicUrl(t.storage_path) : null;
+        // Convert storage URL → data URL to avoid CORS canvas taint in production
+        const rawBg = t.storage_path ? getPublicUrl(t.storage_path) : null;
+        bgUrl = rawBg ? await toDataUrl(rawBg) : null;
+        // Also convert any image/logo fields to data URLs
+        fields = await Promise.all(fields.map(async (f) => {
+          if ((f.type === "image" || f.type === "logo") && f.imageUrl) {
+            return { ...f, imageUrl: await toDataUrl(f.imageUrl) };
+          }
+          return f;
+        }));
       } else {
         const preset = DEFAULT_TEMPLATES[platform];
         width = preset.width;
@@ -266,9 +295,9 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
 
       setActiveTemplate({ width, height, fields, bgUrl });
 
-      // Wait for React to render the hidden canvas and for any background
-      // images to load before capturing. 600ms is enough for most connections.
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // Wait for React to render the hidden canvas and for images to load.
+      // 1000ms for production CDN latency — localhost is faster but this is safe for both.
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (!hiddenCanvasRef.current) {
         throw new Error("Offscreen canvas not rendered in DOM.");
@@ -277,7 +306,9 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
       const dataUrl = await toPng(hiddenCanvasRef.current, {
         width,
         height,
-        pixelRatio: 1,   // prevent Retina 2× scaling — keep exact pixel dimensions
+        pixelRatio: 1,
+        cacheBust:  true,   // force cache-bust to avoid stale cached cross-origin responses
+        includeQueryParams: true,
         style: {
           transform: "scale(1)",
           transformOrigin: "top left",
@@ -364,15 +395,31 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
           <div
             ref={hiddenCanvasRef}
             style={{
-              width:              activeTemplate.width,
-              height:             activeTemplate.height,
-              backgroundImage:    activeTemplate.bgUrl ? `url(${activeTemplate.bgUrl})` : "none",
-              backgroundSize:     "cover",
-              backgroundPosition: "center",
-              backgroundColor:    activeTemplate.bgUrl ? undefined : theme.bg,
-              position:           "relative",
+              width:           activeTemplate.width,
+              height:          activeTemplate.height,
+              backgroundColor: activeTemplate.bgUrl ? undefined : theme.bg,
+              position:        "relative",
+              overflow:        "hidden",
             }}
           >
+            {/* Background rendered as <img> so html-to-image captures it correctly.  */}
+            {/* CSS background-image is NOT captured by html-to-image on Safari/production. */}
+            {activeTemplate.bgUrl && (
+              <img
+                src={activeTemplate.bgUrl}
+                alt=""
+                crossOrigin="anonymous"
+                style={{
+                  position:   "absolute",
+                  inset:      0,
+                  width:      "100%",
+                  height:     "100%",
+                  objectFit:  "cover",
+                  zIndex:     0,
+                  display:    "block",
+                }}
+              />
+            )}
             {activeTemplate.fields.map((field) => {
               if (!field.visible) return null;
               const opacity = field.opacity !== undefined ? field.opacity / 100 : 1;
@@ -403,7 +450,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
                     top:             field.y,
                     width:           field.width,
                     height:          field.height,
-                    zIndex:          field.zIndex,
+                    zIndex:          Math.max(1, field.zIndex), // always above background img (z:0)
                     opacity,
                     transform:       field.rotation ? `rotate(${field.rotation}deg)` : undefined,
                     fontFamily:      field.fontFamily || "Inter, system-ui, sans-serif",
