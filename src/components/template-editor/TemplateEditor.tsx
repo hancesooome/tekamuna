@@ -9,8 +9,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ArrowLeft, Trash2, Save, Move, Eye, EyeOff, Type, Layout, Image as ImageIcon,
-  Link, QrCode, Star, BarChart2, Calendar, List, AlignLeft, ChevronDown, ChevronRight,
+  ArrowLeft, Trash2, Save, Move, Eye, EyeOff, Type, Layout, Image as ImageIcon,  Link, QrCode, Star, BarChart2, Calendar, List, AlignLeft, ChevronDown, ChevronRight,
   FileText, Download, Lock, Unlock, Copy, ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2,
   ChevronUp, ChevronDown as ChevronDownIcon,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { API_BASE_URL } from "@/constants";
 import { getPublicUrl } from "@/lib/storageUtils";
 import type { PostTemplate, TemplateField, FieldType } from "@/types/postTemplate";
+import { downloadPng } from "@/lib/utils";
 import { toPng } from "html-to-image";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -1020,10 +1020,7 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
 
       setSelectedId(currentSelected);
 
-      const link = document.createElement("a");
-      link.download = `${template.name}_preview.png`;
-      link.href = dataUrl;
-      link.click();
+      downloadPng(dataUrl, `${template.name}_preview.png`);
     } catch (error) {
       console.error("Failed to generate preview PNG:", error);
       alert("Naging sanhi ng error ang pag-export ng larawan. Subukan muli.");

@@ -13,6 +13,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Download, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { downloadPng } from "@/lib/utils";
 import { API_BASE_URL, VERDICT_LABELS } from "@/constants";
 import { getPublicUrl } from "@/lib/storageUtils";
 import { buildShareUrl } from "@/utils/shareUrl";
@@ -280,10 +281,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
         },
       });
 
-      const link = document.createElement("a");
-      link.download = `teka-muna_${platform}_${result.verdict}.png`;
-      link.href = dataUrl;
-      link.click();
+      downloadPng(dataUrl, `teka-muna_${platform}_${result.verdict}.png`);
     } catch (err) {
       console.error("Failed to generate export share card:", err);
       alert("Naging sanhi ng error ang pag-download. Subukan muli.");
