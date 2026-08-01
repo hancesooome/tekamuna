@@ -182,16 +182,25 @@ function RenderCanvasField({ field, result }: { field: TemplateField; result: Ve
 
   return (
     <span
-      className="block select-none pointer-events-none overflow-hidden"
+      className="block select-none pointer-events-none"
       style={{
+        width:           "100%",
         fontSize:        `${field.fontSize ?? 16}px`,
         fontWeight:      field.fontWeight ?? "400",
-        lineHeight:      field.lineHeight ?? 1.4,
+        lineHeight:      field.lineHeight ?? 1.5,
         textAlign:       field.textAlign ?? "left",
-        display:         "-webkit-box",
-        WebkitBoxOrient: "vertical",
-        WebkitLineClamp: field.maxLines ?? "unset",
         whiteSpace:      (field.type === "list" || field.type === "sources") ? "pre-line" : "normal",
+        ...(field.maxLines
+          ? {
+              display:         "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: field.maxLines,
+              overflow:        "hidden",
+            }
+          : {
+              display:  "block",
+              overflow: "visible",
+            }),
       }}
     >
       {text}
@@ -557,9 +566,10 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
                     left:            field.x,
                     top:             field.y,
                     width:           field.width,
-                    height:          field.height,
-                    zIndex:          Math.max(1, field.zIndex), // always above background img (z:0)
+                    minHeight:       field.height,
+                    zIndex:          Math.max(1, field.zIndex),
                     opacity,
+                    overflow:        "visible",
                     transform:       field.rotation ? `rotate(${field.rotation}deg)` : undefined,
                     fontFamily:      field.fontFamily || "Inter, system-ui, sans-serif",
                     color:           field.color || theme.text,
@@ -569,6 +579,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
                     display:         "flex",
                     flexDirection:   "column",
                     justifyContent:  "center",
+                    alignItems:      "stretch",
                   }}
                 >
                   <RenderCanvasField field={field} result={result} />

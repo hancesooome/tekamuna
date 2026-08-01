@@ -288,16 +288,25 @@ function FieldPreview({ field }: { field: TemplateField }) {
 
   return (
     <span
-      className="block select-none pointer-events-none overflow-hidden text-wrap"
+      className="block select-none pointer-events-none text-wrap"
       style={{
+        width:       "100%",
         fontSize:    `${field.fontSize ?? 16}px`,
         fontWeight:  field.fontWeight ?? "400",
-        lineHeight:  field.lineHeight ?? 1.4,
+        lineHeight:  field.lineHeight ?? 1.5,
         textAlign:   field.textAlign ?? "left",
-        display:     "-webkit-box",
-        WebkitBoxOrient: "vertical" as React.CSSProperties["WebkitBoxOrient"],
-        WebkitLineClamp: field.maxLines ?? "unset",
         whiteSpace: (field.type === "list" || field.type === "sources") ? "pre-line" : "normal",
+        ...(field.maxLines
+          ? {
+              display:         "-webkit-box",
+              WebkitBoxOrient: "vertical" as React.CSSProperties["WebkitBoxOrient"],
+              WebkitLineClamp: field.maxLines,
+              overflow:        "hidden",
+            }
+          : {
+              display:  "block",
+              overflow: "visible",
+            }),
       }}
     >
       {preview}
@@ -1271,7 +1280,7 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
                   key={field.id}
                   onMouseDown={e => { e.stopPropagation(); startDrag(e, field.id); }}
                   onClick={e => e.stopPropagation()}
-                  className={`absolute cursor-move overflow-hidden ${
+                  className={`absolute cursor-move ${
                     isSelected
                       ? "outline outline-2 outline-primary shadow-[0_0_0_3px_rgba(59,130,246,0.3)]"
                       : "hover:outline hover:outline-1 hover:outline-white/25"
@@ -1280,9 +1289,10 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
                     left:            field.x,
                     top:             field.y,
                     width:           field.width,
-                    height:          field.height,
+                    minHeight:       field.height,  // min not fixed — text grows down, never clips
                     zIndex:          field.zIndex,
                     opacity,
+                    overflow:        "visible",     // never clip descenders
                     transform:       field.rotation ? `rotate(${field.rotation}deg)` : undefined,
                     fontFamily:      field.fontFamily || "Inter, system-ui, sans-serif",
                     color:           field.color || "#ffffff",
@@ -1295,6 +1305,7 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
                     display:         "flex",
                     flexDirection:   "column",
                     justifyContent:  "center",
+                    alignItems:      "stretch",
                   }}
                 >
                   <FieldPreview field={field} />
