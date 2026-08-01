@@ -12,10 +12,16 @@
  *   - Logged out → redirects to /admin/login
  */
 
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { PageLoader } from "@/components/shared/PageLoader";
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, LayoutDashboard, ImagePlay } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const NAV_ITEMS = [
+  { to: "/admin/dashboard",       label: "Dashboard",       icon: LayoutDashboard },
+  { to: "/admin/post-templates",  label: "Post Templates",  icon: ImagePlay       },
+] as const;
 
 export function AdminRoute() {
   const { session, loading, signOut } = useAuth();
@@ -37,6 +43,25 @@ export function AdminRoute() {
             </div>
             <span className="font-black text-sm tracking-wider uppercase">Teka Muna Admin</span>
           </div>
+
+          {/* Nav tabs */}
+          <nav className="hidden sm:flex items-center gap-1">
+            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
 
           <div className="flex items-center gap-4">
             <span className="text-xs text-muted-foreground hidden sm:inline-block">

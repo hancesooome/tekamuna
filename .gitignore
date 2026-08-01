@@ -37,3 +37,4 @@ npm-debug.log*
 # personal learning
 docs/MY_LEARNING_GUIDE.md
 .sixth/agents/software-engineer.md
+supabase/migrations/20260801_post_templates.sql

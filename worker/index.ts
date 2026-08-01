@@ -43,12 +43,14 @@
 // ── Route handlers ─────────────────────────────────────────────────────────
 // Each handler is in its own file in /routes/ to keep this file clean.
 // They receive the raw Request and the Env (env vars/secrets) and return a Response.
-import { handleVerify }       from "./routes/verify";       // POST /api/verify
-import { handleSearch }       from "./routes/search";       // GET  /api/search
-import { handleAnalyzeImage } from "./routes/analyzeImage"; // POST /api/analyze-image
-import { handleOCRExtract }   from "./routes/ocrExtract";   // POST /api/ocr-extract
-import { handleStats }        from "./routes/stats";        // GET  /api/stats/*
-import { handleAdminConfig }  from "./routes/adminConfig";  // GET/POST /api/admin/settings
+import { handleVerify }         from "./routes/verify";         // POST /api/verify
+import { handleSearch }         from "./routes/search";         // GET  /api/search
+import { handleAnalyzeImage }   from "./routes/analyzeImage";   // POST /api/analyze-image
+import { handleOCRExtract }     from "./routes/ocrExtract";     // POST /api/ocr-extract
+import { handleStats }          from "./routes/stats";          // GET  /api/stats/*
+import { handleAdminConfig }    from "./routes/adminConfig";    // GET/POST /api/admin/settings
+import { handlePostTemplates }  from "./routes/postTemplates";  // CRUD /api/admin/post-templates
+import { handleUploadImage }    from "./routes/uploadImage";    // POST /api/admin/upload-image
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -78,10 +80,10 @@ export interface Env {
   // ── OCR ───────────────────────────────────────────────────────────────────
   OCR_SPACE_API_KEY?: string;  // OCR.Space API key — used by /api/ocr-extract
 
-  // ── Supabase (admin settings) ─────────────────────────────────────────────
-  // Used by adminSettings.ts to read routing config from the admin_settings table.
-  SUPABASE_URL?:      string;  // e.g. https://xxx.supabase.co
-  SUPABASE_ANON_KEY?: string;  // Supabase anon key — safe for server-side reads
+  // ── Supabase ──────────────────────────────────────────────────────────────
+  SUPABASE_URL?:               string;  // e.g. https://xxx.supabase.co
+  SUPABASE_ANON_KEY?:          string;  // Supabase anon key — safe for server-side reads
+  SUPABASE_SERVICE_ROLE_KEY?:  string;  // Service role key — bypasses RLS for admin writes
 }
 
 // ── CORS headers ──────────────────────────────────────────────────────────────
@@ -151,6 +153,19 @@ export default {
     // ── /api/stats/* (GET, POST) ─────────────────────────────────────────────
     if (url.pathname.startsWith("/api/stats")) {
       return handleStats(request, env);
+    }
+
+    // ── POST /api/admin/upload-image ──────────────────────────────────────────
+    // Proxies image upload to Supabase Storage, returns storage path.
+    // Must sit before the /api/admin/post-templates and /api/admin catch-alls.
+    if (url.pathname === "/api/admin/upload-image" && request.method === "POST") {
+      return handleUploadImage(request, env);
+    }
+
+    // ── /api/admin/post-templates (GET, POST, PATCH, DELETE) ─────────────────
+    // Template CRUD — must be matched BEFORE the /api/admin catch-all below.
+    if (url.pathname.startsWith("/api/admin/post-templates")) {
+      return handlePostTemplates(request, env);
     }
 
     // ── /api/admin/settings (GET, POST) ───────────────────────────────────────

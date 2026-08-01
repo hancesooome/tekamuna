@@ -38,8 +38,9 @@ const AboutPage            = lazy(() => import("@/pages/AboutPage"));
 const MaintenancePage      = lazy(() => import("@/pages/MaintenancePage"));
 
 // ── Lazy-loaded admin pages ───────────────────────────────────────────────────
-const DashboardPage   = lazy(() => import("@/pages/DashboardPage"));
-const AdminLoginPage  = lazy(() => import("@/pages/admin/AdminLoginPage"));
+const DashboardPage      = lazy(() => import("@/pages/DashboardPage"));
+const AdminLoginPage     = lazy(() => import("@/pages/admin/AdminLoginPage"));
+const PostTemplatesPage  = lazy(() => import("@/pages/admin/PostTemplatesPage"));
 
 // ── Helper: wrap any lazy page with a Suspense loading fallback ───────────────
 function withSuspense(Page: React.ComponentType) {
@@ -83,8 +84,9 @@ const router = createBrowserRouter([
     path: "/admin",
     element: <AdminRoute />,
     children: [
-      { index: true,          element: <Navigate to="/admin/dashboard" replace /> }, // /admin → /admin/dashboard
-      { path: "dashboard",    element: withSuspense(DashboardPage) },               // /admin/dashboard
+      { index: true,             element: <Navigate to="/admin/dashboard" replace /> },
+      { path: "dashboard",       element: withSuspense(DashboardPage) },
+      { path: "post-templates",  element: withSuspense(PostTemplatesPage) },
     ],
   },
 

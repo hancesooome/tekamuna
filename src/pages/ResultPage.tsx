@@ -24,6 +24,7 @@ import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate } from "@
 import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
+import ShareCardButton from "@/components/shared/ShareCardButton";
 
 // --- Verdict config -----------------------------------------------------------
 
@@ -233,6 +234,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                 Ikumpara ang Sources
               </Link>
             </Button>
+            <ShareCardButton result={result} />
             <Button variant="outline" size="sm" className={cn("text-xs transition-all", copied && "border-emerald-400 text-emerald-600")} onClick={async () => {
               const url = buildShareUrl(result.claim);
               if (navigator.share) {
@@ -249,14 +251,6 @@ function SuccessView({ result }: { result: VerifyResult }) {
             }}>
               <Share2 className="h-3.5 w-3.5" />
               {copied ? "Link copied!" : "I-share"}
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
-              const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-              const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-              a.download = "teka-result.json"; a.click();
-            }}>
-              <Download className="h-3.5 w-3.5" />
-              I-download
             </Button>
           </div>
 

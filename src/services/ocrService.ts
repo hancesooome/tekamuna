@@ -164,11 +164,11 @@ async function callOCRSpace(
     .join("\n")
     .trim();
 
-  const serverMs = data.ProcessingTimeInMilliseconds
+  const processingTimeMs = data.ProcessingTimeInMilliseconds
     ? parseInt(data.ProcessingTimeInMilliseconds, 10)
-    : 0;
+    : elapsed;
 
-  return { text, processingTimeMs: elapsed };
+  return { text, processingTimeMs };
 }
 
 // ── Text merger ───────────────────────────────────────────────────────────────
