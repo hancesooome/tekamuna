@@ -74,13 +74,13 @@ export function ApiTable({ apis, isLoading, onViewLogs }: ApiTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {api.requests.toLocaleString()}
+                  {(api.requests ?? 0).toLocaleString()}
                 </TableCell>
                 <TableCell className="hidden text-emerald-600 lg:table-cell">
-                  {api.success.toLocaleString()}
+                  {(api.success ?? 0).toLocaleString()}
                 </TableCell>
                 <TableCell className="hidden text-red-600 lg:table-cell">
-                  {api.failed.toLocaleString()}
+                  {(api.failed ?? 0).toLocaleString()}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   {api.status === "offline" && api.avgResponseMs === 0

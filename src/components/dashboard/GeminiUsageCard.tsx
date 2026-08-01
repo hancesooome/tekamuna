@@ -49,7 +49,7 @@ export function GeminiUsageCard() {
     void fetchUsage();
   }, [fetchUsage]);
 
-  const fmt = (n: number) => n.toLocaleString();
+  const fmt = (n: number | undefined | null) => (n ?? 0).toLocaleString();
 
   const successRate =
     data && data.totalRequests > 0

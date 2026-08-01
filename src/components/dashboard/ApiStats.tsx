@@ -12,25 +12,25 @@ const CARDS = [
     key:    "requestsToday" as const,
     label:  "Requests Today",
     icon:   Activity,
-    format: (v: number) => v.toLocaleString(),
+    format: (v: number | undefined) => (v ?? 0).toLocaleString(),
   },
   {
     key:    "successRate" as const,
     label:  "Success Rate",
     icon:   CheckCircle2,
-    format: (v: number) => `${v}%`,
+    format: (v: number | undefined) => `${v ?? 0}%`,
   },
   {
     key:    "avgResponseMs" as const,
     label:  "Average Response Time",
     icon:   Clock,
-    format: (v: number) => `${v}ms`,
+    format: (v: number | undefined) => `${v ?? 0}ms`,
   },
   {
     key:    "errorsToday" as const,
     label:  "Errors Today",
     icon:   AlertTriangle,
-    format: (v: number) => v.toLocaleString(),
+    format: (v: number | undefined) => (v ?? 0).toLocaleString(),
   },
 ] as const;
 
