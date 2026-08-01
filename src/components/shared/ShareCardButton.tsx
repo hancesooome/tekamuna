@@ -266,7 +266,9 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
 
       setActiveTemplate({ width, height, fields, bgUrl });
 
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      // Wait for React to render the hidden canvas and for any background
+      // images to load before capturing. 600ms is enough for most connections.
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       if (!hiddenCanvasRef.current) {
         throw new Error("Offscreen canvas not rendered in DOM.");
@@ -275,6 +277,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
       const dataUrl = await toPng(hiddenCanvasRef.current, {
         width,
         height,
+        pixelRatio: 1,   // prevent Retina 2× scaling — keep exact pixel dimensions
         style: {
           transform: "scale(1)",
           transformOrigin: "top left",
@@ -343,9 +346,21 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
         </div>
       )}
 
-      {/* ── Offscreen Rendering Canvas Container (Moved out of bounds) ── */}
+      {/* ── Offscreen Rendering Canvas Container ── */}
+      {/* opacity:0 + pointerEvents:none keeps it invisible but still rendered.   */}
+      {/* Negative top/left or display:none causes html-to-image to capture blank. */}
       {activeTemplate && (
-        <div className="fixed top-[-9999px] left-[-9999px] z-[-50] overflow-hidden pointer-events-none">
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            opacity: 0,
+            pointerEvents: "none",
+            zIndex: -1,
+            overflow: "hidden",
+          }}
+        >
           <div
             ref={hiddenCanvasRef}
             style={{
@@ -361,6 +376,23 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
             {activeTemplate.fields.map((field) => {
               if (!field.visible) return null;
               const opacity = field.opacity !== undefined ? field.opacity / 100 : 1;
+              // Apply backgroundOpacity separately so text stays visible when box is faded
+              const bgColor = (() => {
+                const base = field.backgroundColor || "transparent";
+                if (base === "transparent") return "transparent";
+                const pct = field.backgroundOpacity ?? 100;
+                if (pct >= 100) return base;
+                if (pct <= 0)   return "transparent";
+                const a = pct / 100;
+                const hex = base.replace(/^#/, "");
+                if (hex.length === 6) {
+                  const r = parseInt(hex.slice(0, 2), 16);
+                  const g = parseInt(hex.slice(2, 4), 16);
+                  const b = parseInt(hex.slice(4, 6), 16);
+                  return `rgba(${r},${g},${b},${a})`;
+                }
+                return base;
+              })();
 
               return (
                 <div
@@ -376,7 +408,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
                     transform:       field.rotation ? `rotate(${field.rotation}deg)` : undefined,
                     fontFamily:      field.fontFamily || "Inter, system-ui, sans-serif",
                     color:           field.color || theme.text,
-                    backgroundColor: field.backgroundColor || "transparent",
+                    backgroundColor: bgColor,
                     borderRadius:    field.borderRadius ? `${field.borderRadius}px` : undefined,
                     padding:         field.padding ? `${field.padding}px` : undefined,
                     display:         "flex",
@@ -384,7 +416,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
                     justifyContent:  "center",
                   }}
                 >
-                  <RenderCanvasField field={field} result={result} theme={theme} />
+                  <RenderCanvasField field={field} result={result} />
                 </div>
               );
             })}
