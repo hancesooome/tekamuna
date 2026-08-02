@@ -17,8 +17,6 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { decodeClaim, encodeClaim } from "../shared/shareUrl";
 
 const CRAWLER_RE =
@@ -118,48 +116,61 @@ function buildOgHtml(opts: {
 
 /** Read the built SPA shell once and cache it. */
 let _indexHtml: string | null = null;
-function getSpaShell(): string {
+function getSpaShell(): string | null {
   if (_indexHtml) return _indexHtml;
-  // Vercel sets cwd to the project root; dist/index.html is the Vite build output.
-  _indexHtml = readFileSync(join(process.cwd(), "dist", "index.html"), "utf-8");
-  return _indexHtml;
+  try {
+    // In Vercel, the static build output is accessible at process.cwd()
+    // Try multiple known paths
+    const { readFileSync } = require("fs") as typeof import("fs");
+    const { join } = require("path") as typeof import("path");
+    const candidates = [
+      join(process.cwd(), "dist", "index.html"),
+      join(process.cwd(), ".vercel", "output", "static", "index.html"),
+      join(__dirname, "..", "dist", "index.html"),
+    ];
+    for (const p of candidates) {
+      try {
+        _indexHtml = readFileSync(p, "utf-8");
+        return _indexHtml;
+      } catch { /* try next */ }
+    }
+  } catch { /* ignore */ }
+  return null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const encoded = Array.isArray(req.query.c) ? req.query.c[0] : req.query.c ?? "";
   const ua = req.headers["user-agent"] ?? "";
 
-  // Human browsers — serve the SPA shell directly.
-  // A 301 redirect back to /check would re-trigger the vercel.json rewrite
-  // (which routes /check → /api/check), creating an infinite redirect loop.
+  // Human browsers — serve the SPA shell if available, otherwise redirect to root.
+  // We can't redirect back to /check (reruns the rewrite), so serve index.html directly.
   if (!CRAWLER_RE.test(ua)) {
-    try {
-      const html = getSpaShell();
+    const shell = getSpaShell();
+    if (shell) {
       res
         .setHeader("Content-Type", "text/html; charset=utf-8")
         .setHeader("Cache-Control", "no-store")
         .status(200)
-        .send(html);
-    } catch {
-      // dist/index.html not present (e.g. local dev without a build) — safe fallback
-      res.redirect(302, encoded ? `/check?c=${encodeURIComponent(encoded)}` : "/");
+        .send(shell);
+    } else {
+      // Fallback: serve a minimal HTML that loads the SPA via JS redirect
+      res
+        .setHeader("Content-Type", "text/html; charset=utf-8")
+        .setHeader("Cache-Control", "no-store")
+        .status(200)
+        .send(`<!doctype html><html><head><meta charset="UTF-8"/><script>window.location.href="/";</script></head><body></body></html>`);
     }
     return;
   }
 
   const claim = encoded ? decodeClaim(encoded) : null;
 
-  // Crawler but no valid claim — serve SPA shell so the page still loads
+  // Crawler but no valid claim — minimal fallback
   if (!claim) {
-    try {
-      res
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .setHeader("Cache-Control", "no-store")
-        .status(200)
-        .send(getSpaShell());
-    } catch {
-      res.redirect(302, "/");
-    }
+    res
+      .setHeader("Content-Type", "text/html; charset=utf-8")
+      .status(200)
+      .send(`<!doctype html><html><head><meta charset="UTF-8"/><meta property="og:site_name" content="Teka Muna"/></head><body></body></html>`);
     return;
   }
 
