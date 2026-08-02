@@ -83,42 +83,6 @@ function LoadingOverlay() {
   );
 }
 
-// ── Checkbox ──────────────────────────────────────────────────────────────────
-
-function Checkbox({
-  id, label, checked, disabled, onChange,
-}: {
-  id: string; label: string; checked: boolean;
-  disabled?: boolean; onChange: (v: boolean) => void;
-}) {
-  return (
-    <label
-      htmlFor={id}
-      className={cn(
-        "flex items-center gap-2.5 select-none",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-      )}
-    >
-      <div
-        className={cn(
-          "h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-all",
-          checked ? "bg-primary border-primary shadow-sm" : "border-border bg-white",
-        )}
-        onClick={() => !disabled && onChange(!checked)}
-      >
-        {checked && (
-          <svg viewBox="0 0 10 8" className="h-3 w-3 fill-none stroke-white stroke-[2.5]">
-            <path d="M1 4l3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </div>
-      <input type="checkbox" id={id} checked={checked} disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)} className="sr-only" />
-      <span className="text-sm font-medium text-foreground">{label}</span>
-    </label>
-  );
-}
-
 // ── Image Upload Card (OCR-powered text extraction) ───────────────────────────
 
 interface ImageUploadProps {
@@ -402,7 +366,7 @@ function ImageUploadCollapsible({
 export default function VerifyPage() {
   const location = useLocation();
   const [claim, setClaim]                       = useState("");
-  const [optionsOpen] = useState(false); // kept for future use
+
   const [intentError, setIntentError]           = useState<string | null>(null);
 
   const { mutate, isPending, error, reset } = useVerify();
@@ -573,7 +537,6 @@ export default function VerifyPage() {
                     className="text-left rounded-lg border-2 border-border p-4 hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50"
                   >
                     <p className="text-sm font-bold text-primary leading-snug">{ex}</p>
-                    <p className="mt-1.5 text-xs text-muted-foreground">{category}</p>
                   </button>
                 ))}
               </div>
@@ -614,7 +577,6 @@ export default function VerifyPage() {
                     )}
                   >
                     <p className="text-sm font-bold text-primary leading-snug">{ex}</p>
-                    <p className="mt-1.5 text-xs text-muted-foreground">{category}</p>
                   </button>
                 ))}
               </div>
