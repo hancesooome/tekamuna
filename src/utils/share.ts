@@ -68,11 +68,15 @@ export function getPlatformShareUrl(platform: SharePlatform, payload: SharePaylo
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(text);
 
+  // Build the OG preview URL for platforms that scrape meta tags.
+  // /og/check?c= routes to api/check.ts (returns OG HTML to crawlers).
+  // og:url inside that page points back to /check?c= so humans land on the SPA.
+  const ogUrl = url.replace("/check?", "/og/check?");
+  const encodedOgUrl = encodeURIComponent(ogUrl);
+
   switch (platform) {
     case "facebook":
-      // Pass the real /check?c= URL. The Vercel/Pages middleware intercepts
-      // crawler requests to this path and returns full OG meta tags.
-      return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+      return `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrl}`;
     case "messenger":
       return isMobileDevice()
         ? `fb-messenger://share?link=${encodedUrl}`

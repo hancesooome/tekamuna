@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/check", "destination": "/api/check" },
+    { "source": "/og/check", "destination": "/api/check" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

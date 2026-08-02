@@ -137,67 +137,31 @@ function buildOgHtml(opts: {
 </html>`;
 }
 
-/** Read the built SPA shell once and cache it. */
-let _indexHtml: string | null = null;
-function getSpaShell(): string | null {
-  if (_indexHtml) return _indexHtml;
-  try {
-    // In Vercel, the static build output is accessible at process.cwd()
-    // Try multiple known paths
-    const { readFileSync } = require("fs") as typeof import("fs");
-    const { join } = require("path") as typeof import("path");
-    const candidates = [
-      join(process.cwd(), "dist", "index.html"),
-      join(process.cwd(), ".vercel", "output", "static", "index.html"),
-      join(__dirname, "..", "dist", "index.html"),
-    ];
-    for (const p of candidates) {
-      try {
-        _indexHtml = readFileSync(p, "utf-8");
-        return _indexHtml;
-      } catch { /* try next */ }
-    }
-  } catch { /* ignore */ }
-  return null;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const encoded = Array.isArray(req.query.c) ? req.query.c[0] : req.query.c ?? "";
   const ua = req.headers["user-agent"] ?? "";
 
-  // Human browsers — serve the SPA shell if available, otherwise redirect to root.
-  // We can't redirect back to /check (reruns the rewrite), so serve index.html directly.
+  // Human browsers — redirect to the real SPA check page.
+  // /og/check is only meant for crawlers; humans should be on /check?c=...
   if (!CRAWLER_RE.test(ua)) {
-    const shell = getSpaShell();
-    if (shell) {
-      res
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .setHeader("Cache-Control", "no-store")
-        .status(200)
-        .send(shell);
-    } else {
-      // Fallback: serve a minimal HTML that loads the SPA via JS redirect
-      res
-        .setHeader("Content-Type", "text/html; charset=utf-8")
-        .setHeader("Cache-Control", "no-store")
-        .status(200)
-        .send(`<!doctype html><html><head><meta charset="UTF-8"/><script>window.location.href="/";</script></head><body></body></html>`);
-    }
+    const dest = encoded ? `/check?c=${encodeURIComponent(encoded)}` : "/";
+    res.redirect(302, dest);
     return;
   }
 
   const claim = encoded ? decodeClaim(encoded) : null;
 
-  // Crawler but no valid claim — minimal fallback
+  // Crawler but no valid claim — serve minimal OG fallback
   if (!claim) {
     res
       .setHeader("Content-Type", "text/html; charset=utf-8")
       .status(200)
-      .send(`<!doctype html><html><head><meta charset="UTF-8"/><meta property="og:site_name" content="Teka Muna"/></head><body></body></html>`);
+      .send(`<!doctype html><html><head><meta charset="UTF-8"/><meta property="og:site_name" content="Teka Muna"/><title>Teka Muna</title></head><body></body></html>`);
     return;
   }
 
   const origin = `https://${req.headers.host}`;
+  // og:url points to the real SPA page (/check), not the OG endpoint (/og/check)
   const pageUrl = `${origin}/check?c=${encodeURIComponent(encoded)}`;
 
   // og:image must be an absolute URL. Use the Worker base if configured,
