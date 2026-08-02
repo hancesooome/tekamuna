@@ -402,7 +402,7 @@ function ImageUploadCollapsible({
 export default function VerifyPage() {
   const location = useLocation();
   const [claim, setClaim]                       = useState("");
-  const [optionsOpen, setOptionsOpen]           = useState(false);
+  const [optionsOpen] = useState(false); // kept for future use
   const [intentError, setIntentError]           = useState<string | null>(null);
 
   const { mutate, isPending, error, reset } = useVerify();
@@ -420,7 +420,7 @@ export default function VerifyPage() {
         const detection = shouldRunVerificationPipeline(filled);
         if (detection.shouldVerify) {
           setIntentError(null);
-          mutate({ claim: filled.trim(), category: undefined });
+          mutate({ claim: filled.trim() });
         } else {
           setIntentError(detection.reason);
         }
@@ -444,13 +444,12 @@ export default function VerifyPage() {
 
     setIntentError(null);
     reset();
-    mutate({ claim: claim.trim(), category: selectedCategory ?? undefined });
+    mutate({ claim: claim.trim() });
   };
 
-  const fillExample = (exClaim: string, exCategory: Category) => {
+  const fillExample = (exClaim: string) => {
     if (isPending) return;
     setClaim(exClaim);
-    setSelectedCategory(exCategory);
     reset();
   };
 
@@ -567,10 +566,10 @@ export default function VerifyPage() {
             <div className="lg:hidden rounded-xl border-2 border-border bg-white p-6 shadow-sm">
               <p className="text-base font-black text-foreground mb-4">Subukan ang mga ito:</p>
               <div className="flex flex-col gap-3">
-                {EXAMPLE_CLAIMS.map(({ claim: ex, category }) => (
+                {EXAMPLE_CLAIMS.map(({ claim: ex }) => (
                   <button
                     key={ex} type="button" disabled={isPending}
-                    onClick={() => fillExample(ex, category)}
+                    onClick={() => fillExample(ex)}
                     className="text-left rounded-lg border-2 border-border p-4 hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50"
                   >
                     <p className="text-sm font-bold text-primary leading-snug">{ex}</p>
@@ -604,10 +603,10 @@ export default function VerifyPage() {
             <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-sm">
               <p className="text-base font-black text-foreground mb-4">Subukan ang mga ito:</p>
               <div className="flex flex-col gap-3">
-                {EXAMPLE_CLAIMS.map(({ claim: ex, category }) => (
+                {EXAMPLE_CLAIMS.map(({ claim: ex }) => (
                   <button
                     key={ex} type="button" disabled={isPending}
-                    onClick={() => fillExample(ex, category)}
+                    onClick={() => fillExample(ex)}
                     className={cn(
                       "text-left rounded-lg border-2 border-border bg-white p-4",
                       "hover:border-primary/50 hover:bg-primary/5 hover:shadow-md transition-all duration-300",
