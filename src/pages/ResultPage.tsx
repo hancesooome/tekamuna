@@ -165,25 +165,41 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
   const sources   = uniqueEvidenceSources(result);
   const total     = sources.length;
   const [current, setCurrent] = useState(0);
-  const trackRef  = useRef<HTMLDivElement>(null);
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
 
-  // Sync scroll position → current index
+  const getCardWidth = () => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const first = el.firstElementChild as HTMLElement | null;
+    return first ? first.offsetWidth : 0;
+  };
+
+  // Swipe → index
   const onScroll = useCallback(() => {
+    if (isScrolling.current) return;
     const el = trackRef.current;
     if (!el) return;
-    const cardWidth = el.scrollWidth / total;
-    const idx = Math.round(el.scrollLeft / cardWidth);
+    const w = getCardWidth();
+    if (w === 0) return;
+    const idx = Math.round(el.scrollLeft / w);
     setCurrent(Math.max(0, Math.min(total - 1, idx)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
 
-  // Scroll programmatically when clicking dots or arrows
+  // Dot click → scroll
   const scrollTo = useCallback((idx: number) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const cardWidth = el.scrollWidth / total;
-    el.scrollTo({ left: cardWidth * idx, behavior: "smooth" });
-    setCurrent(idx);
-  }, [total]);
+    requestAnimationFrame(() => {
+      const el = trackRef.current;
+      if (!el) return;
+      const w = getCardWidth();
+      if (w === 0) return;
+      isScrolling.current = true;
+      el.scrollTo({ left: w * idx, behavior: "smooth" });
+      setTimeout(() => { isScrolling.current = false; }, 500);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (total === 0) return null;
 
@@ -201,7 +217,7 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
         {sources.map((s) => {
@@ -270,7 +286,7 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
           {sources.map((_, i) => (
             <button
               key={i}
-              onClick={() => scrollTo(i)}
+              onClick={() => { scrollTo(i); setCurrent(i); }}
               aria-label={`Go to card ${i + 1}`}
               className={cn(
                 "rounded-full transition-all duration-200",

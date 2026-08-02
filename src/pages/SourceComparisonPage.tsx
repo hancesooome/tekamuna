@@ -10,7 +10,7 @@
  *      Not linked to table expansion.
  */
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -174,46 +174,62 @@ function TableRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SourceComparisonPage() {
-  const location = useLocation();
+function SourceComparisonView({ result }: { result: VerifyResult }) {
   const navigate = useNavigate();
+  const sources   = allSourcesMerged(result);
 
-  const result: VerifyResult | null = (() => {
-    if (location.state?.result) return location.state.result as VerifyResult;
-    try {
-      const raw = sessionStorage.getItem(RESULT_STORAGE_KEY);
-      if (raw) return JSON.parse(raw) as VerifyResult;
-    } catch { /* ignore */ }
-    return null;
-  })();
-
-  // Carousel active card — driven by both dots and table row clicks
   const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false); // prevent scroll→index feedback loop
+
+  // Helper: get the width of one card from the DOM
+  const getCardWidth = () => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const firstCard = el.firstElementChild as HTMLElement | null;
+    return firstCard ? firstCard.offsetWidth : el.scrollWidth / sources.length;
+  };
+
+  // Scroll → index (user swiping)
+  const onScroll = useCallback(() => {
+    if (isScrolling.current) return; // ignore programmatic scrolls
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = getCardWidth();
+    if (cardWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / cardWidth);
+    setActiveCardIdx(Math.max(0, Math.min(sources.length - 1, idx)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sources.length]);
+
+  // Index → scroll (dots + table row clicks)
+  const scrollToIdx = useCallback((idx: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    // Use rAF so the DOM has finished layout before we measure
+    requestAnimationFrame(() => {
+      const cardWidth = getCardWidth();
+      if (cardWidth === 0) return;
+      isScrolling.current = true;
+      el.scrollTo({ left: cardWidth * idx, behavior: "smooth" });
+      // Release the guard after the smooth scroll completes (~400ms)
+      setTimeout(() => { isScrolling.current = false; }, 500);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    scrollToIdx(activeCardIdx);
+  }, [activeCardIdx, scrollToIdx]);
 
   const handleSourceClick = (idx: number) => {
     setActiveCardIdx(idx);
-    // Scroll the detail card into view smoothly
     setTimeout(() => {
       document.getElementById("source-detail-card")?.scrollIntoView({
         behavior: "smooth", block: "start",
       });
     }, 50);
   };
-
-  if (!result) {
-    return (
-      <PageContainer className="pb-8">
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Walang data. Bumalik sa resulta at subukan ulit.
-          </p>
-          <Button asChild><Link to="/verify">I-Verify ang Claim</Link></Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  const sources = allSourcesMerged(result);
 
   return (
     <PageContainer className="animate-page-in max-w-[980px] pb-12">
@@ -278,21 +294,31 @@ export default function SourceComparisonPage() {
         </div>
       </div>
 
-      {/* ── Section 2: Detail card carousel (driven by table clicks + dots) ── */}
+      {/* ── Section 2: Swipeable detail card carousel ── */}
       {sources.length > 0 && (
         <div id="source-detail-card">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-black text-foreground">
               {sources[activeCardIdx].sourceName}
             </h2>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs font-bold text-muted-foreground tabular-nums">
               {activeCardIdx + 1} / {sources.length}
             </span>
           </div>
 
-          <DetailCard source={sources[activeCardIdx]} />
+          <div
+            ref={trackRef}
+            onScroll={onScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory"
+            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+          >
+            {sources.map((source, i) => (
+              <div key={source.url ?? i} className="shrink-0 w-full snap-center">
+                <DetailCard source={source} />
+              </div>
+            ))}
+          </div>
 
-          {/* Dot pagination — drives carousel only, does NOT expand table rows */}
           {sources.length > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               {sources.map((_, i) => (
@@ -314,4 +340,32 @@ export default function SourceComparisonPage() {
       )}
     </PageContainer>
   );
+}
+
+export default function SourceComparisonPage() {
+  const location = useLocation();
+
+  const result: VerifyResult | null = (() => {
+    if (location.state?.result) return location.state.result as VerifyResult;
+    try {
+      const raw = sessionStorage.getItem(RESULT_STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as VerifyResult;
+    } catch { /* ignore */ }
+    return null;
+  })();
+
+  if (!result) {
+    return (
+      <PageContainer className="pb-8">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Walang data. Bumalik sa resulta at subukan ulit.
+          </p>
+          <Button asChild><Link to="/verify">I-Verify ang Claim</Link></Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return <SourceComparisonView result={result} />;
 }
