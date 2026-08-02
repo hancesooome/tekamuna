@@ -164,10 +164,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // og:url points to the real SPA page (/check), not the OG endpoint (/og/check)
   const pageUrl = `${origin}/check?c=${encodeURIComponent(encoded)}`;
 
-  // og:image must be an absolute URL. Use the Worker base if configured,
-  // otherwise fall back to same-origin /api (Vercel proxies /api/* to the Worker).
-  const workerUrl = workerBase().startsWith("http") ? workerBase() : origin + "/api";
-  const imageUrl = `${workerUrl}/og/image?c=${encodeURIComponent(encoded)}`;
+  // Use the stored share-card PNG if the worker is configured, otherwise fall back
+  // to the static preview image served from the same Vercel domain.
+  const workerUrl = workerBase().startsWith("http") ? workerBase() : null;
+  const imageUrl = workerUrl
+    ? `${workerUrl}/og/image?c=${encodeURIComponent(encoded)}`
+    : `${origin}/preview-image.png`;
 
   // Try to get a richer description from the Worker cache
   const cached = await fetchVerdict(claim);
