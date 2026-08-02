@@ -68,7 +68,7 @@ const VERDICT_THEMES: Record<Verdict, VerdictTheme> = {
   },
 };
 
-const DEFAULT_TEMPLATES: Record<TemplatePlatform, { width: number; height: number; fields: Partial<TemplateField>[] }> = {
+const DEFAULT_TEMPLATES: Partial<Record<TemplatePlatform, { width: number; height: number; fields: Partial<TemplateField>[] }>> = {
   facebook: {
     width: 1200,
     height: 630,
@@ -361,6 +361,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
         }));
       } else {
         const preset = DEFAULT_TEMPLATES[platform];
+        if (!preset) throw new Error(`No default template for platform: ${platform}`);
         width = preset.width;
         height = preset.height;
         bgUrl = null;
