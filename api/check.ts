@@ -17,7 +17,30 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { decodeClaim, encodeClaim } from "../shared/shareUrl";
+
+/** Base64url → UTF-8 string, returns null on failure. */
+function decodeClaim(encoded: string): string | null {
+  try {
+    const base64 = encoded
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(encoded.length + ((4 - (encoded.length % 4)) % 4), "=");
+    const bin = atob(base64);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const decoded = new TextDecoder().decode(bytes);
+    if (!decoded || decoded.trim().length === 0 || decoded.length > 1000) return null;
+    return decoded.trim();
+  } catch {
+    return null;
+  }
+}
+
+/** UTF-8 string → Base64url. */
+function encodeClaim(claim: string): string {
+  const bytes = new TextEncoder().encode(claim);
+  const bin = Array.from(bytes, (b) => String.fromCharCode(b)).join("");
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
 
 const CRAWLER_RE =
   /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot|Pinterest|Googlebot/i;
