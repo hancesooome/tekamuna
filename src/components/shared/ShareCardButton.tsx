@@ -237,6 +237,7 @@ function CardPreviewModal({
   onClose:  () => void;
 }) {
   const ios = isIOS();
+  const [saved, setSaved] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -254,6 +255,8 @@ function CardPreviewModal({
 
   function handleDownload() {
     downloadPng(dataUrl, filename);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   return createPortal(
@@ -292,13 +295,27 @@ function CardPreviewModal({
         {/* Footer */}
         <div className="shrink-0 border-t border-border px-4 py-3 bg-background">
           {ios ? (
-            /* iOS Safari: programmatic download is blocked.
-               Show the image above so the user can long-press → Save to Photos. */
+            /* iOS Safari — long-press instructions + Done indicator */
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
                 <span className="font-semibold text-foreground">Long-press the image</span> above,
                 then tap <span className="font-semibold text-foreground">"Add to Photos"</span> or use the Share menu.
               </p>
+              <Button variant="outline" size="sm" onClick={onClose} className="shrink-0">
+                <X className="h-3.5 w-3.5 mr-1" />Close
+              </Button>
+            </div>
+          ) : saved ? (
+            /* Downloaded! confirmation banner */
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 10 8" className="h-3 w-3 fill-none stroke-white stroke-[2.5]">
+                    <path d="M1 4l3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <span className="text-sm font-semibold">Na-download na! Check your downloads folder.</span>
+              </div>
               <Button variant="outline" size="sm" onClick={onClose} className="shrink-0">
                 <X className="h-3.5 w-3.5 mr-1" />Close
               </Button>
