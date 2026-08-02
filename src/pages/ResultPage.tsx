@@ -8,7 +8,7 @@
  *   Three tabs: Buod / Timeline ng Ebidensya / Mga Source
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FileText, XCircle, CheckCircle, AlertTriangle, HelpCircle,
@@ -156,6 +156,133 @@ function ErrorState() {
         </Button>
       </div>
     </PageContainer>
+  );
+}
+
+// --- Source Carousel ----------------------------------------------------------
+
+function SourceCarousel({ result }: { result: VerifyResult }) {
+  const sources   = uniqueEvidenceSources(result);
+  const total     = sources.length;
+  const [current, setCurrent] = useState(0);
+  const trackRef  = useRef<HTMLDivElement>(null);
+
+  // Sync scroll position → current index
+  const onScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = el.scrollWidth / total;
+    const idx = Math.round(el.scrollLeft / cardWidth);
+    setCurrent(Math.max(0, Math.min(total - 1, idx)));
+  }, [total]);
+
+  // Scroll programmatically when clicking dots or arrows
+  const scrollTo = useCallback((idx: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = el.scrollWidth / total;
+    el.scrollTo({ left: cardWidth * idx, behavior: "smooth" });
+    setCurrent(idx);
+  }, [total]);
+
+  if (total === 0) return null;
+
+  return (
+    <div>
+      {/* Header row: title + counter */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-black text-foreground">Mga Katulad na Claim</h3>
+        <span className="text-xs font-bold text-muted-foreground tabular-nums">
+          {current + 1} / {total}
+        </span>
+      </div>
+
+      {/* Card track — CSS scroll snap */}
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
+        {sources.map((s) => {
+          const stance = stanceOf(s, result);
+          const { score } = getCredibility(s.url);
+          return (
+            <a
+              key={s.url}
+              href={s.url}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 w-[82vw] max-w-xs snap-center rounded-2xl border border-border bg-white p-4 hover:shadow-md transition-shadow flex flex-col gap-2"
+            >
+              {/* Domain + credibility score */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-muted-foreground truncate">
+                  {(() => { try { return new URL(s.url).hostname.replace("www.", ""); } catch { return s.sourceName ?? s.url; } })()}
+                </span>
+                <span className={cn(
+                  "shrink-0 text-xs font-black rounded-full px-2 py-0.5",
+                  scoreBg(score), scoreColor(score),
+                )}>
+                  {score}
+                </span>
+              </div>
+
+              {/* Title */}
+              <p className="text-xs font-semibold text-foreground leading-snug line-clamp-3 flex-1">
+                {s.title || s.sourceName}
+              </p>
+
+              {/* Key facts */}
+              {s.keyFacts && s.keyFacts.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground mb-1">
+                    Mga Key Facts
+                  </p>
+                  <ul className="space-y-1">
+                    {s.keyFacts.slice(0, 2).map((fact, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground leading-snug">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <span className="line-clamp-2">{fact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-1 border-t border-border/50 mt-auto">
+                <span className="text-[10px] text-muted-foreground">
+                  {formatDate(s.publishedDate) ?? "Petsa hindi available"}
+                </span>
+                <span className="text-[10px] font-bold text-primary flex items-center gap-0.5">
+                  Buksan ang Source <ExternalLink className="h-2.5 w-2.5" />
+                </span>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      {/* Dot indicators */}
+      {total > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-3">
+          {sources.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollTo(i)}
+              aria-label={`Go to card ${i + 1}`}
+              className={cn(
+                "rounded-full transition-all duration-200",
+                i === current
+                  ? "w-5 h-2 bg-primary"
+                  : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60",
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -376,23 +503,9 @@ function SuccessView({ result }: { result: VerifyResult }) {
               <p className="text-sm text-amber-900 leading-relaxed">{result.truthStatement}</p>
             </div>
 
-            {/* Related claims */}
+            {/* Related claims — swipeable carousel */}
             {(result.supportingEvidence.length > 0 || result.contradictingEvidence.length > 0) && (
-              <div>
-                <h3 className="text-sm font-black text-foreground mb-3">Mga Katulad na Claim</h3>
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {uniqueEvidenceSources(result).slice(0, 4).map((s) => {
-                    const stance = stanceOf(s, result);
-                    return (
-                      <a key={s.url} href={s.url} target="_blank" rel="noreferrer"
-                        className="shrink-0 w-56 rounded-2xl border border-border bg-white p-4 hover:shadow-md transition-shadow flex flex-col gap-2">
-                        <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{s.title}</p>
-                        <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
+              <SourceCarousel result={result} />
             )}
           </div>
         </TabsContent>
