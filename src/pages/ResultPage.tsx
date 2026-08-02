@@ -20,7 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
-import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate } from "@/utils/sources";
+import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
 import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
@@ -221,8 +221,8 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
         {sources.map((s) => {
-          const stance = stanceOf(s, result);
           const { score } = getCredibility(s.url);
+          const facts = extractKeyFacts(s.summary);
           return (
             <a
               key={s.url}
@@ -250,13 +250,13 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
               </p>
 
               {/* Key facts */}
-              {s.keyFacts && s.keyFacts.length > 0 && (
+              {facts.length > 0 && (
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground mb-1">
                     Mga Key Facts
                   </p>
                   <ul className="space-y-1">
-                    {s.keyFacts.slice(0, 2).map((fact, i) => (
+                    {facts.slice(0, 2).map((fact: string, i: number) => (
                       <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground leading-snug">
                         <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                         <span className="line-clamp-2">{fact}</span>
