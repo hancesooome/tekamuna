@@ -123,8 +123,8 @@ function buildOgHtml(opts: {
   <meta property="og:description" content="${d}" />
   <meta property="og:url" content="${u}" />
   <meta property="og:image" content="${img}" />
-  <meta property="og:image:width" content="1080" />
-  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${t}" />
   <meta name="twitter:description" content="${d}" />
