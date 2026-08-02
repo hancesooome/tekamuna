@@ -402,13 +402,7 @@ function ImageUploadCollapsible({
 export default function VerifyPage() {
   const location = useLocation();
   const [claim, setClaim]                       = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [optionsOpen, setOptionsOpen]           = useState(false);
-  const [opts, setOpts]                         = useState({
-    crossReference:    true,
-    checkSocialMedia:  false,
-    includeHistorical: true,
-  });
   const [intentError, setIntentError]           = useState<string | null>(null);
 
   const { mutate, isPending, error, reset } = useVerify();
@@ -558,72 +552,6 @@ export default function VerifyPage() {
 
             {/* Card 2 — Single image upload (collapsible) */}
             <ImageUploadCollapsible disabled={isPending} onClaim={handleImageClaim} />
-
-            {/* Card 3 — Kategorya + checkboxes (collapsible) */}
-            <div className="rounded-2xl border-2 border-border bg-white shadow-sm overflow-hidden">
-              {/* Toggle header */}
-              <button
-                type="button"
-                onClick={() => setOptionsOpen((o) => !o)}
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-foreground">
-                    Kategorya at mga Opsyon{" "}
-                    <span className="font-normal text-muted-foreground">(opsyonal)</span>
-                  </span>
-                  {!optionsOpen && selectedCategory && (
-                    <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                      {selectedCategory}
-                    </span>
-                  )}
-                </div>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    optionsOpen && "rotate-180",
-                  )}
-                />
-              </button>
-
-              {/* Collapsible body */}
-              {optionsOpen && (
-                <div className="px-6 pb-6 border-t border-border flex flex-col gap-5">
-                  <div className="pt-5">
-                    <p className="text-sm font-bold text-foreground mb-3">Kategorya</p>
-                    <div className="flex flex-wrap gap-2.5">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat} type="button" disabled={isPending}
-                          onClick={() => setSelectedCategory((p) => (p === cat ? null : cat))}
-                          className={cn(
-                            "rounded-lg border-2 px-4 py-2 text-sm font-bold transition-all",
-                            "disabled:opacity-50 disabled:cursor-not-allowed",
-                            selectedCategory === cat
-                              ? "bg-primary border-primary text-white shadow-md"
-                              : "border-border bg-white text-foreground hover:border-primary/50 hover:bg-primary/5",
-                          )}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-x-6 gap-y-3">
-                    <Checkbox id="cross-reference"    label="Cross-reference sources"
-                      checked={opts.crossReference}    disabled={isPending}
-                      onChange={(v) => setOpts((p) => ({ ...p, crossReference:    v }))} />
-                    <Checkbox id="check-social"        label="Check social media"
-                      checked={opts.checkSocialMedia}  disabled={isPending}
-                      onChange={(v) => setOpts((p) => ({ ...p, checkSocialMedia:  v }))} />
-                    <Checkbox id="include-historical"  label="Include historical data"
-                      checked={opts.includeHistorical} disabled={isPending}
-                      onChange={(v) => setOpts((p) => ({ ...p, includeHistorical: v }))} />
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Submit — always visible, outside the collapsibles */}
             <Button
