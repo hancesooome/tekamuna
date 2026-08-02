@@ -9,9 +9,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ArrowLeft, Trash2, Save, Move, Eye, EyeOff, Type, Layout, Image as ImageIcon,  Link, QrCode, Star, BarChart2, Calendar, List, AlignLeft, ChevronDown, ChevronRight,
+  ArrowLeft, Trash2, Save, Move, Eye, EyeOff, Type, Layout, Image as ImageIcon, Link, QrCode, Star, BarChart2, Calendar, List, AlignLeft, ChevronDown, ChevronRight,
   FileText, Download, Lock, Unlock, Copy, ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2,
-  ChevronUp, ChevronDown as ChevronDownIcon,
+  ChevronUp, ChevronDown as ChevronDownIcon, CopyCheck, X, Check, Loader2 as Loader2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -711,6 +711,249 @@ function FieldButton({ type, label, icon, accent, onClick }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+// ── Copy Layout Modal ─────────────────────────────────────────────────────────
+//
+// Lets the user copy the current template's config_json to other verdict
+// templates on the same platform. The verdict field colors are automatically
+// swapped to match each target verdict — everything else stays identical.
+
+const VERDICT_META: { value: string; label: string; dot: string }[] = [
+  { value: "true",       label: "Totoo",          dot: "bg-emerald-500" },
+  { value: "false",      label: "Hindi Totoo",    dot: "bg-red-500"     },
+  { value: "misleading", label: "Mapanlinlang",   dot: "bg-amber-500"   },
+  { value: "unverified", label: "Hindi Ma-verify", dot: "bg-slate-400"  },
+];
+
+interface CopyLayoutModalProps {
+  template: PostTemplate;
+  fields:   TemplateField[];
+  token:    string | null;
+  onClose:  () => void;
+}
+
+function CopyLayoutModal({ template, fields, token, onClose }: CopyLayoutModalProps) {
+  const [targets,   setTargets]   = useState<PostTemplate[]>([]);
+  const [selected,  setSelected]  = useState<Set<string>>(new Set());
+  const [loading,   setLoading]   = useState(true);
+  const [copying,   setCopying]   = useState(false);
+  const [doneIds,   setDoneIds]   = useState<Set<string>>(new Set());
+  const [errorMsg,  setErrorMsg]  = useState<string | null>(null);
+
+  // Fetch all templates on the same platform, excluding the current one
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/post-templates`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error("Failed to load templates");
+        const data = await res.json() as { data: PostTemplate[] };
+        const others = (data.data ?? []).filter(
+          t => t.platform === template.platform && t.id !== template.id
+        );
+        setTargets(others);
+      } catch (e) {
+        setErrorMsg(e instanceof Error ? e.message : "Error loading templates");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, [template, token]);
+
+  function toggle(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  // Swap verdict field colors to match the target template's verdict
+  function applyVerdictColors(
+    sourceFields: TemplateField[],
+    targetVerdict: string,
+  ): TemplateField[] {
+    const vc = VERDICT_COLORS[targetVerdict];
+    if (!vc) return sourceFields;
+    return sourceFields.map(f => {
+      if (f.type !== "verdict") return f;
+      return {
+        ...f,
+        backgroundColor: vc.bg,
+        color:           vc.text,
+        staticValue:     vc.label,
+      };
+    });
+  }
+
+  async function handleCopy() {
+    if (selected.size === 0) return;
+    setCopying(true);
+    setErrorMsg(null);
+    const done = new Set<string>();
+
+    for (const targetId of selected) {
+      const target = targets.find(t => t.id === targetId);
+      if (!target) continue;
+      const adapted = applyVerdictColors(fields, target.verdict);
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/post-templates/${targetId}`, {
+          method:  "PATCH",
+          headers: {
+            "Content-Type":  "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ config_json: adapted }),
+        });
+        if (!res.ok) {
+          const d = await res.json() as { error?: string };
+          throw new Error(d.error ?? `HTTP ${res.status}`);
+        }
+        done.add(targetId);
+        setDoneIds(new Set(done)); // update UI progressively
+      } catch (e) {
+        setErrorMsg(
+          `Failed to copy to "${target.name}": ${e instanceof Error ? e.message : "Unknown error"}`
+        );
+      }
+    }
+
+    setCopying(false);
+    // Auto-close after a short delay if everything succeeded
+    if (done.size === selected.size) {
+      setTimeout(onClose, 1200);
+    }
+  }
+
+  const otherVerdicts = VERDICT_META.filter(v => v.value !== template.verdict);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+          <div>
+            <p className="font-extrabold text-sm text-white">Copy Layout To</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Same platform · verdict colors auto-swapped
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-3">
+          {loading && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm py-4 justify-center">
+              <Loader2Icon className="h-4 w-4 animate-spin" /> Loading templates…
+            </div>
+          )}
+
+          {!loading && targets.length === 0 && (
+            <div className="text-center py-6 text-slate-500 text-sm">
+              No other {template.platform === "instagram" ? "FB / IG" : "Story"} templates found.
+              <p className="text-xs mt-1 text-slate-600">Create templates for the other verdicts first.</p>
+            </div>
+          )}
+
+          {!loading && targets.length > 0 && (
+            <>
+              {/* Group by verdict for clarity */}
+              {otherVerdicts.map(vm => {
+                const verdictTargets = targets.filter(t => t.verdict === vm.value);
+                if (verdictTargets.length === 0) return null;
+                return (
+                  <div key={vm.value} className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                      <span className={`h-1.5 w-1.5 rounded-full ${vm.dot}`} />
+                      {vm.label}
+                    </div>
+                    {verdictTargets.map(t => {
+                      const isDone = doneIds.has(t.id);
+                      const isChecked = selected.has(t.id);
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => !isDone && toggle(t.id)}
+                          disabled={copying || isDone}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
+                            isDone
+                              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 cursor-default"
+                              : isChecked
+                              ? "border-primary/60 bg-primary/10 text-white"
+                              : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600 hover:bg-slate-800"
+                          }`}
+                        >
+                          <div className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                            isDone
+                              ? "border-emerald-500 bg-emerald-500"
+                              : isChecked
+                              ? "border-primary bg-primary"
+                              : "border-slate-600 bg-transparent"
+                          }`}>
+                            {isDone
+                              ? <Check className="h-3 w-3 text-white" />
+                              : isChecked
+                              ? <Check className="h-3 w-3 text-white" />
+                              : null}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate">{t.name}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">
+                              {t.is_active ? "● Active" : "○ Inactive"}
+                            </p>
+                          </div>
+                          {isDone && <span className="text-[10px] font-bold text-emerald-400">Copied</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {errorMsg && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+              {errorMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!loading && targets.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-800">
+            <p className="text-xs text-slate-500">
+              {selected.size > 0 ? `${selected.size} template${selected.size > 1 ? "s" : ""} selected` : "Select templates above"}
+            </p>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400 hover:text-white">
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleCopy}
+                disabled={selected.size === 0 || copying}
+                className="gap-1.5"
+              >
+                {copying
+                  ? <><Loader2Icon className="h-3.5 w-3.5 animate-spin" /> Copying…</>
+                  : <><CopyCheck className="h-3.5 w-3.5" /> Copy to {selected.size > 0 ? selected.size : ""} Template{selected.size !== 1 ? "s" : ""}</>
+                }
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TemplateEditor({ template, onBack, onSaveSuccess, token }: TemplateEditorProps) {
   const [fields,      setFields]      = useState<TemplateField[]>(template.config_json || []);
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
@@ -722,6 +965,7 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
 
   // Saved field style defaults — loaded from Supabase on mount
   const [fieldDefaults, setFieldDefaults] = useState<FieldDefaultsMap>({});
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -1250,6 +1494,17 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
             Generate Preview
           </Button>
 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCopyModalOpen(true)}
+            className="h-9 px-3.5 gap-1.5 text-xs text-slate-200 border-slate-700 hover:bg-slate-800"
+            title="Copy this layout to other verdict templates"
+          >
+            <CopyCheck className="h-3.5 w-3.5" />
+            Copy Layout
+          </Button>
+
           <Button onClick={handleSave} disabled={saving} size="sm" className="gap-1.5 h-9">
             {saving ? <Loader2 className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
             Save Layout
@@ -1538,6 +1793,16 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
           </div>
         </aside>
       </div>
+
+      {/* Copy Layout Modal */}
+      {copyModalOpen && (
+        <CopyLayoutModal
+          template={template}
+          fields={fields}
+          token={token}
+          onClose={() => setCopyModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
