@@ -31,6 +31,19 @@ const VERDICT_LABELS: Record<string, string> = {
   unverified: "Hindi Ma-verify",
 };
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function truncate(s: string, max: number): string {
+  return s.length <= max ? s : s.slice(0, max - 1).trimEnd() + "…";
+}
+
 function workerBase(): string {
   // WORKER_API_BASE is set in Vercel project env vars to the Worker URL.
   // Falls back to same-origin /api (works if Worker is bound to the same domain).
@@ -153,11 +166,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = `https://${req.headers.host}`;
   const pageUrl = `${origin}/check?c=${encodeURIComponent(encoded)}`;
 
-  // og:image: prefer the stored share-card PNG from the Worker
-  const base = workerBase().startsWith("http")
-    ? workerBase()
-    : origin + "/api";
-  const imageUrl = `${base}/og/image?c=${encodeURIComponent(encoded)}`;
+  // og:image must be an absolute URL. Use the Worker base if configured,
+  // otherwise fall back to same-origin /api (Vercel proxies /api/* to the Worker).
+  const workerUrl = workerBase().startsWith("http") ? workerBase() : origin + "/api";
+  const imageUrl = `${workerUrl}/og/image?c=${encodeURIComponent(encoded)}`;
 
   // Try to get a richer description from the Worker cache
   const cached = await fetchVerdict(claim);
