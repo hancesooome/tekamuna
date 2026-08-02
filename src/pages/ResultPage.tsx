@@ -220,7 +220,7 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
         className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
-        {sources.map((s) => {
+        {sources.map((s, i) => {
           const { score } = getCredibility(s.url);
           const facts = extractKeyFacts(s.summary);
           const validUrl = s.url && s.url.startsWith("http") ? s.url : null;
