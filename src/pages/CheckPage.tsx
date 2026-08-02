@@ -27,7 +27,8 @@ import { verifyClaim, ApiServiceError } from "@/services/api";
 import { appendToHistory }   from "@/services/historyService";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
-import { decodeClaim, buildShareUrl } from "@/utils/shareUrl";
+import { decodeClaim } from "@/utils/shareUrl";
+import ShareButton from "@/components/shared/ShareButton";
 import { VERDICT_LABELS }    from "@/constants";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn }                from "@/lib/utils";
@@ -184,7 +185,6 @@ function ApiErrorView({ claim, message, onRetry }: { claim: string; message: str
 // ─── Result view (inline, same layout as ResultPage) ──────────────────────────
 
 function ResultView({ result }: { result: VerifyResult }) {
-  const [copied, setCopied] = useState(false);
   const cfg   = V[result.verdict];
   const { Icon } = cfg;
   const label = VERDICT_LABELS[result.verdict];
@@ -193,25 +193,6 @@ function ResultView({ result }: { result: VerifyResult }) {
   const factualAccuracy = Math.round(result.confidence * 0.18);
   const sourceAlignment = Math.round(result.confidence * 0.27);
   const dataRecency     = Math.min(95, Math.round(result.confidence * 0.95));
-
-  const handleShare = async () => {
-    const url = buildShareUrl(result.claim);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Teka Muna — Fact Check", text: `${label}: ${result.claim}`, url });
-        return;
-      } catch {
-        // user cancelled or share failed — fall through to clipboard
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // clipboard also failed — do nothing
-    }
-  };
 
   return (
     <PageContainer className="animate-page-in max-w-[850px] pb-12">
@@ -263,14 +244,7 @@ function ResultView({ result }: { result: VerifyResult }) {
                 <BarChart2 className="h-3.5 w-3.5" /> Ikumpara ang Sources
               </Link>
             </Button>
-            <Button
-              variant="outline" size="sm"
-              className={cn("text-xs transition-all", copied && "border-emerald-400 text-emerald-600")}
-              onClick={handleShare}
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              {copied ? "Link copied!" : "I-share"}
-            </Button>
+            <ShareButton result={result} />
             <Button variant="outline" size="sm" className="text-xs" onClick={() => {
               const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
               const a = document.createElement("a");

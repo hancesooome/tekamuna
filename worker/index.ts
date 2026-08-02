@@ -51,6 +51,7 @@ import { handleStats }          from "./routes/stats";          // GET  /api/sta
 import { handleAdminConfig }    from "./routes/adminConfig";    // GET/POST /api/admin/settings
 import { handlePostTemplates }  from "./routes/postTemplates";  // CRUD /api/admin/post-templates
 import { handleUploadImage }    from "./routes/uploadImage";    // POST /api/admin/upload-image
+import { handleOgStore, handleOgImage, handleOgPreview } from "./routes/og";
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -122,6 +123,17 @@ export default {
     // If we don't handle this, the browser blocks the actual request.
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
+    // ── Open Graph (social link previews) ─────────────────────────────────
+    if (url.pathname === "/api/og/store" && request.method === "POST") {
+      return handleOgStore(request, env);
+    }
+    if (url.pathname === "/api/og/image" && request.method === "GET") {
+      return handleOgImage(request, env);
+    }
+    if (url.pathname === "/api/og/preview" && request.method === "GET") {
+      return handleOgPreview(request, env);
     }
 
     // ── POST /api/verify ───────────────────────────────────────────────────

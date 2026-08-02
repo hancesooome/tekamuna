@@ -12,7 +12,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FileText, XCircle, CheckCircle, AlertTriangle, HelpCircle,
-  ThumbsUp, ThumbsDown, Share2, BarChart2, Search,
+  ThumbsUp, ThumbsDown, BarChart2, Search,
   ExternalLink, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,10 +21,10 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
-import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 import ShareCardButton from "@/components/shared/ShareCardButton";
+import ShareButton from "@/components/shared/ShareButton";
 
 // --- Verdict config -----------------------------------------------------------
 
@@ -314,7 +314,6 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
 
 function SuccessView({ result }: { result: VerifyResult }) {
   const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
   const cfg = V[result.verdict];
   const { Icon } = cfg;
   const label = VERDICT_LABELS[result.verdict];
@@ -386,23 +385,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
               </Link>
             </Button>
             <ShareCardButton result={result} />
-            <Button variant="outline" size="sm" className={cn("text-xs transition-all", copied && "border-emerald-400 text-emerald-600")} onClick={async () => {
-              const url = buildShareUrl(result.claim);
-              if (navigator.share) {
-                try {
-                  await navigator.share({ title: "Teka Muna — Fact Check", text: `${label}: ${result.claim}`, url });
-                  return;
-                } catch { /* user cancelled — fall through */ }
-              }
-              try {
-                await navigator.clipboard.writeText(url);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2500);
-              } catch { /* clipboard blocked */ }
-            }}>
-              <Share2 className="h-3.5 w-3.5" />
-              {copied ? "Link copied!" : "I-share"}
-            </Button>
+            <ShareButton result={result} />
           </div>
 
           {/* Feedback row */}
