@@ -12,7 +12,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Download, Loader2, ChevronDown, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadPng } from "@/lib/utils";
 import { API_BASE_URL, VERDICT_LABELS } from "@/constants";
@@ -95,20 +95,6 @@ const DEFAULT_TEMPLATES: Record<TemplatePlatform, { width: number; height: numbe
       { id: "qr_code", type: "qr_code", x: 50, y: 760, width: 240, height: 240, backgroundColor: "#ffffff", borderRadius: 14, padding: 14 },
       { id: "scan_text", type: "text", x: 320, y: 830, width: 710, height: 80, fontSize: 18, fontWeight: "700", color: "#ffffff", textAlign: "left", staticValue: "I-scan ang QR Code para sa buong detalye ng pagsusuri." },
       { id: "date", type: "date", x: 320, y: 920, width: 710, height: 30, fontSize: 14, fontWeight: "500", color: "#94a3b8", textAlign: "left" },
-    ],
-  },
-  story: {
-    width: 1080,
-    height: 1920,
-    fields: [
-      { id: "brand_logo", type: "text", x: 60, y: 80, width: 960, height: 50, fontSize: 24, fontWeight: "900", color: "#ffffff", textAlign: "center", staticValue: "TEKA MUNA" },
-      { id: "verdict", type: "verdict", x: 60, y: 180, width: 380, height: 72, fontSize: 28, fontWeight: "900", color: "#ffffff", textAlign: "center", borderRadius: 36, padding: 12 },
-      { id: "confidence", type: "confidence", x: 470, y: 192, width: 200, height: 50, fontSize: 16, fontWeight: "700", textAlign: "center", borderRadius: 10, padding: 8 },
-      { id: "claim", type: "claim", x: 60, y: 290, width: 960, height: 320, fontSize: 28, fontWeight: "700", color: "#0f172a", textAlign: "left", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 20, padding: 28 },
-      { id: "summary", type: "summary", x: 60, y: 650, width: 960, height: 460, fontSize: 18, fontWeight: "400", color: "#1e293b", textAlign: "left", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 20, padding: 28, lineHeight: 1.6 },
-      { id: "qr_code", type: "qr_code", x: 360, y: 1220, width: 360, height: 360, backgroundColor: "#ffffff", borderRadius: 24, padding: 22 },
-      { id: "scan_text", type: "text", x: 60, y: 1620, width: 960, height: 40, fontSize: 18, fontWeight: "700", color: "#ffffff", textAlign: "center", staticValue: "I-scan para basahin ang buong ulat" },
-      { id: "date", type: "date", x: 60, y: 1720, width: 960, height: 40, fontSize: 14, fontWeight: "500", color: "#94a3b8", textAlign: "center" },
     ],
   },
 };
@@ -336,10 +322,8 @@ function CardPreviewModal({
 }
 
 export default function ShareCardButton({ result }: ShareCardButtonProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ dataUrl: string; filename: string } | null>(null);
-  const dropdownRef               = useRef<HTMLDivElement>(null);
   const hiddenCanvasRef           = useRef<HTMLDivElement>(null);
   const [activeTemplate, setActiveTemplate] = useState<{
     width: number;
@@ -350,21 +334,7 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
 
   const theme = VERDICT_THEMES[result.verdict];
 
-  // Click away to close dropdown
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleOutsideClick);
-    }
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, [dropdownOpen]);
-
   const triggerExport = async (platform: TemplatePlatform) => {
-    setDropdownOpen(false);
     setExporting(platform);
 
     try {
@@ -445,11 +415,11 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
 
   return (
     <>
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left">
       <Button
         variant="outline"
         size="sm"
-        onClick={() => setDropdownOpen(o => !o)}
+        onClick={() => triggerExport("instagram")}
         className="text-xs gap-1.5"
         disabled={!!exporting}
       >
@@ -462,39 +432,9 @@ export default function ShareCardButton({ result }: ShareCardButtonProps) {
           <>
             <Download className="h-3.5 w-3.5" />
             I-download
-            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           </>
         )}
       </Button>
-
-      {dropdownOpen && (
-        <div className="absolute left-0 mt-1.5 w-60 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-          <button
-            type="button"
-            onClick={() => triggerExport("instagram")}
-            className="w-full text-left text-xs py-2.5 px-3.5 hover:bg-muted/70 flex items-center justify-between border-b border-border/40 transition-colors cursor-pointer"
-          >
-            <span className="font-semibold">FB / IG Square Photo</span>
-            {exporting === "instagram" ? (
-              <Loader2 className="h-3 w-3 animate-spin text-primary" />
-            ) : (
-              <span className="text-[10px] font-mono opacity-50">1080&times;1080</span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => triggerExport("story")}
-            className="w-full text-left text-xs py-2.5 px-3.5 hover:bg-muted/70 flex items-center justify-between transition-colors cursor-pointer"
-          >
-            <span className="font-semibold">Story Portrait</span>
-            {exporting === "story" ? (
-              <Loader2 className="h-3 w-3 animate-spin text-primary" />
-            ) : (
-              <span className="text-[10px] font-mono opacity-50">1080&times;1920</span>
-            )}
-          </button>
-        </div>
-      )}
 
       {/* ── Offscreen Rendering Canvas Container ── */}
       {/* Positioned off-screen (not hidden/opacity:0/z:-1) so Safari paints it. */}

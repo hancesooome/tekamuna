@@ -691,7 +691,6 @@ export default function PostTemplatesPage() {
                   className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="instagram">FB / IG Square Photo (1080 × 1080)</option>
-                  <option value="story">Story (1080 × 1920)</option>
                 </select>
               </div>
 
@@ -804,7 +803,6 @@ export default function PostTemplatesPage() {
                   className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="instagram">FB / IG Square Photo (1080 × 1080)</option>
-                  <option value="story">Story (1080 × 1920)</option>
                 </select>
               </div>
 
