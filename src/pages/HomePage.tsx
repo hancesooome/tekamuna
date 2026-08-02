@@ -8,11 +8,13 @@
  *  4. CTA           — full-bleed blue, call-to-action
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { VerdictBadge, type Verdict } from "@/components/shared/VerdictBadge";
-import { LOGO_ICON_URL, MASCOT_URL } from "@/constants";
+import { VerdictBadge } from "@/components/shared/VerdictBadge";
+import { LOGO_ICON_URL, MASCOT_URL, CATEGORY_KEYWORD_MAP } from "@/constants";
+import { loadHistory } from "@/services/historyService";
+import type { VerifyResult } from "@/types";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -59,76 +61,22 @@ const FEATURES = [
   },
 ] as const;
 
-const RECENT_CHECKS: {
-  id: number;
-  claim: string;
-  date: string;
-  category: string;
-  confidence: number;
-  verdict: Verdict;
-  highlight?: string;
-}[] = [
-  {
-    id: 1,
-    claim: "Ang Pilipinas ay may pinakamabilis na internet sa ASEAN",
-    date: "Jul 24, 2026",
-    category: "Teknolohiya",
-    confidence: 82,
-    verdict: "false",
-    highlight: "pinakamabilis",
-  },
-  {
-    id: 2,
-    claim: "Libre ang tuition fee sa lahat ng state universities sa Pilipinas",
-    date: "Jul 23, 2026",
-    category: "Edukasyon",
-    confidence: 96,
-    verdict: "true",
-    highlight: "Pilipinas",
-  },
-  {
-    id: 3,
-    claim: "Natuklasan ang bagong species ng hayop sa Mt. Apo",
-    date: "Jul 22, 2026",
-    category: "Kalikasan",
-    confidence: 91,
-    verdict: "true",
-    highlight: undefined,
-  },
-  {
-    id: 4,
-    claim: "Ang Pilipinas ay sumali na sa BRICS bilang full member",
-    date: "Jul 21, 2026",
-    category: "Pulitika",
-    confidence: 45,
-    verdict: "unverified",
-    highlight: "Pilipinas",
-  },
-];
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function inferCategory(claim: string): string {
+  for (const [key, cat] of Object.entries(CATEGORY_KEYWORD_MAP)) {
+    if (claim.includes(key)) return cat;
+  }
+  return "Pangkalahatan";
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-PH", {
+    month: "short", day: "numeric", year: "numeric",
+  });
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-/** Highlighted text in a claim row */
-function HighlightedClaim({
-  claim,
-  highlight,
-}: {
-  claim: string;
-  highlight?: string;
-}) {
-  if (!highlight) return <span>{claim}</span>;
-  const idx = claim.toLowerCase().indexOf(highlight.toLowerCase());
-  if (idx === -1) return <span>{claim}</span>;
-  return (
-    <span>
-      {claim.slice(0, idx)}
-      <span className="text-primary font-semibold underline">
-        {claim.slice(idx, idx + highlight.length)}
-      </span>
-      {claim.slice(idx + highlight.length)}
-    </span>
-  );
-}
 
 /** Category pill */
 function CategoryPill({ label }: { label: string }) {
@@ -151,7 +99,7 @@ function HeroSection() {
 
   const handleSuriin = () => {
     if (!canSubmit) return;
-    navigate("/verify", { state: { claim: query.trim(), autoSubmit: true } });
+    void navigate("/verify", { state: { claim: query.trim(), autoSubmit: true } });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -330,6 +278,18 @@ function FeaturesSection() {
 }
 
 function RecentChecksSection() {
+  const navigate = useNavigate();
+  const [recent, setRecent] = useState<VerifyResult[]>([]);
+
+  useEffect(() => {
+    setRecent(loadHistory().slice(0, 5));
+  }, []);
+
+  const handleRowClick = (item: VerifyResult) => {
+    sessionStorage.setItem("teka_verify_result", JSON.stringify(item));
+    void navigate("/result");
+  };
+
   return (
     <section className="mx-auto max-w-[1100px] px-5 sm:px-6 lg:px-0 pb-16 sm:pb-24">
       {/* Header */}
@@ -340,47 +300,71 @@ function RecentChecksSection() {
             Mga pinakabagong claim na na-verify ng aming AI
           </p>
         </div>
-        <Link
-          to="/kasaysayan"
-          className="flex items-center gap-1 text-sm font-bold text-primary hover:underline transition-all"
-        >
-          Tingnan Lahat <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
-
-      {/* List */}
-      <div className="rounded-2xl border-2 border-border overflow-hidden bg-white shadow-sm">
-        {RECENT_CHECKS.map((item, i) => (
-          <button
-            key={item.id}
-            className={`w-full text-left flex items-center justify-between gap-6 px-6 py-5 hover:bg-muted/50 transition-all duration-200 ${
-              i !== RECENT_CHECKS.length - 1 ? "border-b border-border" : ""
-            }`}
+        {recent.length > 0 && (
+          <Link
+            to="/kasaysayan"
+            className="flex items-center gap-1 text-sm font-bold text-primary hover:underline transition-all"
           >
-            {/* Left: claim + meta */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground leading-snug mb-2">
-                <HighlightedClaim claim={item.claim} highlight={item.highlight} />
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground font-medium">{item.date}</span>
-                <CategoryPill label={item.category} />
-              </div>
-            </div>
-
-            {/* Right: confidence + badge */}
-            <div className="flex items-center gap-5 shrink-0">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
-                  Confidence
-                </span>
-                <span className="text-lg font-black text-foreground tabular-nums">{item.confidence}%</span>
-              </div>
-              <VerdictBadge verdict={item.verdict} confidence={item.confidence} size="sm" />
-            </div>
-          </button>
-        ))}
+            Tingnan Lahat <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
       </div>
+
+      {recent.length === 0 ? (
+        /* Empty state — no history yet */
+        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 px-8 py-16 flex flex-col items-center gap-4 text-center">
+          <Search className="h-10 w-10 text-muted-foreground/40" />
+          <p className="text-base font-bold text-muted-foreground">Wala pang na-verify na claim.</p>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            I-verify ang iyong unang claim at lalabas ito dito.
+          </p>
+          <Link
+            to="/verify"
+            className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all"
+          >
+            Magsimula <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : (
+        /* Real history rows */
+        <div className="rounded-2xl border-2 border-border overflow-hidden bg-white shadow-sm">
+          {recent.map((item, i) => (
+            <button
+              key={item.verifiedAt}
+              onClick={() => handleRowClick(item)}
+              className={`w-full text-left flex items-center justify-between gap-6 px-6 py-5 hover:bg-muted/50 transition-all duration-200 ${
+                i !== recent.length - 1 ? "border-b border-border" : ""
+              }`}
+            >
+              {/* Left: claim + meta */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground leading-snug mb-2 line-clamp-2">
+                  {item.claim}
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {formatDate(item.verifiedAt)}
+                  </span>
+                  <CategoryPill label={inferCategory(item.claim)} />
+                </div>
+              </div>
+
+              {/* Right: confidence + badge */}
+              <div className="flex items-center gap-5 shrink-0">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                    Confidence
+                  </span>
+                  <span className="text-lg font-black text-foreground tabular-nums">
+                    {item.confidence}%
+                  </span>
+                </div>
+                <VerdictBadge verdict={item.verdict} confidence={item.confidence} size="sm" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

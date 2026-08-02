@@ -52,6 +52,7 @@ import { handleAdminConfig }    from "./routes/adminConfig";    // GET/POST /api
 import { handlePostTemplates }  from "./routes/postTemplates";  // CRUD /api/admin/post-templates
 import { handleUploadImage }    from "./routes/uploadImage";    // POST /api/admin/upload-image
 import { handleOgStore, handleOgImage, handleOgPreview } from "./routes/og";
+import { handleFieldDefaults }  from "./routes/fieldDefaults"; // GET/POST /api/admin/field-defaults
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -178,13 +179,6 @@ export default {
     // Stores/retrieves per-field-type style defaults in admin_settings.
     // Must sit before the /api/admin catch-all.
     if (url.pathname === "/api/admin/field-defaults") {
-      if (request.method === "OPTIONS") {
-        return new Response(null, { status: 204, headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }});
-      }
       return handleFieldDefaults(request, env);
     }
 
@@ -238,105 +232,3 @@ export default {
 // it checks that our default export has the correct shape for a Cloudflare Worker
 // without changing its inferred type. Better than `as ExportedHandler<Env>` (which
 // would bypass type errors) or leaving it untyped.
-
-// ── /api/admin/field-defaults ─────────────────────────────────────────────────
-// Stores per-field-type style defaults in the admin_settings table so they
-// persist across devices and browsers.
-//
-//   GET  /api/admin/field-defaults
-//     → { defaults: Record<FieldType, Partial<TemplateField>> }
-//
-//   POST /api/admin/field-defaults
-//     Body: { defaults: Record<FieldType, Partial<TemplateField>> }
-//     → { ok: true }
-
-const FIELD_DEFAULTS_CORS: Record<string, string> = {
-  "Access-Control-Allow-Origin":  "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
-function fdJson(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...FIELD_DEFAULTS_CORS },
-  });
-}
-
-async function handleFieldDefaults(request: Request, env: Env): Promise<Response> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    return fdJson({ error: "Supabase not configured." }, 503);
-  }
-
-  const auth = request.headers.get("Authorization") ?? "";
-  if (!auth.startsWith("Bearer ") || auth.length < 20) {
-    return fdJson({ error: "Unauthorized." }, 401);
-  }
-  const token = auth.slice(7);
-
-  // ── GET ────────────────────────────────────────────────────────────────────
-  if (request.method === "GET") {
-    const url = `${env.SUPABASE_URL}/rest/v1/admin_settings?setting_key=eq.field_defaults&select=setting_value`;
-    const res = await fetch(url, {
-      headers: {
-        "apikey":        env.SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) return fdJson({ defaults: {} });
-    const rows = await res.json() as { setting_value: string }[];
-    if (!rows.length) return fdJson({ defaults: {} });
-    try {
-      return fdJson({ defaults: JSON.parse(rows[0].setting_value) });
-    } catch {
-      return fdJson({ defaults: {} });
-    }
-  }
-
-  // ── POST ───────────────────────────────────────────────────────────────────
-  if (request.method === "POST") {
-    let body: unknown;
-    try { body = await request.json(); } catch {
-      return fdJson({ error: "Invalid JSON." }, 400);
-    }
-    const { defaults } = body as Record<string, unknown>;
-    if (!defaults || typeof defaults !== "object") {
-      return fdJson({ error: "Body must be { defaults: {...} }." }, 422);
-    }
-
-    const value = JSON.stringify(defaults);
-
-    // Try PATCH first (update existing row)
-    const patchUrl = `${env.SUPABASE_URL}/rest/v1/admin_settings?setting_key=eq.field_defaults`;
-    const patchRes = await fetch(patchUrl, {
-      method: "PATCH",
-      headers: {
-        "apikey":        env.SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${token}`,
-        "Content-Type":  "application/json",
-        "Prefer":        "return=minimal",
-      },
-      body: JSON.stringify({ setting_value: value }),
-    });
-
-    // If no row was updated (204 but Content-Range: */0), INSERT instead
-    const contentRange = patchRes.headers.get("Content-Range") ?? "";
-    if (patchRes.ok && contentRange.endsWith("/0")) {
-      const insertUrl = `${env.SUPABASE_URL}/rest/v1/admin_settings`;
-      await fetch(insertUrl, {
-        method: "POST",
-        headers: {
-          "apikey":        env.SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${token}`,
-          "Content-Type":  "application/json",
-          "Prefer":        "return=minimal",
-        },
-        body: JSON.stringify({ setting_key: "field_defaults", setting_value: value }),
-      });
-    }
-
-    return fdJson({ ok: true });
-  }
-
-  return fdJson({ error: "Method not allowed." }, 405);
-}

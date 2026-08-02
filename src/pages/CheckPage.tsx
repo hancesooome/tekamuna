@@ -16,19 +16,21 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
   Search, XCircle, CheckCircle, AlertTriangle, HelpCircle,
-  Share2, Download, BarChart2, ExternalLink, ChevronRight, FileText,
+  Share2, BarChart2, ExternalLink, ChevronRight, FileText,
   Loader2,
 } from "lucide-react";
 import { useMutation }       from "@tanstack/react-query";
 import { Button }            from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer }     from "@/components/shared/PageContainer";
-import { verifyClaim, ApiServiceError } from "@/services/api";
+import { verifyClaim } from "@/services/api";
+import type { ApiServiceError } from "@/services/api";
 import { appendToHistory }   from "@/services/historyService";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
 import { decodeClaim } from "@/utils/shareUrl";
 import ShareButton from "@/components/shared/ShareButton";
+import ShareCardButton from "@/components/shared/ShareCardButton";
 import { VERDICT_LABELS }    from "@/constants";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn }                from "@/lib/utils";
@@ -245,15 +247,7 @@ function ResultView({ result }: { result: VerifyResult }) {
               </Link>
             </Button>
             <ShareButton result={result} />
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
-              const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-              const a = document.createElement("a");
-              a.href = URL.createObjectURL(blob);
-              a.download = "teka-result.json";
-              a.click();
-            }}>
-              <Download className="h-3.5 w-3.5" /> I-download
-            </Button>
+            <ShareCardButton result={result} />
           </div>
         </div>
 

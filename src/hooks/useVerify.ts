@@ -30,7 +30,8 @@ import { useNavigate } from "react-router-dom";
 // useNavigate → React Router hook that gives you a function to programmatically
 // change the URL (e.g. navigate("/result")) without a full page reload.
 
-import { verifyClaim, ApiServiceError } from "@/services/api";
+import { verifyClaim } from "@/services/api";
+import type { ApiServiceError } from "@/services/api";
 // verifyClaim   → async function that POSTs a claim to the Worker's /api/verify
 // ApiServiceError → custom error class thrown when the API call fails
 

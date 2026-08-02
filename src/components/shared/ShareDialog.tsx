@@ -19,6 +19,7 @@ import {
   openPlatformShare,
   type SharePlatform,
 } from "@/utils/share";
+import { ensureShareCardUploaded } from "@/services/shareCardService";
 import type { VerifyResult } from "@/types";
 
 interface ShareDialogProps {
@@ -80,6 +81,7 @@ const PLATFORMS: {
 export default function ShareDialog({ result, open, onOpenChange }: ShareDialogProps) {
   const payload = buildSharePayload(result);
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function handleCopy() {
     const ok = await copyShareLink(payload.url);
@@ -89,7 +91,19 @@ export default function ShareDialog({ result, open, onOpenChange }: ShareDialogP
     }
   }
 
-  function handlePlatform(platform: SharePlatform) {
+  async function handlePlatform(platform: SharePlatform) {
+    // For Facebook: ensure the share card PNG is uploaded first so the
+    // og:image is ready when FB's crawler hits the /check?c= URL.
+    if (platform === "facebook" || platform === "messenger") {
+      setUploading(true);
+      try {
+        await ensureShareCardUploaded(result);
+      } catch {
+        // Upload failed — open sharer anyway, FB will use the fallback SVG
+      } finally {
+        setUploading(false);
+      }
+    }
     openPlatformShare(platform, payload);
   }
 
@@ -140,7 +154,8 @@ export default function ShareDialog({ result, open, onOpenChange }: ShareDialogP
                   key={p.id}
                   type="button"
                   onClick={() => handlePlatform(p.id)}
-                  className="flex flex-col items-center gap-1.5 group"
+                  disabled={uploading}
+                  className="flex flex-col items-center gap-1.5 group disabled:opacity-60 disabled:cursor-wait"
                 >
                   <span
                     className={cn(
@@ -157,6 +172,11 @@ export default function ShareDialog({ result, open, onOpenChange }: ShareDialogP
                 </button>
               ))}
             </div>
+            {uploading && (
+              <p className="text-center text-[10px] text-muted-foreground animate-pulse">
+                Inihahanda ang preview…
+              </p>
+            )}
           </div>
         </div>
       </DialogContent>

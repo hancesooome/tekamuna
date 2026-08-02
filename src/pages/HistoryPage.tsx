@@ -14,15 +14,16 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
+import { Button } from "@/components/ui/button";
 import {
   RESULT_STORAGE_KEY,
   FILTER_CATEGORIES,
   CATEGORY_KEYWORD_MAP,
 } from "@/constants";
-import { loadHistory } from "@/services/historyService";
+import { loadHistory, deleteFromHistory, clearHistory } from "@/services/historyService";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -61,10 +62,12 @@ function ClaimRow({
   item,
   category,
   onClick,
+  onDelete,
 }: {
   item:     VerifyResult;
   category: string;
   onClick:  () => void;
+  onDelete: (e: React.MouseEvent) => void;
 }) {
   const date = new Date(item.verifiedAt).toLocaleDateString("en-PH", {
     month: "short", day: "numeric", year: "numeric",
@@ -85,25 +88,35 @@ function ClaimRow({
   })();
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left flex items-center justify-between gap-6 py-5 border-b border-border hover:bg-muted/40 transition-all last:border-0 px-2"
-    >
-      {/* Left */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground leading-snug mb-2">{highlighted}</p>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs text-muted-foreground font-medium">{date}</span>
-          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            {category}
-          </span>
+    <div className="flex items-center gap-2 border-b border-border last:border-0 hover:bg-muted/40 transition-all group">
+      <button
+        onClick={onClick}
+        className="flex-1 text-left flex items-center justify-between gap-6 py-5 px-2 min-w-0"
+      >
+        {/* Left */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground leading-snug mb-2">{highlighted}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-muted-foreground font-medium">{date}</span>
+            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+              {category}
+            </span>
+          </div>
         </div>
-      </div>
-      {/* Right */}
-      <div className="shrink-0">
-        <VerdictBadge verdict={item.verdict} confidence={item.confidence} size="sm" />
-      </div>
-    </button>
+        {/* Verdict */}
+        <div className="shrink-0">
+          <VerdictBadge verdict={item.verdict} confidence={item.confidence} size="sm" />
+        </div>
+      </button>
+      {/* Delete button — visible on hover */}
+      <button
+        onClick={onDelete}
+        aria-label="Burahin ang entry na ito"
+        className="shrink-0 mr-2 p-1.5 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
@@ -147,16 +160,39 @@ export default function HistoryPage() {
     void navigate("/result");
   }, [navigate]);
 
+  const handleDelete = useCallback((verifiedAt: string) => {
+    deleteFromHistory(verifiedAt);
+    setHistory((prev) => prev.filter((h) => h.verifiedAt !== verifiedAt));
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    clearHistory();
+    setHistory([]);
+  }, []);
+
   return (
     <PageContainer className="animate-page-in max-w-[850px] pb-12">
       {/* ── Heading ── */}
-      <div className="pt-9 pb-8">
-        <h1 className="text-3xl sm:text-[32px] font-black text-foreground">
-          Kasaysayan ng Pagsusuri
-        </h1>
-        <p className="mt-3 text-base text-muted-foreground">
-          Lahat ng iyong nakaraang fact-check requests.
-        </p>
+      <div className="pt-9 pb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-[32px] font-black text-foreground">
+            Kasaysayan ng Pagsusuri
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Lahat ng iyong nakaraang fact-check requests.
+          </p>
+        </div>
+        {history.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 mt-2 text-xs gap-1.5 text-muted-foreground hover:text-red-500 hover:border-red-300"
+            onClick={handleClearAll}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            I-clear Lahat
+          </Button>
+        )}
       </div>
 
       {/* ── Stats row ── */}
@@ -216,6 +252,7 @@ export default function HistoryPage() {
                 item={item}
                 category={category}
                 onClick={() => handleRowClick(item)}
+                onDelete={(e) => { e.stopPropagation(); handleDelete(item.verifiedAt); }}
               />
             ))}
           </div>

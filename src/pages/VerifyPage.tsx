@@ -20,6 +20,7 @@ import { extractTextFromImageBrowser, OCR_MAX_FILE_BYTES, OCR_ALLOWED_MIME } fro
 import { shouldRunVerificationPipeline } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
+import { CATEGORIES, type Category } from "@/constants";
 import thinkImage from "../assets/think.png";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -29,12 +30,6 @@ const MAX_CHARS = 500;
 const ALLOWED_MIME = OCR_ALLOWED_MIME as readonly string[];
 // OCR.Space free tier cap is 1 MB
 const MAX_FILE_MB  = OCR_MAX_FILE_BYTES / (1024 * 1024);
-
-const CATEGORIES = [
-  "Pulitika", "Kalusugan", "Ekonomiya", "Teknolohiya",
-  "Kalikasan", "Edukasyon", "Krimen", "Internasyonal",
-] as const;
-type Category = (typeof CATEGORIES)[number];
 
 const EXAMPLE_CLAIMS: { claim: string; category: Category }[] = [
   { claim: "Libre ang COVID vaccine sa lahat ng Pilipino",                   category: "Kalusugan" },

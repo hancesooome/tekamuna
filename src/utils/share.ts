@@ -4,9 +4,9 @@
  * Share helpers — native share on mobile, platform links + clipboard on desktop.
  */
 
-import { VERDICT_LABELS, API_BASE_URL } from "@/constants";
+import { VERDICT_LABELS } from "@/constants";
 import { ensureShareCardUploaded } from "@/services/shareCardService";
-import { buildShareUrl, encodeClaim } from "@/utils/shareUrl";
+import { buildShareUrl } from "@/utils/shareUrl";
 import type { VerifyResult } from "@/types";
 
 export interface SharePayload {
@@ -38,19 +38,6 @@ export function buildSharePayload(result: VerifyResult): SharePayload {
   };
 }
 
-/**
- * Build the URL that Facebook (and other crawlers) should fetch for OG tags.
- * Points to /api/og/preview which returns full OG HTML + a meta-refresh
- * redirect back to the real /check page for human visitors.
- */
-function buildOgPreviewUrl(claim: string): string {
-  const encoded = encodeClaim(claim);
-  const origin = window.location.origin;
-  // Use absolute API base if configured (prod Worker), else same-origin /api
-  const base = API_BASE_URL.startsWith("http") ? API_BASE_URL : origin + "/api";
-  return `${base}/og/preview?c=${encodeURIComponent(encoded)}&origin=${encodeURIComponent(origin)}`;
-}
-
 /** Kick off OG image upload without blocking UI. */
 export function prepareShare(result: VerifyResult): void {
   ensureShareCardUploaded(result).catch((err) => {
@@ -76,25 +63,20 @@ function canUseNativeShare(payload: SharePayload): boolean {
   return true;
 }
 
-export function getPlatformShareUrl(platform: SharePlatform, payload: SharePayload, claim?: string): string {
+export function getPlatformShareUrl(platform: SharePlatform, payload: SharePayload): string {
   const { url, text } = payload;
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(text);
 
-  // Facebook's crawler will fetch ogUrl to read OG meta tags.
-  // Real users get redirected back to /check via meta-refresh in the og/preview response.
-  const ogUrl = claim ? buildOgPreviewUrl(claim) : url;
-  const encodedOgUrl = encodeURIComponent(ogUrl);
-
   switch (platform) {
     case "facebook":
-      return `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrl}`;
+      // Pass the real /check?c= URL. The Vercel/Pages middleware intercepts
+      // crawler requests to this path and returns full OG meta tags.
+      return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
     case "messenger":
-      // fb-messenger:// deep link works without a Facebook App ID.
-      // On desktop (no app installed) it falls back to the Messenger web share page.
       return isMobileDevice()
-        ? `fb-messenger://share?link=${encodedOgUrl}`
-        : `https://www.facebook.com/dialog/send?link=${encodedOgUrl}&redirect_uri=${encodedUrl}`;
+        ? `fb-messenger://share?link=${encodedUrl}`
+        : `https://www.facebook.com/dialog/send?link=${encodedUrl}&redirect_uri=${encodedUrl}`;
     case "x":
       return `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`;
     case "whatsapp":
@@ -105,7 +87,7 @@ export function getPlatformShareUrl(platform: SharePlatform, payload: SharePaylo
 }
 
 export function openPlatformShare(platform: SharePlatform, payload: SharePayload): void {
-  const shareUrl = getPlatformShareUrl(platform, payload, payload.title);
+  const shareUrl = getPlatformShareUrl(platform, payload);
   window.open(shareUrl, "_blank", "noopener,noreferrer,width=600,height=640");
 }
 

@@ -10,7 +10,7 @@
  *  6. Awards        — "Mga Parangal at Pagkilala" — blue banner
  */
 
-import { ShieldCheck, TrendingUp, Medal } from "lucide-react";
+import { ShieldCheck, TrendingUp } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { LOGO_ICON_URL } from "@/constants";
 
@@ -63,15 +63,6 @@ const PROCESS_STEPS = [
   },
 ] as const;
 
-const TEAM_MEMBERS = [
-  { initials: "MS", name: "Dr. Maria Santos", role: "Chief AI Researcher", color: "bg-primary" },
-  { initials: "JC", name: "Juan dela Cruz", role: "Lead Engineer", color: "bg-cyan-500" },
-  { initials: "AR", name: "Ana Reyes", role: "Journalism Director", color: "bg-amber-500" },
-  { initials: "MT", name: "Miguel Torres", role: "Data Scientist", color: "bg-emerald-500" },
-  { initials: "SB", name: "Sofia Bautista", role: "UX Design Lead", color: "bg-violet-500" },
-  { initials: "CM", name: "Carlo Mendoza", role: "Policy Advisor", color: "bg-orange-500" },
-] as const;
-
 const TRUSTED_SOURCES = [
   {
     group: "Fact-Checking",
@@ -101,21 +92,6 @@ const TRUSTED_SOURCES = [
       { name: "Manila Bulletin",         logo: "/logos/manila_bulletin.svg",  url: "https://mb.com.ph",                  alt: "Manila Bulletin — Philippine newspaper" },
       { name: "The Philippine Star",     logo: "/logos/philippine_star.png",  url: "https://www.philstar.com",           alt: "The Philippine Star — Philippine broadsheet newspaper" },
     ],
-  },
-] as const;
-
-const AWARDS = [
-  {
-    title: "Best Government Tech Innovation",
-    org: "GovTech Awards PH 2025",
-  },
-  {
-    title: "Excellence in Digital Journalism",
-    org: "NUIP Digital Awards 2025",
-  },
-  {
-    title: "Best Civic Technology Platform",
-    org: "ICT Industry Awards 2025",
   },
 ] as const;
 
@@ -211,40 +187,6 @@ function ProcessSection() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// @ts-ignore -- temporarily hidden from UI
-function TeamSection() {
-  return (
-    <div className="mb-14 sm:mb-16">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-[26px] font-black text-foreground">Ang Aming Koponan</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Mga eksperto sa AI, journalism, at data science
-        </p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {TEAM_MEMBERS.map((member) => (
-          <div
-            key={member.initials}
-            className="group rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 flex flex-col items-center gap-3 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
-          >
-            <div
-              className={`h-14 w-14 rounded-2xl ${member.color} flex items-center justify-center text-white text-lg font-black shadow-md group-hover:scale-110 transition-transform`}
-            >
-              {member.initials}
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-black text-foreground">{member.name}</p>
-              <p className="text-xs text-primary font-semibold mt-1">{member.role}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function TrustedSourcesSection() {
   return (
     <div className="mb-14 sm:mb-16">
@@ -305,31 +247,6 @@ function TrustedSourcesSection() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// @ts-ignore -- temporarily hidden from UI
-function AwardsSection() {
-  return (
-    <div className="mb-16">
-      <div className="rounded-2xl bg-gradient-primary p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20">
-            <Medal className="h-6 w-6 text-accent" />
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white">Mga Parangal at Pagkilala</h2>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-5">
-          {AWARDS.map((award) => (
-            <div key={award.title} className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/10 hover:bg-white/20 transition-all duration-300">
-              <p className="text-sm font-black text-white leading-tight mb-1">{award.title}</p>
-              <p className="text-xs text-white/80">{award.org}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AboutPage() {
@@ -338,9 +255,7 @@ export default function AboutPage() {
       <HeroSection />
       <MissionVisionSection />
       <ProcessSection />
-      {/* <TeamSection /> */}
       <TrustedSourcesSection />
-      {/* <AwardsSection /> */}
     </PageContainer>
   );
 }

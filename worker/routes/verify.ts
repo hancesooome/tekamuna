@@ -176,6 +176,12 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     // Cache MISS
   }
 
+  // ── 4–7. Pipeline: search → AI analysis → cache → respond ──────────────
+  // Wrapped in try/catch so any unexpected throw (Tavily keys exhausted,
+  // AI provider error, network failure) returns a proper JSON 500 instead of
+  // crashing the Worker isolate and returning a non-JSON Cloudflare error page.
+  try {
+
   // ── 4. Tavily web search ─────────────────────────────────────────────────
   // searchWeb accepts the resolved tavilyMode so it never reads from global state.
   const searchResults = await searchWeb(
@@ -238,4 +244,13 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
   };
 
   return json(finalResult, 200);
+
+  } catch (err) {
+    // Log the error for Worker tail log visibility, then return a structured
+    // JSON 500 so the frontend error banner can display a useful message.
+    console.error("[verify] Pipeline error:", err);
+    const message =
+      err instanceof Error ? err.message : "Unexpected server error.";
+    return json({ error: message }, 500);
+  }
 }

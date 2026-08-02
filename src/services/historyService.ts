@@ -89,3 +89,31 @@ export function loadHistory(): VerifyResult[] {
     return [];
   }
 }
+
+/**
+ * Removes a single entry from history by its verifiedAt timestamp.
+ * Silently ignores errors.
+ *
+ * @param verifiedAt The verifiedAt string of the entry to remove.
+ */
+export function deleteFromHistory(verifiedAt: string): void {
+  try {
+    const prev = loadHistory();
+    const next = prev.filter((h) => h.verifiedAt !== verifiedAt);
+    sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Removes all entries from history.
+ * Silently ignores errors.
+ */
+export function clearHistory(): void {
+  try {
+    sessionStorage.removeItem(HISTORY_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
