@@ -223,12 +223,10 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
         {sources.map((s) => {
           const { score } = getCredibility(s.url);
           const facts = extractKeyFacts(s.summary);
+          const validUrl = s.url && s.url.startsWith("http") ? s.url : null;
           return (
-            <a
-              key={s.url}
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
+            <div
+              key={s.url || i}
               className="shrink-0 w-[82vw] max-w-xs snap-center rounded-2xl border border-border bg-white p-4 hover:shadow-md transition-shadow flex flex-col gap-2"
             >
               {/* Domain + credibility score */}
@@ -256,8 +254,8 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
                     Mga Key Facts
                   </p>
                   <ul className="space-y-1">
-                    {facts.slice(0, 2).map((fact: string, i: number) => (
-                      <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground leading-snug">
+                    {facts.slice(0, 2).map((fact: string, fi: number) => (
+                      <li key={fi} className="flex items-start gap-1.5 text-[11px] text-foreground leading-snug">
                         <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                         <span className="line-clamp-2">{fact}</span>
                       </li>
@@ -271,11 +269,21 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
                 <span className="text-[10px] text-muted-foreground">
                   {formatDate(s.publishedDate) ?? "Petsa hindi available"}
                 </span>
-                <span className="text-[10px] font-bold text-primary flex items-center gap-0.5">
-                  Buksan ang Source <ExternalLink className="h-2.5 w-2.5" />
-                </span>
+                {validUrl ? (
+                  <a
+                    href={validUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] font-bold text-primary flex items-center gap-0.5 hover:underline"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    Buksan ang Source <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">Walang link</span>
+                )}
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
