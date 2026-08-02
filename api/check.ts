@@ -129,7 +129,6 @@ function buildOgHtml(opts: {
   <meta name="twitter:title" content="${t}" />
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
-  <meta http-equiv="refresh" content="0;url=${u}" />
 </head>
 <body>
   <p><a href="${u}">${t}</a></p>
