@@ -47,6 +47,11 @@ import { extractJson }                 from "../utils/json";
 // extractJson<T>(str) → parses a JSON object from a string, even if surrounded
 // by markdown code fences (```json ... ```) that some models add.
 
+export type AnalysisResult = VerifyResult & {
+  _persist?: boolean;
+  _aiModelUsed?: string;
+};
+
 // ── Public input type ─────────────────────────────────────────────────────────
 // This is what handleVerify passes into analyseEvidence().
 export interface AnalyseInput {
@@ -145,7 +150,7 @@ function fallbackResult(
   claim: string,
   reason: string,
   allSources: Source[],
-): VerifyResult {
+): AnalysisResult {
   return {
     claim,
     verdict:               "unverified", // Can't verify without AI
@@ -161,6 +166,7 @@ function fallbackResult(
       "Ka-Teka! Basahin ang mga source sa ibaba habang hinihintay ang AI verdict.",
     searchResultsCount:    allSources.length,
     verifiedAt:            new Date().toISOString(), // ISO 8601 timestamp of now
+    _persist:              false,
   };
 }
 
@@ -175,7 +181,7 @@ const MAX_SOURCES_FOR_VERDICT = 5;
  * @param input  AnalyseInput with claim, searchResults, and API keys
  * @returns      Promise<VerifyResult> — always resolves (never rejects)
  */
-export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult> {
+export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResult> {
   // Get (or create) the shared AIManager singleton.
   const manager = getManager(input);
 
@@ -365,6 +371,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<VerifyResult
     category:            input.category,
     pipelineVersion:     undefined,               // Injected by the route handler after save
     expiresAt:           undefined,               // Injected by the route handler after save
+    _persist:            true,
     _aiModelUsed:        aiModelUsed,             // Internal — stripped before sending to client
-  } as VerifyResult & { _aiModelUsed: string };
+  } as AnalysisResult;
 }

@@ -16,7 +16,7 @@
 
 import type { Env } from "../index";
 import { searchWeb }       from "../services/tavily";
-import { analyseEvidence } from "../services/gemini";
+import { analyseEvidence, type AnalysisResult } from "../services/gemini";
 import type { VerifyRequest, VerifyResult } from "../../src/types/verify";
 import { shouldRunVerificationPipeline } from "../../src/utils/intent";
 import { fetchAdminSettings } from "../lib/adminSettings";
@@ -201,7 +201,7 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     openRouterApiKey2: env.OPENROUTER_API_KEY_2,
     envVars:           env as unknown as Record<string, string | undefined>,
     aiProviderMode,
-  }) as VerifyResult & { _aiModelUsed?: string };
+  }) as AnalysisResult;
 
   // ── 6. Save result to cache ───────────────────────────────────────────────
   const cacheCategory = rawResult.category ?? cleanCategory ?? "evergreen";
@@ -211,31 +211,35 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
   // until the cache write completes AFTER the response has been returned.
   // Without ctx.waitUntil, the Worker terminates immediately on return and
   // the Supabase HTTP request gets cancelled before it can complete.
-  ctx.waitUntil(saveCachedClaim(env, {
-    claimOriginal:   cleanClaim,
-    claimNormalized: normalizedClaim,
-    category:        cacheCategory,
-    verdict:         rawResult.verdict,
-    confidence:      rawResult.confidence,
-    summary:         rawResult.explanation,
-    reasoning:       rawResult.truthStatement,
-    sources: {
-      supportingEvidence:    rawResult.supportingEvidence,
-      contradictingEvidence: rawResult.contradictingEvidence,
-      reliableSources:       rawResult.reliableSources,
-      mascotAdvice:          rawResult.mascotAdvice,
-      searchResultsCount:    rawResult.searchResultsCount,
-    },
-    searchProvider: tavilyMode,
-    aiModel:        rawResult._aiModelUsed ?? "unknown",
-    pipelineVersion: CURRENT_PIPELINE_VERSION,
-  })); // double-close: inner saveCachedClaim({...}) + outer ctx.waitUntil(...)
+  if (rawResult._persist !== false) {
+    ctx.waitUntil(saveCachedClaim(env, {
+      claimOriginal:   cleanClaim,
+      claimNormalized: normalizedClaim,
+      category:        cacheCategory,
+      verdict:         rawResult.verdict,
+      confidence:      rawResult.confidence,
+      summary:         rawResult.explanation,
+      reasoning:       rawResult.truthStatement,
+      sources: {
+        supportingEvidence:    rawResult.supportingEvidence,
+        contradictingEvidence: rawResult.contradictingEvidence,
+        reliableSources:       rawResult.reliableSources,
+        mascotAdvice:          rawResult.mascotAdvice,
+        searchResultsCount:    rawResult.searchResultsCount,
+      },
+      searchProvider: tavilyMode,
+      aiModel:        rawResult._aiModelUsed ?? "unknown",
+      pipelineVersion: CURRENT_PIPELINE_VERSION,
+    })); // double-close: inner saveCachedClaim({...}) + outer ctx.waitUntil(...)
+  }
 
   // ── 7. Return result ─────────────────────────────────────────────────────
   // Strip internal _aiModelUsed field before returning to the client
-  const { _aiModelUsed: _stripped, ...result } = rawResult;
+  const result = { ...rawResult } as Partial<VerifyResult> & Partial<AnalysisResult>;
+  delete result._aiModelUsed;
+  delete result._persist;
   const finalResult: VerifyResult = {
-    ...result,
+    ...(result as VerifyResult),
     cached:          cacheEntry ? false : false,  // Always false for fresh results
     cacheStatus:     cacheEntry ? "expired" : null, // Inform client if we refreshed a stale record
     expiresAt,
