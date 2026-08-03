@@ -810,8 +810,7 @@ See [LICENSE](LICENSE) for full terms.
 
 Built with ❤️ by **Filipinos, for Filipinos.**
 
-**Author:** [Hance Dagondon](https://github.com/hanzodevelopment)  
-**Contributors:** [See GitHub Contributors](https://github.com/hanzodevelopment/teka-muna/contributors)
+**Author:** [Hance Dagondon](https://github.com/hancesooome)  
 
 **Powered By:**
 - 🤖 [OpenRouter](https://openrouter.ai) — Free AI model access
@@ -823,9 +822,9 @@ Built with ❤️ by **Filipinos, for Filipinos.**
 
 ## 💬 Follow Us
 
-- **GitHub:** [@hanzodevelopment](https://github.com/hanzodevelopment)
-- **Twitter/X:** [@tekamuna](https://x.com/tekamuna) *(to be added)*
-- **Facebook:** [Teka Muna](https://facebook.com/tekamuna) *(to be added)*
+- **GitHub:** [@hancesooome](https://github.com/hancesooome)
+- **Instagram:** [@hancesoome](https://www.instagram.com/hancesoome)
+- **Facebook:** [Hance Soome](https://www.facebook.com/hancesooome/)
 
 ---
 
