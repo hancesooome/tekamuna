@@ -46,7 +46,7 @@ export function resolveProvider(modelId: string): string {
 
 // ── Default model lists per task ──────────────────────────────────────────────
 //
-// Free models first (no cost), paid models as last-resort fallbacks.
+// Free models only.
 // All :free models are rate-limited but cost nothing.
 // Order = priority (index 0 = highest priority).
 
@@ -61,9 +61,6 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "deepseek/deepseek-chat:free",           // DeepSeek — strong reasoning, free
     "qwen/qwen3-32b:free",                   // Qwen 3 32B — free
     // nvidia/nemotron-3-super-120b-a12b:free removed — unreliable JSON output
-    "mistralai/mistral-small:free",          // Mistral Small — free fallback
-    "gemini-2.0-flash",                      // Gemini direct — final fallback
-    "gemini-1.5-flash",                      // Gemini 1.5 — last resort
   ],
 
   /**
@@ -73,7 +70,6 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   EVIDENCE_EXTRACTION: [
     "google/gemma-4-26b-a4b-it:free",    // fast, good at structured output
-    "mistralai/mistral-small:free",       // fast fallback
     "google/gemma-4-31b-it:free",
     "deepseek/deepseek-chat:free",
     "qwen/qwen3-32b:free",
@@ -85,25 +81,22 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   SUMMARY: [
     "google/gemma-4-26b-a4b-it:free",
-    "mistralai/mistral-small:free",
     "qwen/qwen3-32b:free",
     "deepseek/deepseek-chat:free",
-    "gemini-2.0-flash",
+    "google/gemma-4-31b-it:free",
   ],
 
   SEARCH_QUERY: [
-    "mistralai/mistral-small:free",
     "google/gemma-4-26b-a4b-it:free",
     "qwen/qwen3-32b:free",
-    "gemini-2.0-flash",
+    "deepseek/deepseek-chat:free",
   ],
 
   TRANSLATION: [
     "google/gemma-4-26b-a4b-it:free",
     "qwen/qwen3-32b:free",
     "deepseek/deepseek-chat:free",
-    "mistralai/mistral-small:free",
-    "gemini-2.0-flash",
+    "google/gemma-4-31b-it:free",
   ],
 };
 

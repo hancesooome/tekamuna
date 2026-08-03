@@ -236,10 +236,11 @@ export class AIManager {
         const startMs = Date.now(); // Record start time for latency measurement
 
         try {
+          const fallbackSuffix = retryChain.length > 0
+            ? ` (fallback after ${retryChain.length} earlier failure${retryChain.length === 1 ? "" : "s"})`
+            : "";
           this.log(
-            `[AIManager] Attempt ${attemptCount}: ${providerId}/${modelId}` +
-            // Show "(fallback after N failures)" if this isn't the first attempt
-            (retryChain.length > 0 ? ` (fallback after ${retryChain.length} failures)` : ""),
+            `[AIManager] Attempt ${attemptCount}: ${providerId}/${modelId}${fallbackSuffix}`,
           );
 
           // ── The actual AI call ──────────────────────────────────────────
@@ -284,7 +285,9 @@ export class AIManager {
           this.log(
             `[AIManager] ✓ ${providerId}/${modelId} — ${latencyMs}ms` +
             (partial.usage ? ` — ${partial.usage.totalTokens} tokens` : "") +
-            (attemptCount > 1 ? ` — fallback #${attemptCount}` : ""),
+            (attemptCount > 1
+              ? ` — fallback succeeded after ${retryChain.length} previous failure${retryChain.length === 1 ? "" : "s"}`
+              : ""),
           );
 
           return response; // SUCCESS — return to the caller immediately
@@ -298,6 +301,14 @@ export class AIManager {
           const retryable = err instanceof Error && "retryable" in err
             ? (err as { retryable: boolean }).retryable
             : true;
+          const statusCode =
+            err instanceof Error && "statusCode" in err
+              ? (err as { statusCode?: number }).statusCode
+              : undefined;
+          const isUnavailable =
+            statusCode === 404 ||
+            msg.toLowerCase().includes("no endpoints found") ||
+            msg.toLowerCase().includes("model not found");
 
           // Update health state (may trigger cooldown if too many failures).
           this.recordFailure(health, msg);
@@ -307,15 +318,15 @@ export class AIManager {
           this.log(
             `[AIManager] ✗ ${providerId}/${modelId} failed in ${latencyMs}ms: ${msg.slice(0, 120)}`,
           );
+          if (isUnavailable) {
+            this.log(
+              `[AIManager] ${providerId}/${modelId} unavailable (${statusCode ?? "no status"}); trying next configured model`,
+            );
+          }
 
           // Non-retryable errors (e.g. 400 Bad Request = invalid prompt):
           // No point trying other models with the same bad input — throw immediately.
           if (!retryable) {
-            const statusCode =
-              err instanceof Error && "statusCode" in err
-                ? (err as { statusCode?: number }).statusCode
-                : undefined;
-
             const apiLogEntry = this.logToApiLogger({
               providerId,
               modelId,
