@@ -215,6 +215,23 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
           </p>
         </div>
 
+        {/* Error message (file too large, unsupported format) */}
+        {ocrError && (
+          <div className="flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+            <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-red-800 leading-relaxed">{ocrError}</p>
+              <button
+                type="button"
+                onClick={() => setOcrError(null)}
+                className="mt-1.5 text-xs font-bold text-red-600 hover:underline"
+              >
+                Pagsiriin ang ibang larawan
+              </button>
+            </div>
+          </div>
+        )}
+
         <input
           ref={inputRef}
           type="file"
