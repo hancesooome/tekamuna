@@ -7,6 +7,9 @@ import { StrictMode } from "react";
 // It helps catch common mistakes, like using outdated APIs or side effects in render.
 // It has NO effect in production builds — it's dev-only.
 
+import { Analytics } from "@vercel/analytics/react";
+// Vercel Analytics collects page-view events for the deployed app.
+
 import { createRoot } from "react-dom/client";
 // createRoot is the modern React 18+ way to mount your app into the HTML page.
 // The older ReactDOM.render() is deprecated. createRoot enables concurrent features.
@@ -78,5 +81,6 @@ createRoot(rootEl).render(
         </AuthProvider>
       </QueryProvider>
     )}
+    <Analytics />
   </StrictMode>,
 );
