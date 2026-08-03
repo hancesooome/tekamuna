@@ -53,7 +53,7 @@ export class OpenRouterVisionProvider implements VisionProvider {
             headers: {
               "Content-Type":  "application/json",
               "Authorization": `Bearer ${this.apiKey}`,
-              "HTTP-Referer":  "https://teka-nga.pages.dev",
+              "HTTP-Referer":  "https://tekamuna.app",
               "X-Title":       "Teka Muna Image Analysis",
             },
             body: JSON.stringify({

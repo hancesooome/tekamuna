@@ -21,7 +21,7 @@ Teka Muna is deployed on **Cloudflare Pages** with a **Cloudflare Worker** backe
 
 ```bash
 git clone <repo>
-cd teka-nga-v2
+cd teka-muna
 npm install
 cp .env.example .dev.vars   # fill in your API keys
 ```

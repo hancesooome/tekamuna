@@ -1,7 +1,7 @@
 # Teka Muna — Folder Structure
 
 ```
-teka-nga-v2/
+teka-muna/
 │
 ├── src/                          Frontend (React + TypeScript + Vite)
 │   ├── constants/

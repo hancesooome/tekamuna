@@ -99,7 +99,7 @@ export class OpenRouterProvider extends BaseProvider {
         headers: {
           "Content-Type":  "application/json",
           "Authorization": `Bearer ${this.apiKey}`,
-          "HTTP-Referer":  "https://teka-nga.pages.dev",
+          "HTTP-Referer":  "https://tekamuna.app",
           "X-Title":       "Teka Muna Fact Checker",
         },
         body: JSON.stringify({
