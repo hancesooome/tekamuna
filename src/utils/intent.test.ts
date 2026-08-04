@@ -32,6 +32,61 @@ describe('shouldRunVerificationPipeline', () => {
     expect(actual.needs).toEqual([]);
   });
 
+  it.each([
+    // Politics
+    'Totoo ba na inalis na ang Senior Citizen discount?',
+    'Marcos signed a law lowering the voting age to 16.',
+    'Sara Duterte resigned as Vice President today.',
+    'The Philippines declared a state of emergency yesterday.',
+    'Congress approved a ₱6 trillion national budget.',
+    'COMELEC extended voter registration until December.',
+    'BBM visited the White House this week.',
+    // Health
+    'Drinking hot water kills COVID-19.',
+    'Dengue cases increased by 40% this month.',
+    'DOH approved a new dengue vaccine.',
+    'Coffee causes cancer.',
+    'Garlic cures hypertension.',
+    // Science
+    'The Earth is flat.',
+    'Humans only use 10% of their brain.',
+    'NASA discovered life on Mars.',
+    'A solar eclipse will happen tomorrow.',
+    // Economy
+    'Rice prices dropped below ₱30 per kilo.',
+    'Inflation is now below 2%.',
+    'BSP lowered interest rates today.',
+    'The peso reached ₱70 per US dollar.',
+    // Technology
+    'Facebook will start charging users next month.',
+    'TikTok is banned in the Philippines.',
+    'OpenAI released GPT-6.',
+    'Apple announced the iPhone 19 today.',
+    // Disaster / public safety
+    'There was an earthquake in Manila this morning.',
+    'May tsunami warning sa Luzon.',
+    'A volcano erupted in Batangas today.',
+    'A magnitude 8.0 earthquake struck Japan.',
+    // Celebrity
+    'Taylor Swift got married.',
+    'Kathryn Bernardo is running for senator.',
+    'Cristiano Ronaldo retired.',
+    // Sports
+    'Gilas Pilipinas won the FIBA World Cup.',
+    'Manny Pacquiao announced his retirement.',
+    'Barangay Ginebra won the PBA Finals.',
+    // Filipino / Taglish verification questions
+    'Totoo bang may bagong lockdown?',
+    'Is it true that face masks are mandatory again?',
+    'Fake ba na magkakaroon ng alien invasion?',
+    'May bagyo ba bukas?',
+    'Nagtaas ba ang presyo ng gasolina ngayon?',
+  ])('routes a verifiable claim to the pipeline: %s', (input) => {
+    const actual = expectCategory(input, 'FACT_CHECKABLE');
+    expect(actual.claim.length).toBeGreaterThan(0);
+    expect(actual.needs).toEqual([]);
+  });
+
   it('removes an opinion wrapper and extracts its factual proposition', () => {
     const actual = expectCategory('Sa tingin ko umiikot ang Earth sa Araw.', 'FACT_CHECKABLE');
     expect(actual.claim).toBe('umiikot ang Earth sa Araw');

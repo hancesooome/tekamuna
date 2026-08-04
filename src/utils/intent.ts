@@ -27,7 +27,7 @@ function normalize(input: string): string {
 
 function cleanClaim(input: string): string {
   let claim = input.trim().replace(/[.!?]+$/, "").trim();
-  claim = claim.replace(/^(totoo\s+ba(?:\s+na|\s+bang)?|tama\s+ba|mali\s+ba|tunay\s+ba)\s*/i, "");
+  claim = claim.replace(/^(totoo\s+ba(?:\s+na|\s+bang)?|totoo\s+bang|fake\s+ba(?:\s+na)?|tama\s+ba|mali\s+ba|tunay\s+ba)\s*/i, "");
   claim = claim.replace(/^(is\s+it\s+true\s+that|is\s+this\s+(true|accurate)|verify\s+(this|that))\s*/i, "");
   claim = claim.replace(/^(sa\s+tingin\s+ko|feeling\s+ko|i\s+think|people\s+say|sabi\s+nila)\s+/i, "");
   return claim.trim().replace(/[.!?]+$/, "").trim();
@@ -35,11 +35,18 @@ function cleanClaim(input: string): string {
 
 function hasSpecificSubject(claim: string): boolean {
   const words = claim.split(/\s+/).filter(Boolean);
-  return words.length >= 3 && /\b(si|ang|may|the|a|an|[A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑ'-]*|\d|₱|https?:\/\/)/u.test(claim);
+  if (words.length < 3) return false;
+
+  const hasSubjectSignal = /\b(si|ang|may|the|a|an|[A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑ'-]*|\d|₱|https?:\/\/)/u.test(claim);
+  const startsWithUnresolvedReference = /^(he|she|they|someone|somebody|siya|sila)\b/i.test(claim);
+
+  // Capitalization is useful for names, but it must not be required: users and
+  // OCR frequently submit otherwise valid claims entirely in lowercase.
+  return hasSubjectSignal || !startsWithUnresolvedReference;
 }
 
 function hasPredicate(claim: string): boolean {
-  return /\b(is|are|was|were|has|have|did|does|do|said|announced|declared|banned|arrested|died|won|lost|signed|approved|passed|increased|decreased|reported|confirmed|denied|claimed|alleged|ay|tumaas|bumaba|nangyari|naganap|sinabi|inamin|kinumpirma|ipinagbawal|pinalaya|nanalo|namatay|nahatulan|may|meron|libre|patay|buhay|umiikot|na-ban)\b/i.test(claim);
+  return /\b(is|are|was|were|has|have|had|did|does|do|will|said|says|announced|declared|banned|arrested|died|won|lost|signed|approved|passed|increased|decreased|reported|confirmed|denied|claimed|alleged|removed|lowered|raised|extended|visited|kills?|causes?|cures?|discovered|released|reached|dropped|happens?|happened|charging|erupted|struck|married|resigned|retired|running|mandatory|ay|tumaas|bumaba|nagtaas|nangyari|naganap|sinabi|inamin|kinumpirma|ipinagbawal|inalis|pinalaya|nanalo|namatay|nahatulan|may|meron|magkakaroon|libre|patay|buhay|umiikot|na-ban)\b/i.test(claim);
 }
 
 function isCompleteClaim(claim: string): boolean {
@@ -64,7 +71,7 @@ export function shouldRunVerificationPipeline(input: string): DetectionResult {
   if (/\b(what if|suppose|imagine|paano kung|kung sakali)\b/i.test(text)) {
     return result("HYPOTHETICAL", 0.98, "The input describes an imaginary or hypothetical scenario.");
   }
-  if (/\b(will|going to|plans? to|magiging|mangyayari|mananalo|matatalo|balak na|inaasahang)\b/i.test(text)) {
+  if (/\b(mananalo|matatalo)\b/i.test(text) || /^(is|are)\b.+\bgoing to\b/i.test(text)) {
     return result("PREDICTION", 0.94, "The input concerns a future event or outcome.");
   }
   if (/\b(god|diyos|religion|faith|belief|spiritual|supernatural|himala|sumpa|swerte)\b/i.test(text)) {
@@ -94,8 +101,8 @@ export function shouldRunVerificationPipeline(input: string): DetectionResult {
     return result("INFORMATION_REQUEST", 0.94, "Requests information or an explanation without asserting a specific claim.");
   }
 
-  const explicit = /\b(totoo\s+ba|totoo\s+bang|tama\s+ba|mali\s+ba|tunay\s+ba|fact\s*check|verify|debunk|is\s+it\s+true|fake\s+news)\b/i.test(text);
-  const factual = /\b(declared|announced|arrested|died|banned|resigned|signed|enacted|approved|elected|appointed|won|lost|increased|decreased|reported|confirmed|denied|alleged|said|is|are|was|were|has|have|did|ay|tumaas|bumaba|sinabi|inamin|kinumpirma|ipinagbawal|pinalaya|naganap|nangyari|nanalo|namatay|libre|may batas|umiikot|pinaka[\w-]+|na-ban)\b/i.test(extracted);
+  const explicit = /\b(totoo\s+ba|totoo\s+bang|tama\s+ba|mali\s+ba|tunay\s+ba|fact\s*check|verify|debunk|is\s+it\s+true|fake\s+ba|fake\s+news)\b/i.test(text);
+  const factual = hasPredicate(extracted) || /\b(pinaka[\w-]+|may batas)\b/i.test(extracted);
   if (explicit && !isCompleteClaim(extracted)) {
     return result("NEEDS_CONTEXT", 0.94, "A verification request was detected, but the factual proposition is incomplete.", "", ["claim"]);
   }
