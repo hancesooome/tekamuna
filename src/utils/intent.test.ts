@@ -127,4 +127,49 @@ describe('shouldRunVerificationPipeline', () => {
   ] as const)('rejects non-fact-check input: %s', (input, category) => {
     expectCategory(input, category);
   });
+
+  it.each([
+    // Greetings and casual conversation
+    'Hello', 'Hi', 'Good morning', 'Good afternoon', 'Good evening', 'Kamusta',
+    'Kumusta ka?', 'Hey', 'Yo', 'How are you?', 'Anong ginagawa mo?', "What's up?",
+    'Nice to meet you.', 'Thank you.', 'Salamat.', "You're welcome.", 'Bye.',
+    'Good night.',
+    // Opinions and personal preferences
+    'I love React.', 'Pineapple belongs on pizza.', 'JavaScript is the best language.',
+    "Mas masarap ang Jollibee kaysa McDonald's.", 'Apple is better than Samsung.',
+    'My favorite color is blue.', 'I like dogs.', 'I prefer coffee.', 'Ayoko ng adobo.',
+    'Mahilig ako sa anime.',
+    // Creative, coding, translation, and summarization requests
+    'Write me a poem.', 'Write a story.', 'Make a rap.', 'Generate a script.', 'Write lyrics.',
+    'How do I center a div?', 'Explain React hooks.', 'Fix my JavaScript.', 'Write CSS.',
+    'Generate Python code.', 'Translate this.', 'Translate to English.',
+    'Ano ang ibig sabihin nito?', 'Translate "Magandang umaga."',
+    'Summarize this article.', 'Summarize this PDF.', 'Give me the TL;DR.',
+    // Math and general knowledge
+    '1 + 1', '5 * 9', 'Solve x + 2 = 5', '100 / 4', 'Square root of 81',
+    'What is HTML?', 'What is CSS?', 'Who invented JavaScript?', 'What is React?', 'Explain AI.',
+    // Commands
+    'Open Facebook.', 'Search Google.', 'Generate image.', 'Create logo.', 'Download this.',
+    // Empty, random, emoji-only, and OCR garbage
+    '', ' ', '\n', 'asdfasdf', 'qwerty', '............', '????????', '😂😂😂',
+    '❤️❤️❤️', '123456789', '😂', '🤣🤣🤣', '❤️', '👍', '🔥🔥🔥', '😭😭😭',
+    'a8s9d8a7s9d', '###$$%%^^', '|||||||||', '..........',
+    // Incomplete fragments and non-verifiable questions
+    'Maybe...', 'Perhaps.', 'I think...', 'Not sure.', 'Hmm...', 'Okay.', 'Yes.', 'No.',
+    'Can you help me?', 'Can you explain?', 'Teach me React.', 'How do I cook adobo?',
+    "What's your favorite food?",
+    // URL-only input
+    'https://google.com', 'https://facebook.com', 'www.example.com',
+    // Single words, ambiguous references, and tiny edge cases
+    'True', 'False', 'Fake', 'Real', 'News', 'Politics', 'COVID', 'Election',
+    'Is this?', 'What about this?', 'That one.', 'Here.', 'This.',
+    '...', '???', '!!!!', '🙂', 'lol', 'haha', 'hehe', 'test', 'testing', '123',
+    'abc', '.', ',', '/', '\\',
+  ])('does not route non-verifiable input to the pipeline: %s', (input) => {
+    const actual = shouldRunVerificationPipeline(input);
+    expect(actual.shouldVerify).toBe(false);
+    expect(actual.canFactCheck).toBe(false);
+    expect(actual.route).not.toBe('fact_check');
+    expect(actual.category).not.toBe('FACT_CHECKABLE');
+  });
 });

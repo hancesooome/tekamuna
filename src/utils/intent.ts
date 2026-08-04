@@ -65,7 +65,10 @@ export function shouldRunVerificationPipeline(input: string): DetectionResult {
   const text = normalize(raw);
   if (!text) return result("NEEDS_CONTEXT", 1, "No claim was provided.", "", ["claim"]);
 
-  if (/^(translate|summarize|summary|write|create|generate|draft|compose|draw|design|explain|define|tell\s+me\s+a|isalin|sumulat|gumawa|ipaliwanag|i-translate)\b/i.test(text)) {
+  if (/^(?:\d+(?:\.\d+)?\s*[+*/=]\s*\d|solve\b|square\s+root\b)/i.test(text)) {
+    return result("COMMAND", 0.99, "The input is a calculation request rather than a factual claim.");
+  }
+  if (/^(translate|summarize|summary|write|make|create|generate|draft|compose|draw|design|explain|define|fix|open|search|download|teach|solve|give\s+me|tell\s+me\s+a|isalin|sumulat|gumawa|ipaliwanag|i-translate)\b/i.test(text)) {
     return result("COMMAND", 0.98, "The input is an instruction rather than a factual claim.");
   }
   if (/\b(what if|suppose|imagine|paano kung|kung sakali)\b/i.test(text)) {
@@ -82,7 +85,7 @@ export function shouldRunVerificationPipeline(input: string): DetectionResult {
   }
 
   const extracted = cleanClaim(raw);
-  if (/\b(opinion|i prefer|favorite|mas maganda|mas mabuti|mas mahusay|mas magaling|dapat ba akong|sa tingin mo)\b/i.test(text)) {
+  if (/\b(opinion|i prefer|favorite|mas maganda|mas masarap|mas mabuti|mas mahusay|mas magaling|dapat ba akong|sa tingin mo|is\s+the\s+best|is\s+better\s+than)\b/i.test(text)) {
     if (!/^(sa\s+tingin\s+ko|feeling\s+ko|i\s+think|people\s+say|sabi\s+nila)\b/i.test(text) || !isCompleteClaim(extracted)) {
       return result("OPINION", 0.97, "The input expresses a preference or subjective value judgment.");
     }
