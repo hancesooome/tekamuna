@@ -9,6 +9,7 @@
  */
 
 import { Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -16,12 +17,12 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 export function RootLayout() {
   const { pathname } = useLocation();
 
-  // Scroll to top on every route change
-  // (React Router v7 doesn't do this by default)
-  const key = pathname;
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background" key={key}>
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
 
       {/*
@@ -30,7 +31,9 @@ export function RootLayout() {
        * max-w-7xl gutter wrap their content in a <PageContainer>.
        */}
       <main className="flex-1 w-full pb-20 md:pb-0">
-        <Outlet />
+        <div key={pathname} className="animate-page-in">
+          <Outlet />
+        </div>
       </main>
 
       <Footer />

@@ -31,7 +31,7 @@ export function MobileBottomNav() {
             onClick={handleClick}
             className={({ isActive }) =>
               cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95",
+                "tm-interactive flex flex-1 flex-col items-center justify-center gap-1 py-1",
                 isActive ? "text-primary" : "text-muted-foreground",
               )
             }
@@ -40,7 +40,7 @@ export function MobileBottomNav() {
               <>
                 <div
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                    "tm-interactive flex h-8 w-8 items-center justify-center rounded-full",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground",

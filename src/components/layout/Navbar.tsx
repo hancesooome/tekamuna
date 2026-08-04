@@ -47,7 +47,7 @@ export function Navbar() {
           {/* ── Logo ── */}
           <button
             onClick={() => { window.location.href = "/"; handleNavClick(); }}
-            className="group flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none"
+            className="tm-interactive group flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none"
             aria-label="Teka Muna — bumalik sa Home"
           >
             <img
@@ -74,7 +74,7 @@ export function Navbar() {
                 onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(
-                    "flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                    "tm-interactive flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-foreground hover:bg-muted hover:text-primary",
@@ -88,7 +88,7 @@ export function Navbar() {
 
           {/* ── Mobile hamburger ── */}
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:hidden"
+            className="tm-interactive flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="I-toggle ang menu"
             aria-expanded={mobileOpen}
@@ -100,7 +100,7 @@ export function Navbar() {
 
       {/* ── Mobile drawer ── */}
       {mobileOpen && (
-        <div className="border-t border-border bg-white px-5 pb-6 pt-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:hidden">
+        <div className="animate-content-in border-t border-border bg-white px-5 pb-6 pt-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:hidden">
           <div className="space-y-2">
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink
@@ -110,7 +110,7 @@ export function Navbar() {
                 onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(
-                    "flex min-h-12 w-full items-center rounded-md px-5 py-3 text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                    "tm-interactive flex min-h-12 w-full items-center rounded-md px-5 py-3 text-base font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-foreground hover:bg-muted",
