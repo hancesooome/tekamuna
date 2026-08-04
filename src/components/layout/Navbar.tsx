@@ -37,23 +37,23 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm transition-all duration-200",
-        scrolled ? "border-b border-border shadow-sm" : "border-b border-transparent",
+        "sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm transition-[border-color,box-shadow] duration-150",
+        scrolled ? "border-b border-border shadow-[0_1px_8px_rgba(15,23,42,0.05)]" : "border-b border-transparent",
       )}
     >
       <div className="max-w-[1100px] mx-auto px-5 sm:px-6 lg:px-0">
-        <div className="flex h-[56px] items-center justify-between">
+        <div className="flex h-16 items-center justify-between">
 
           {/* ── Logo ── */}
           <button
             onClick={() => { window.location.href = "/"; handleNavClick(); }}
-            className="flex items-center gap-2 group focus:outline-none"
+            className="group flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none"
             aria-label="Teka Muna — bumalik sa Home"
           >
             <img
               src={LOGO_ICON_URL}
               alt="Teka Muna logo"
-              className="h-9 w-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
+              className="h-9 w-9 object-contain drop-shadow-sm"
               referrerPolicy="no-referrer"
             />
             <div className="flex flex-col leading-none">
@@ -65,7 +65,7 @@ export function Navbar() {
           </button>
 
           {/* ── Desktop nav ── */}
-          <nav className="hidden md:flex items-center gap-1.5" aria-label="Pangunahing navigation">
+          <nav className="hidden items-center gap-1.5 md:flex" aria-label="Pangunahing navigation">
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink
                 key={to}
@@ -74,9 +74,9 @@ export function Navbar() {
                 onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(
-                    "rounded-xl px-4 py-2 text-sm font-bold transition-all",
+                    "flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
+                      ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-foreground hover:bg-muted hover:text-primary",
                   )
                 }
@@ -86,12 +86,9 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* ── Desktop right controls — intentionally empty ── */}
-          <div className="hidden md:flex items-center gap-3" />
-
           {/* ── Mobile hamburger ── */}
           <button
-            className="md:hidden p-2.5 rounded-xl text-muted-foreground hover:bg-muted transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="I-toggle ang menu"
             aria-expanded={mobileOpen}
@@ -103,7 +100,7 @@ export function Navbar() {
 
       {/* ── Mobile drawer ── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-white px-5 pb-6 pt-4 shadow-xl">
+        <div className="border-t border-border bg-white px-5 pb-6 pt-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:hidden">
           <div className="space-y-2">
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink
@@ -113,9 +110,9 @@ export function Navbar() {
                 onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(
-                    "block w-full rounded-xl px-5 py-3.5 text-base font-bold transition-colors",
+                    "flex min-h-12 w-full items-center rounded-md px-5 py-3 text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
+                      ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-foreground hover:bg-muted",
                   )
                 }

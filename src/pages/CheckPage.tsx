@@ -108,7 +108,7 @@ function LoadingView({ claim }: { claim: string }) {
       </nav>
 
       {/* Claim preview */}
-      <div className="flex items-center gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-6 py-5 mb-8 shadow-sm">
+      <div className="mb-8 flex items-center gap-3 rounded-xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
           <FileText className="h-4 w-4 text-primary" />
         </div>
@@ -213,7 +213,7 @@ function ResultView({ result }: { result: VerifyResult }) {
       </div>
 
       {/* Claim banner */}
-      <div className="flex items-center gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-6 py-6 mb-6 shadow-sm">
+      <div className="mb-6 flex items-center gap-3 rounded-xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-6">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
           <FileText className="h-4 w-4 text-primary" />
         </div>
@@ -227,13 +227,13 @@ function ResultView({ result }: { result: VerifyResult }) {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-5 mb-6">
 
         {/* Verdict card */}
-        <div className={cn("rounded-2xl border p-6 flex flex-col gap-4", cfg.bg, cfg.border)}>
+        <section aria-labelledby="shared-ai-verdict-title" className={cn("flex flex-col gap-4 rounded-xl border-2 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.07)] sm:p-6", cfg.bg, cfg.border)}>
           <div className="flex items-start gap-4">
             <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm", cfg.iconBg)}>
               <Icon className="h-7 w-7 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hatol ng AI</p>
+              <p id="shared-ai-verdict-title" className="mb-1 text-xs font-black uppercase tracking-[0.14em] text-primary">AI VERDICT</p>
               <p className={cn("text-3xl font-black leading-tight mt-0.5", cfg.label)}>{label}</p>
             </div>
           </div>
@@ -249,10 +249,10 @@ function ResultView({ result }: { result: VerifyResult }) {
             <ShareButton result={result} />
             <ShareCardButton result={result} />
           </div>
-        </div>
+        </section>
 
         {/* Confidence panel */}
-        <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start">Detection Confidence</p>
           <div className="flex flex-row items-center gap-4 w-full sm:flex-col sm:items-center">
             <ConfidenceDonut value={result.confidence} color={cfg.arc} />
@@ -288,7 +288,7 @@ function ResultView({ result }: { result: VerifyResult }) {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-2xl border border-[#d9e4ff] bg-[#f8faff] shadow-sm">
+      <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-xl border border-[#d9e4ff] bg-[#f8faff] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <TabsList className="w-full rounded-none border-b border-[#d9e4ff] bg-transparent p-0 h-auto justify-start gap-0 overflow-x-auto">
           {(["buod", "timeline", "sources"] as const).map((v) => {
             const names = { buod: "Buod", timeline: "Timeline ng Ebidensya", sources: "Mga Source" };

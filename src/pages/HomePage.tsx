@@ -147,7 +147,7 @@ function HeroSection() {
           {/* ── Left: text + search ── */}
           <div className="flex-1 max-w-xl text-white">
             {/* Badge pill */}
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm shadow-lg">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white shadow-sm">
               <Zap className="h-3.5 w-3.5 text-accent" />
               Powered by AI · Built for Every Juan
             </div>
@@ -165,7 +165,7 @@ function HeroSection() {
             </p>
 
             {/* Search bar — single line until focused, then expands */}
-            <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-200">
+            <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-[0_12px_32px_rgba(15,23,42,0.18)] ring-1 ring-black/5 transition-shadow duration-150 focus-within:ring-4 focus-within:ring-white/25">
               {!isExpanded ? (
                 /* Collapsed: single-line look with inline button */
                 <div className="flex items-center">
@@ -174,12 +174,12 @@ function HeroSection() {
                     readOnly
                     onFocus={() => setFocused(true)}
                     placeholder="I-type ang claim na gusto mong suriin..."
-                    className="flex-1 bg-transparent px-6 py-4 text-sm text-foreground placeholder:text-muted-foreground cursor-text focus:outline-none"
+                    className="min-h-14 flex-1 cursor-text bg-transparent px-5 py-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none sm:px-6"
                   />
                   <button
                     type="button"
                     onClick={() => setFocused(true)}
-                    className="m-1.5 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg shrink-0"
+                    className="m-1.5 flex min-h-11 shrink-0 items-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-6"
                   >
                     <Search className="h-4 w-4" />
                     Suriin
@@ -204,7 +204,7 @@ function HeroSection() {
                       type="button"
                       onClick={handleSuriin}
                       disabled={!canSubmit}
-                      className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex min-h-11 items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Search className="h-4 w-4" />
                       Suriin
@@ -261,7 +261,7 @@ function FeaturesSection() {
         {FEATURES.map(({ icon: Icon, title, description }) => (
           <div
             key={title}
-            className="group rounded-2xl border-2 border-border bg-white p-6 flex flex-col gap-4 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+            className="group flex flex-col gap-4 rounded-xl border border-border bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow] duration-150 hover:border-primary/25 hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Icon className="h-6 w-6 text-primary" />
@@ -312,7 +312,7 @@ function RecentChecksSection() {
 
       {recent.length === 0 ? (
         /* Empty state — no history yet */
-        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 px-8 py-16 flex flex-col items-center gap-4 text-center">
+        <div className="tm-empty-state flex flex-col items-center justify-center gap-4 px-6 py-12 text-center sm:px-8">
           <Search className="h-10 w-10 text-muted-foreground/40" />
           <p className="text-base font-bold text-muted-foreground">Wala pang na-verify na claim.</p>
           <p className="text-sm text-muted-foreground max-w-sm">
@@ -320,19 +320,19 @@ function RecentChecksSection() {
           </p>
           <Link
             to="/verify"
-            className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-all"
+            className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
             Magsimula <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       ) : (
         /* Real history rows */
-        <div className="rounded-2xl border-2 border-border overflow-hidden bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           {recent.map((item, i) => (
             <button
               key={item.verifiedAt}
               onClick={() => handleRowClick(item)}
-              className={`w-full text-left flex items-center justify-between gap-6 px-6 py-5 hover:bg-muted/50 transition-all duration-200 ${
+              className={`flex min-h-20 w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40 sm:gap-6 sm:px-6 ${
                 i !== recent.length - 1 ? "border-b border-border" : ""
               }`}
             >
@@ -390,7 +390,7 @@ function CTASection() {
         </p>
         <Link
           to="/verify"
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-4 text-base font-black text-foreground shadow-xl hover:bg-accent/90 hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          className="inline-flex min-h-12 items-center gap-2 rounded-md bg-accent px-8 py-3 text-base font-black text-foreground shadow-sm transition-[background-color,box-shadow] hover:bg-accent/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
         >
           Magsimula Na <ArrowRight className="h-5 w-5" />
         </Link>

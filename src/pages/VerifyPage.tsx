@@ -348,7 +348,7 @@ function ImageUploadCollapsible({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-2xl border-2 border-border bg-white shadow-sm overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       {/* Toggle header — always visible */}
       <button
         type="button"
@@ -519,7 +519,7 @@ export default function VerifyPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
             {/* Card 1 — Claim textarea */}
-            <div className="relative rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-6 shadow-sm">
+            <div className="relative rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6">
               {isPending && <LoadingOverlay />}
               <p className="text-base font-black text-foreground mb-4">
                 Ang Claim o Statement
@@ -585,7 +585,7 @@ export default function VerifyPage() {
           <aside className="hidden lg:flex flex-col gap-5">
 
             {/* Tips */}
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-center gap-2.5 mb-4">
                 <span className="text-xl leading-none">💡</span>
                 <span className="text-base font-black text-amber-900">Mga Tips</span>
@@ -601,7 +601,7 @@ export default function VerifyPage() {
             </div>
 
             {/* Examples */}
-            <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-sm">
+            <div className="rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <p className="text-base font-black text-foreground mb-4">Subukan ang mga ito:</p>
               <div className="flex flex-col gap-3">
                 {EXAMPLE_CLAIMS.map(({ claim: ex }) => (

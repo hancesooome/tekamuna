@@ -130,7 +130,7 @@ function MissionVisionSection() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-14 sm:mb-16">
       {/* Mission — blue */}
-      <div className="rounded-2xl bg-gradient-primary p-7 text-white shadow-sm">
+      <div className="rounded-xl bg-gradient-primary p-6 text-white shadow-[0_8px_24px_rgba(26,86,219,0.16)] sm:p-7">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 mb-5">
           <ShieldCheck className="h-6 w-6 text-white" />
         </div>
@@ -142,7 +142,7 @@ function MissionVisionSection() {
       </div>
 
       {/* Vision — yellow */}
-      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-7 shadow-sm">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-7">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 mb-5">
           <TrendingUp className="h-6 w-6 text-amber-600" />
         </div>
@@ -171,7 +171,7 @@ function ProcessSection() {
         {PROCESS_STEPS.map((step) => (
           <div
             key={step.num}
-          className="group rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+          className="group rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 transition-[border-color,box-shadow] duration-150 hover:border-primary/30 hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
           >
             <span className="inline-block text-[28px] font-black text-primary/20 leading-none mb-3">
               {step.num}

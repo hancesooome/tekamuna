@@ -127,12 +127,12 @@ function LoadingSkeleton() {
     <PageContainer className="pb-8">
       <div className="flex flex-col gap-5 pt-6">
         <div className="h-8 w-48 rounded-lg bg-muted animate-pulse" />
-        <div className="h-16 rounded-2xl bg-muted animate-pulse" />
+        <div className="tm-skeleton h-16 rounded-xl" />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
-          <div className="h-64 rounded-2xl bg-muted animate-pulse" />
-          <div className="h-64 rounded-2xl bg-muted animate-pulse" />
+          <div className="tm-skeleton h-64 rounded-xl" />
+          <div className="tm-skeleton h-64 rounded-xl" />
         </div>
-        <div className="h-96 rounded-2xl bg-muted animate-pulse" />
+        <div className="tm-skeleton h-96 rounded-xl" />
       </div>
     </PageContainer>
   );
@@ -218,7 +218,7 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
         ref={trackRef}
         onScroll={onScroll}
         className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
-        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
       >
         {sources.map((s, i) => {
           const { score } = getCredibility(s.url);
@@ -339,7 +339,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
       </nav>
 
       {/* -- Claim banner -- */}
-      <div className="flex items-start gap-3 rounded-2xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 mb-6 shadow-sm">
+      <div className="mb-6 flex items-start gap-3 rounded-xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 mt-0.5">
           <FileText className="h-4 w-4 text-primary" />
         </div>
@@ -357,14 +357,14 @@ function SuccessView({ result }: { result: VerifyResult }) {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-5 mb-6">
 
         {/* Left: verdict card */}
-        <div className={cn("rounded-2xl border p-6 flex flex-col gap-4", cfg.bg, cfg.border)}>
+        <section aria-labelledby="ai-verdict-title" className={cn("flex flex-col gap-4 rounded-xl border-2 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.07)] sm:p-6", cfg.bg, cfg.border)}>
           {/* Header */}
           <div className="flex items-start gap-4">
             <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm", cfg.iconBg)}>
               <Icon className="h-7 w-7 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <p id="ai-verdict-title" className="mb-1 text-xs font-black uppercase tracking-[0.14em] text-primary">
                 Hatol ng AI
               </p>
               <p className={cn("text-3xl font-black leading-tight mt-0.5", cfg.label)}>
@@ -398,10 +398,10 @@ function SuccessView({ result }: { result: VerifyResult }) {
               <ThumbsDown className="h-3.5 w-3.5" /> Hindi
             </button>
           </div>
-        </div>
+        </section>
 
         {/* Right: confidence panel */}
-        <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] p-5 flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start">
             Detection Confidence
           </p>
@@ -444,7 +444,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
       </div>
 
       {/* -- Three tabs -- */}
-      <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-2xl border border-[#d9e4ff] bg-[#f8faff] shadow-sm">
+      <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-xl border border-[#d9e4ff] bg-[#f8faff] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <TabsList className="w-full rounded-none border-b border-[#d9e4ff] bg-transparent p-0 h-auto justify-start gap-0 overflow-x-auto">
           {(["buod", "timeline", "sources"] as const).map((v) => {
             const names = { buod: "Buod", timeline: "Timeline ng Ebidensya", sources: "Mga Source" };

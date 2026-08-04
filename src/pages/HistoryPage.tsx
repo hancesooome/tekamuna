@@ -49,8 +49,8 @@ const STAT_CONFIG: Record<Verdict, { label: string; numColor: string; bg: string
 function StatCard({ verdict, count }: { verdict: Verdict; count: number }) {
   const cfg = STAT_CONFIG[verdict];
   return (
-    <div className={cn("rounded-xl border-2 p-5 flex flex-col gap-2 shadow-sm hover:shadow-md transition-all", cfg.bg, cfg.border)}>
-      <span className={cn("text-4xl font-black tabular-nums", cfg.numColor)}>{count}</span>
+    <div className={cn("flex flex-col gap-2 rounded-xl border p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] sm:p-5", cfg.bg, cfg.border)}>
+      <span className={cn("text-3xl font-black tabular-nums sm:text-4xl", cfg.numColor)}>{count}</span>
       <span className="text-sm font-bold text-muted-foreground">{cfg.label}</span>
     </div>
   );
@@ -88,10 +88,10 @@ function ClaimRow({
   })();
 
   return (
-    <div className="flex items-center gap-2 border-b border-border last:border-0 hover:bg-muted/40 transition-all group">
+    <div className="group flex items-center gap-1 border-b border-border transition-colors last:border-0 hover:bg-muted/40 sm:gap-2">
       <button
         onClick={onClick}
-        className="flex-1 text-left flex items-center justify-between gap-6 py-5 px-2 min-w-0"
+        className="flex min-h-20 min-w-0 flex-1 items-center justify-between gap-3 px-2 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40 sm:gap-6 sm:py-5"
       >
         {/* Left */}
         <div className="flex-1 min-w-0">
@@ -112,7 +112,7 @@ function ClaimRow({
       <button
         onClick={onDelete}
         aria-label="Burahin ang entry na ito"
-        className="shrink-0 mr-2 p-1.5 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
+        className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:mr-2 sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -173,7 +173,7 @@ export default function HistoryPage() {
   return (
     <PageContainer className="animate-page-in max-w-[850px] pb-12">
       {/* ── Heading ── */}
-      <div className="pt-9 pb-8 flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 pb-8 pt-8 sm:pt-10">
         <div>
           <h1 className="text-3xl sm:text-[32px] font-black text-foreground">
             Kasaysayan ng Pagsusuri
@@ -212,7 +212,7 @@ export default function HistoryPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Hanapin ang claim..."
-            className="w-full rounded-xl border-2 border-border bg-white pl-11 pr-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="min-h-11 w-full rounded-md border border-border bg-white py-3 pl-11 pr-4 text-sm shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
 
@@ -223,10 +223,10 @@ export default function HistoryPage() {
               key={cat}
               onClick={() => setActiveFilter(cat)}
               className={cn(
-                "shrink-0 rounded-full px-5 py-2 text-sm font-bold transition-all duration-300",
+                "min-h-11 shrink-0 rounded-full px-5 py-2 text-sm font-bold transition-[color,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 activeFilter === cat
-                  ? "bg-primary text-white shadow-md scale-105"
-                  : "bg-white border-2 border-border text-foreground hover:border-primary/50 hover:bg-primary/5",
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-border bg-white text-foreground hover:border-primary/40 hover:bg-primary/5",
               )}
             >
               {cat}
@@ -236,16 +236,16 @@ export default function HistoryPage() {
       </div>
 
       {/* ── Claim list ── */}
-      <div className="rounded-2xl border border-[#d9e4ff] bg-[#f8faff] overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-[#d9e4ff] bg-[#f8faff] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         {filteredWithCategories.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <div className="tm-empty-state flex flex-col items-center justify-center gap-4 rounded-none border-0 px-6 py-16 text-center">
             <Search className="h-12 w-12 text-muted-foreground/30" />
             <p className="text-base text-muted-foreground">
               {search ? `Walang nahanap para sa "${search}"` : "Wala pang kasaysayan ng pagsusuri."}
             </p>
           </div>
         ) : (
-          <div className="px-6 sm:px-7">
+          <div className="px-3 sm:px-6">
             {filteredWithCategories.map(({ item, category }, i) => (
               <ClaimRow
                 key={`${item.verifiedAt}-${i}`}
