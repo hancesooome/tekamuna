@@ -63,60 +63,60 @@ function result(category: ClassificationCategory, confidence: number, reason: st
 export function shouldRunVerificationPipeline(input: string): DetectionResult {
   const raw = typeof input === "string" ? input.trim() : "";
   const text = normalize(raw);
-  if (!text) return result("NEEDS_CONTEXT", 1, "No claim was provided.", "", ["claim"]);
+  if (!text) return result("NEEDS_CONTEXT", 1, "Walang inilagay na claim.", "", ["claim"]);
 
   if (/^(?:\d+(?:\.\d+)?\s*[+*/=]\s*\d|solve\b|square\s+root\b)/i.test(text)) {
-    return result("COMMAND", 0.99, "The input is a calculation request rather than a factual claim.");
+    return result("COMMAND", 0.99, "Math problem ito, hindi isang claim na maaaring suriin.");
   }
   if (/^(translate|summarize|summary|write|make|create|generate|draft|compose|draw|design|explain|define|fix|open|search|download|teach|solve|give\s+me|tell\s+me\s+a|isalin|sumulat|gumawa|ipaliwanag|i-translate)\b/i.test(text)) {
-    return result("COMMAND", 0.98, "The input is an instruction rather than a factual claim.");
+    return result("COMMAND", 0.98, "Utos o instruksyon ito, hindi isang claim na maaaring suriin.");
   }
   if (/\b(what if|suppose|imagine|paano kung|kung sakali)\b/i.test(text)) {
-    return result("HYPOTHETICAL", 0.98, "The input describes an imaginary or hypothetical scenario.");
+    return result("HYPOTHETICAL", 0.98, "Kathang-isip o haka-haka ang sitwasyong ito.");
   }
   if (/\b(mananalo|matatalo)\b/i.test(text) || /^(is|are)\b.+\bgoing to\b/i.test(text)) {
-    return result("PREDICTION", 0.94, "The input concerns a future event or outcome.");
+    return result("PREDICTION", 0.94, "Tungkol ito sa pangyayari o resultang hindi pa nagaganap.");
   }
   if (/\b(god|diyos|religion|faith|belief|spiritual|supernatural|himala|sumpa|swerte)\b/i.test(text)) {
-    return result("BELIEF", 0.96, "The input concerns a religious, philosophical, or supernatural belief.");
+    return result("BELIEF", 0.96, "Tungkol ito sa relihiyoso, pilosopikal, o supernatural na paniniwala.");
   }
   if (/^(naranasan ko|nararamdaman ko|feeling ko)\b/i.test(text) || /\b(i|my|ako|aking)\b.*\b(felt|feel|experienced|naranasan|masakit|masaya|malungkot|nagkasakit)\b/i.test(text)) {
-    return result("PERSONAL_EXPERIENCE", 0.96, "The input describes the user's own experience or feeling.");
+    return result("PERSONAL_EXPERIENCE", 0.96, "Personal na karanasan o damdamin ang inilagay.");
   }
 
   const extracted = cleanClaim(raw);
   if (/\b(opinion|i prefer|favorite|mas maganda|mas masarap|mas mabuti|mas mahusay|mas magaling|dapat ba akong|sa tingin mo|is\s+the\s+best|is\s+better\s+than)\b/i.test(text)) {
     if (!/^(sa\s+tingin\s+ko|feeling\s+ko|i\s+think|people\s+say|sabi\s+nila)\b/i.test(text) || !isCompleteClaim(extracted)) {
-      return result("OPINION", 0.97, "The input expresses a preference or subjective value judgment.");
+      return result("OPINION", 0.97, "Personal na opinyon o paghuhusga ang inilagay.");
     }
   }
   if (/^fake\s*news\s*(ba\s*)?(ito|yan)?\??$/i.test(text)) {
-    return result("NEEDS_CONTEXT", 0.97, "A broad label was provided without the claim or content to assess.", "", ["claim"]);
+    return result("NEEDS_CONTEXT", 0.97, "Ilagay ang mismong claim o nilalamang gusto mong suriin.", "", ["claim"]);
   }
   if (/\b(meme|lol|haha|sarcasm|sarcastic|joke)\b/i.test(text)) {
-    return result("SATIRE_OR_MEME", 0.93, "The input appears to be a joke, meme, satire, or broad label.");
+    return result("SATIRE_OR_MEME", 0.93, "Mukhang biro, meme, satira, o pangkalahatang label ang inilagay.");
   }
   if (/\b(sex life|private chat|private conversation|intimate|leaked nude|titi|puki|boobs|penis|vagina|jowa|gf|bf)\b/i.test(text)) {
-    return result("PRIVATE_OR_UNVERIFIABLE", 0.96, "The input concerns private, intimate, or non-public personal information.");
+    return result("PRIVATE_OR_UNVERIFIABLE", 0.96, "Tungkol ito sa pribado o hindi pampublikong personal na impormasyon.");
   }
 
   if (/^(who|what|where|when|why|how|ano|sino|saan|kailan|bakit|paano)\b/i.test(text)) {
-    return result("INFORMATION_REQUEST", 0.94, "Requests information or an explanation without asserting a specific claim.");
+    return result("INFORMATION_REQUEST", 0.94, "Tanong ito na humihingi ng impormasyon, pero walang tiyak na claim.");
   }
 
   const explicit = /\b(totoo\s+ba|totoo\s+bang|tama\s+ba|mali\s+ba|tunay\s+ba|fact\s*check|verify|debunk|is\s+it\s+true|fake\s+ba|fake\s+news)\b/i.test(text);
   const factual = hasPredicate(extracted) || /\b(pinaka[\w-]+|may batas)\b/i.test(extracted);
   if (explicit && !isCompleteClaim(extracted)) {
-    return result("NEEDS_CONTEXT", 0.94, "A verification request was detected, but the factual proposition is incomplete.", "", ["claim"]);
+    return result("NEEDS_CONTEXT", 0.94, "Hindi kumpleto ang claim na gusto mong suriin.", "", ["claim"]);
   }
   if (isCompleteClaim(extracted) && (explicit || factual || /\?/.test(raw) || /\d|%|₱|\b(according to|ayon sa)\b/i.test(extracted))) {
-    return result("FACT_CHECKABLE", explicit ? 0.99 : 0.91, "Contains a specific, objective, publicly verifiable factual claim.", extracted);
+    return result("FACT_CHECKABLE", explicit ? 0.99 : 0.91, "May tiyak at pampublikong claim na maaaring suriin.", extracted);
   }
   if (/^(sinungaling|scammer|corrupt|masama|magaling|mabuti|pangit)\b/i.test(text) || /\b(he|she|siya)\s+(is|ay)\s+(a\s+)?(liar|sinungaling)\b/i.test(text)) {
-    return result("NEEDS_CONTEXT", 0.95, "The subject or supporting proposition is not identified.", "", ["person"]);
+    return result("NEEDS_CONTEXT", 0.95, "Hindi malinaw kung sino o ano ang tinutukoy ng claim.", "", ["person"]);
   }
-  if (text.split(/\s+/).length < 5) return result("NEEDS_CONTEXT", 0.78, "The input is too short or vague to identify a verifiable claim.", "", ["claim"]);
-  return result("NEEDS_CONTEXT", 0.68, "The input does not contain enough specific context to verify.", "", ["person", "place", "date"]);
+  if (text.split(/\s+/).length < 5) return result("NEEDS_CONTEXT", 0.78, "Masyadong maikli o malabo ang inilagay para matukoy ang claim.", "", ["claim"]);
+  return result("NEEDS_CONTEXT", 0.68, "Kulang ang tiyak na detalye para masuri ang claim.", "", ["person", "place", "date"]);
 }
 
 export const isFactCheckingQuery = shouldRunVerificationPipeline;

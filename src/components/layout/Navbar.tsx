@@ -2,7 +2,7 @@
  * Navbar — sticky top bar matching the Figma design.
  *
  * Left:   Logo (mascot circle + "Teka Muna" wordmark + "AI FACT-CHECKER" sub)
- * Center: Nav links (Home · I-Verify · Kasaysayan · Tungkol Sa Amin)
+ * Center: Nav links (Home · Suriin · Kasaysayan · Tungkol Sa Amin)
  * Right:  Settings icon + yellow "Suriin →" pill button
  */
 
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home", end: true },
-  { to: "/verify", label: "I-Verify", end: false },
+  { to: "/verify", label: "Suriin", end: false },
   { to: "/kasaysayan", label: "Kasaysayan", end: false },
   { to: "/tungkol", label: "Tungkol Sa Amin", end: false },
 ] as const;

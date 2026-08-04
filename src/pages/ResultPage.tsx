@@ -152,7 +152,7 @@ function ErrorState() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/verify"><Search className="h-4 w-4" /> I-Verify ang Claim</Link>
+          <Link to="/verify"><Search className="h-4 w-4" /> Suriin ang Claim</Link>
         </Button>
       </div>
     </PageContainer>
@@ -333,7 +333,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
       <nav className="flex items-center gap-1.5 pt-8 pb-6 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <Link to="/verify" className="hover:text-foreground transition-colors">Verify</Link>
+        <Link to="/verify" className="hover:text-foreground transition-colors">Suriin</Link>
         <ChevronRight className="h-3 w-3" />
         <span className="font-semibold text-foreground">Resulta</span>
       </nav>
@@ -619,7 +619,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
       {/* -- Bottom actions -- */}
       <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
         <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate(-1)}>
-          Bumalik sa Verify
+          Bumalik sa Suriin
         </Button>
         <Button className="w-full sm:w-auto" asChild>
           <Link to="/kasaysayan">Tingnan ang Kasaysayan</Link>

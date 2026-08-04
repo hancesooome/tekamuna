@@ -86,10 +86,10 @@ function CredBadge({ score }: { score: number }) {
 // ─── Loading state ─────────────────────────────────────────────────────────────
 
 const LOADING_STEPS = [
-  "Nire-receive ang claim...",
+  "Tinatanggap ang claim...",
   "Naghahanap ng mga pinagkukunan...",
   "Sinusuri ang mga ebidensya...",
-  "Kinakalkula ang verdict...",
+  "Binubuo ang resulta...",
 ];
 
 function LoadingView({ claim }: { claim: string }) {
@@ -148,11 +148,11 @@ function InvalidClaimError() {
         <div>
           <h1 className="text-2xl font-black text-foreground">Invalid na Link</h1>
           <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-            Ang share link na ito ay may mali o wala nang laman. Subukan mag-verify ng bagong claim.
+            May mali o walang laman ang link na ito. Subukang magsuri ng bagong claim.
           </p>
         </div>
         <Button asChild>
-          <Link to="/verify"><Search className="h-4 w-4" /> I-Verify ang Claim</Link>
+          <Link to="/verify"><Search className="h-4 w-4" /> Suriin ang Claim</Link>
         </Button>
       </div>
     </PageContainer>
@@ -176,7 +176,7 @@ function ApiErrorView({ claim, message, onRetry }: { claim: string; message: str
             <Loader2 className="h-4 w-4" /> Subukan Ulit
           </Button>
           <Button asChild>
-            <Link to="/verify"><Search className="h-4 w-4" /> I-Verify Muli</Link>
+            <Link to="/verify"><Search className="h-4 w-4" /> Magsuri Muli</Link>
           </Button>
         </div>
       </div>
@@ -391,7 +391,7 @@ function ResultView({ result }: { result: VerifyResult }) {
       {/* Bottom actions */}
       <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
         <Button variant="outline" className="w-full sm:w-auto" asChild>
-          <Link to="/verify">I-Verify ang Bagong Claim</Link>
+          <Link to="/verify">Suriin ang Bagong Claim</Link>
         </Button>
         <Button className="w-full sm:w-auto" asChild>
           <Link to="/kasaysayan">Tingnan ang Kasaysayan</Link>

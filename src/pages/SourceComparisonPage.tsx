@@ -361,7 +361,7 @@ export default function SourceComparisonPage() {
           <p className="text-sm text-muted-foreground">
             Walang data. Bumalik sa resulta at subukan ulit.
           </p>
-          <Button asChild><Link to="/verify">I-Verify ang Claim</Link></Button>
+          <Button asChild><Link to="/verify">Suriin ang Claim</Link></Button>
         </div>
       </PageContainer>
     );

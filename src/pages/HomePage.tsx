@@ -220,7 +220,10 @@ function HeroSection() {
           {/* ── Right: mascot ── */}
           <div className="hidden lg:flex flex-col items-center gap-4 shrink-0">
             <div className="relative">
-              <div className="absolute inset-0 bg-accent/20 rounded-full blur-3xl" />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 h-68 w-68 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12)_0%,rgba(235,244,255,0.07)_38%,rgba(214,231,255,0.025)_62%,transparent_78%)] blur-2xl"
+              />
               <img
                 src={MASCOT_URL}
                 alt="Teka mascot holding a magnifying glass"
@@ -297,7 +300,7 @@ function RecentChecksSection() {
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-foreground">Kamakallan na Sinuri</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Mga pinakabagong claim na na-verify ng aming AI
+            Mga pinakabagong claim na sinuri ng aming AI
           </p>
         </div>
         {recent.length > 0 && (
@@ -314,9 +317,9 @@ function RecentChecksSection() {
         /* Empty state — no history yet */
         <div className="tm-empty-state flex flex-col items-center justify-center gap-4 px-6 py-12 text-center sm:px-8">
           <Search className="h-10 w-10 text-muted-foreground/40" />
-          <p className="text-base font-bold text-muted-foreground">Wala pang na-verify na claim.</p>
+          <p className="text-base font-bold text-muted-foreground">Wala pang nasusuring claim.</p>
           <p className="text-sm text-muted-foreground max-w-sm">
-            I-verify ang iyong unang claim at lalabas ito dito.
+            Suriin ang iyong unang claim at lalabas ito rito.
           </p>
           <Link
             to="/verify"

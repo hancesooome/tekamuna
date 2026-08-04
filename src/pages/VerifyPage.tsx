@@ -1,5 +1,5 @@
 /**
- * VerifyPage — "I-Verify ang Claim"
+ * VerifyPage — "Suriin ang Claim"
  *
  * Card 1: Claim textarea
  * Card 2: Single-image upload with live AI Vision extraction
@@ -39,32 +39,32 @@ const EXAMPLE_CLAIMS: { claim: string; category: Category }[] = [
 ];
 
 const TIPS = [
-  "Gamitin ang buong sentence, hindi lang keywords",
-  "Maaaring mag-paste ng headline mula sa balita",
-  "I-specify ang lugar at petsa kung available",
-  "I-check din ang konteksto ng statement",
+  "Gumamit ng buong pangungusap, hindi lang keywords.",
+  "Maaari kang mag-paste ng headline mula sa balita.",
+  "Kung maaari, isama ang lugar at petsa.",
+  "Isama rin ang konteksto ng claim.",
 ];
 
 function getIntentTitle(category: ClassificationCategory | null): string {
   if (category === "NEEDS_CONTEXT") return "Kailangan pa ng konteksto";
   if (category === "INFORMATION_REQUEST") return "Impormasyon ang hinihingi ng tanong";
-  if (category === "COMMAND") return "Instruction ang ipinadala";
+  if (category === "COMMAND") return "Utos ang ipinadala";
   if (category === "PREDICTION") return "Pagtataya tungkol sa hinaharap";
   if (category === "OPINION") return "Opinyon o personal na pananaw";
   if (category === "PERSONAL_EXPERIENCE") return "Personal na karanasan";
   if (category === "PRIVATE_OR_UNVERIFIABLE") return "Pribado o hindi mapapatunayang impormasyon";
-  if (category === "SATIRE_OR_MEME") return "Meme, biro, o satire";
-  if (category === "BELIEF") return "Paniniwala o supernatural na pahayag";
-  return "Hindi ito mukhang fact-check";
+  if (category === "SATIRE_OR_MEME") return "Meme, biro, o satira";
+  if (category === "BELIEF") return "Paniniwala o pahayag tungkol sa kababalaghan";
+  return "Hindi ito mukhang claim na maaaring suriin";
 }
 
 // ── Loading overlay (verify in progress) ─────────────────────────────────────
 
 const LOADING_STEPS = [
-  "Nire-receive ang inyong claim...",
+  "Tinatanggap ang iyong claim...",
   "Naghahanap ng mga pinagkukunan...",
   "Sinusuri ang mga ebidensya...",
-  "Kinakalkula ang verdict...",
+  "Binubuo ang resulta...",
 ];
 
 function LoadingOverlay() {
@@ -124,7 +124,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
       return;
     }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setOcrError(`File ay masyadong malaki (${formatSize(file.size)}). Maximum ay ${MAX_FILE_MB} MB para sa OCR.`);
+      setOcrError(`Masyadong malaki ang file (${formatSize(file.size)}). Hanggang ${MAX_FILE_MB} MB lang ang puwedeng i-upload.`);
       return;
     }
 
@@ -212,7 +212,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
-              I-drag &amp; drop o mag-<span className="text-primary underline">click</span> para pumili
+              I-drag dito ang larawan o <span className="text-primary underline">pumili ng file</span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               JPG, PNG, WebP · max {MAX_FILE_MB} MB · isang larawan lamang
@@ -223,7 +223,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
         <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
           <ScanText className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-800 leading-relaxed">
-            <span className="font-bold">OCR Text Extraction.</span>{" "}
+            <span className="font-bold">Pagkuha ng teksto.</span>{" "}
             Awtomatikong mababasa ang teksto mula sa larawan o screenshot at ilalagay sa claim box para ma-edit mo bago suriin.
           </p>
         </div>
@@ -239,7 +239,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
                 onClick={() => setOcrError(null)}
                 className="mt-1.5 text-xs font-bold text-red-600 hover:underline"
               >
-                Pagsiriin ang ibang larawan
+                Subukan ang ibang larawan
               </button>
             </div>
           </div>
@@ -265,7 +265,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
         <div className="flex items-center gap-4 p-4 bg-muted/30">
           <img
             src={preview}
-            alt="Uploaded preview"
+            alt="Preview ng in-upload na larawan"
             className="h-20 w-20 rounded-lg object-cover shrink-0 border border-border shadow-sm"
           />
           <div className="flex-1 min-w-0">
@@ -287,7 +287,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
             )}
             {!isExtracting && !ocrSuccess && !ocrError && (
               <p className="text-xs text-muted-foreground mt-1.5 italic">
-                Naghihintay ng OCR result...
+                Hinihintay ang resulta...
               </p>
             )}
           </div>
@@ -471,11 +471,11 @@ export default function VerifyPage() {
             referrerPolicy="no-referrer"
           />
           <h1 className="text-3xl sm:text-[36px] font-black text-foreground tracking-tight">
-            I-Verify ang Claim
+            Suriin ang Claim
           </h1>
           <p className="text-base leading-relaxed max-w-xl">
             <span className="text-muted-foreground">
-              I-type o i-paste ang claim, o mag-upload ng larawan/screenshot.
+              I-type o i-paste ang claim, o mag-upload ng larawan o screenshot.
             </span>
           </p>
         </div>
@@ -522,7 +522,7 @@ export default function VerifyPage() {
             <div className="relative rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6">
               {isPending && <LoadingOverlay />}
               <p className="text-base font-black text-foreground mb-4">
-                Ang Claim o Statement
+                Ang Claim
               </p>
               <div className="relative">
                 <Textarea
@@ -588,7 +588,7 @@ export default function VerifyPage() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-center gap-2.5 mb-4">
                 <span className="text-xl leading-none">💡</span>
-                <span className="text-base font-black text-amber-900">Mga Tips</span>
+                <span className="text-base font-black text-amber-900">Mga Tip</span>
               </div>
               <ul className="space-y-3">
                 {TIPS.map((tip) => (
