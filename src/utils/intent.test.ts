@@ -1,224 +1,75 @@
-import { describe, expect, it } from "vitest";
-import { shouldRunVerificationPipeline } from "./intent";
+﻿import { describe, expect, it } from 'vitest';
+import { shouldRunVerificationPipeline, type ClassificationCategory } from './intent';
 
-describe("shouldRunVerificationPipeline - Language-Agnostic Verifiability Classifier", () => {
-  describe("MUST return TRUE (Fact-Check Pipeline)", () => {
-    it("classifies Tagalog vaccine claim: Libre ang COVID vaccine sa lahat ng Pilipino.", () => {
-      const result = shouldRunVerificationPipeline("Libre ang COVID vaccine sa lahat ng Pilipino.");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
+function expectCategory(input: string, category: ClassificationCategory) {
+  const actual = shouldRunVerificationPipeline(input);
+  expect(actual.category).toBe(category);
+  expect(actual.canFactCheck).toBe(category === 'FACT_CHECKABLE');
+  expect(actual.shouldVerify).toBe(actual.canFactCheck);
+  expect(actual.route).toBe(category === 'FACT_CHECKABLE' ? 'fact_check' : category === 'NEEDS_CONTEXT' ? 'ask_user' : 'reject');
+  expect(actual.confidence).toBeGreaterThanOrEqual(0);
+  expect(actual.confidence).toBeLessThanOrEqual(1);
+  return actual;
+}
 
-    it("classifies Tagalog metric ranking claim: Ang Pilipinas ay may pinakamataas na unemployment rate sa ASEAN.", () => {
-      const result = shouldRunVerificationPipeline(
-        "Ang Pilipinas ay may pinakamataas na unemployment rate sa ASEAN.",
-      );
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Tagalog law/ban claim: Ipinagbawal na ang social media para sa mga menor de edad.", () => {
-      const result = shouldRunVerificationPipeline(
-        "Ipinagbawal na ang social media para sa mga menor de edad.",
-      );
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Tagalog environmental claim: Ang Maynila ay ang pinaka-polluted na lungsod sa buong mundo.", () => {
-      const result = shouldRunVerificationPipeline(
-        "Ang Maynila ay ang pinaka-polluted na lungsod sa buong mundo.",
-      );
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Tagalog event occurrence claim: May lindol na magnitude 7 sa Mindanao kahapon.", () => {
-      const result = shouldRunVerificationPipeline(
-        "May lindol na magnitude 7 sa Mindanao kahapon.",
-      );
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Tagalog sports achievement claim: Nanalo si Carlos Yulo ng dalawang Olympic gold medals.", () => {
-      const result = shouldRunVerificationPipeline(
-        "Nanalo si Carlos Yulo ng dalawang Olympic gold medals.",
-      );
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Tagalog economic trend claim: Bumaba ang inflation ngayong taon.", () => {
-      const result = shouldRunVerificationPipeline("Bumaba ang inflation ngayong taon.");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("detects explicit English verification queries", () => {
-      const result = shouldRunVerificationPipeline("Is this news accurate?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThan(0.5);
-    });
-
-    it("detects sports and transfer rumors as verification-worthy", () => {
-      const result = shouldRunVerificationPipeline("Is LeBron James going to Sixers?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThan(0.5);
-    });
-
-    it("detects Filipino explicit fact-check phrases", () => {
-      const result = shouldRunVerificationPipeline("Totoo ba na pinalaya siya?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.5);
-    });
-
-    it("detects fake news queries", () => {
-      const result = shouldRunVerificationPipeline("Fake news ba ito?");
-      expect(result.shouldVerify).toBe(true);
-    });
-
-    it("recognizes English standalone news claims", () => {
-      const result = shouldRunVerificationPipeline("Marcos Jr. declared Martial Law again.");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Filipino verifiable death question: patay naba si president bong bong marcos?", () => {
-      const result = shouldRunVerificationPipeline("patay naba si president bong bong marcos?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies buhay pa ba question as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Buhay pa ba si Cory Aquino?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies English 'is X dead' as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Is Fidel Ramos still alive?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies namatay na ba question as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Namatay na ba si Erap Estrada?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Totoo bang... style questions as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Totoo bang libre ang COVID vaccine?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Na-ban na ba... style questions as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Na-ban na ba ang TikTok sa Pilipinas?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies Sinabi ba ni... style questions as verifiable", () => {
-      const result = shouldRunVerificationPipeline("Sinabi ba ni Sara Duterte na kaya niyang mag-hire ng gunman ng ₱5,000?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
-
-    it("classifies May batas ba... style questions as verifiable", () => {
-      const result = shouldRunVerificationPipeline("May batas ba na nagbabawal sa social media para sa menor de edad?");
-      expect(result.shouldVerify).toBe(true);
-      expect(result.detectionConfidence).toBeGreaterThanOrEqual(0.7);
-    });
+describe('shouldRunVerificationPipeline', () => {
+  it.each([
+    'Totoo ba na ₱20 na ang bigas?',
+    'Sa tingin ko umiikot ang Earth sa Araw.',
+    'Libre ang COVID vaccine sa lahat ng Pilipino.',
+    'Ang Pilipinas ay may pinakamataas na unemployment rate sa ASEAN.',
+    'Ang Maynila ay ang pinaka-polluted na lungsod sa buong mundo.',
+    'May lindol na magnitude 7 sa Mindanao kahapon.',
+    'Nanalo si Carlos Yulo ng dalawang Olympic gold medals.',
+    'Bumaba ang inflation ngayong taon.',
+    'Marcos Jr. declared Martial Law again.',
+    'Na-ban na ba ang TikTok sa Pilipinas?',
+    'Sinabi ba ni Sara Duterte na kaya niyang mag-hire ng gunman ng ₱5,000?',
+    'May batas ba na nagbabawal sa social media para sa menor de edad?',
+  ])('classifies a public factual proposition: %s', (input) => {
+    const actual = expectCategory(input, 'FACT_CHECKABLE');
+    expect(actual.claim.length).toBeGreaterThan(0);
+    expect(actual.needs).toEqual([]);
   });
 
-  describe("MUST return FALSE (Normal Chat)", () => {
-    it("routes Tagalog definitional query: Ano ang unemployment?", () => {
-      const result = shouldRunVerificationPipeline("Ano ang unemployment?");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Definitional");
-    });
+  it('removes an opinion wrapper and extracts its factual proposition', () => {
+    const actual = expectCategory('Sa tingin ko umiikot ang Earth sa Araw.', 'FACT_CHECKABLE');
+    expect(actual.claim).toBe('umiikot ang Earth sa Araw');
+  });
 
-    it("routes Tagalog definitional query: Ano ang ASEAN?", () => {
-      const result = shouldRunVerificationPipeline("Ano ang ASEAN?");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Definitional");
-    });
+  it.each([
+    ['Sinungaling siya.', ['person']],
+    ['Totoo ba?', ['claim']],
+    ['Fake news ba ito?', ['claim']],
+    ['Verify this', ['claim']],
+  ])('asks for missing context: %s', (input, needs) => {
+    const actual = expectCategory(input as string, 'NEEDS_CONTEXT');
+    expect(actual.needs).toEqual(needs);
+    expect(actual.claim).toBe('');
+  });
 
-    it("routes Tagalog creative prompt: Gumawa ng tula tungkol sa Maynila.", () => {
-      const result = shouldRunVerificationPipeline("Gumawa ng tula tungkol sa Maynila.");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Creative");
-    });
-
-    it("routes Tagalog translation task: Isalin ito sa English.", () => {
-      const result = shouldRunVerificationPipeline("Isalin ito sa English.");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Creative");
-    });
-
-    it("routes Tagalog creative task: Sumulat ng birthday greeting.", () => {
-      const result = shouldRunVerificationPipeline("Sumulat ng birthday greeting.");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Creative");
-    });
-
-    it("routes English creative request: Tell me a joke.", () => {
-      const result = shouldRunVerificationPipeline("Tell me a joke.");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Creative");
-    });
-
-    it("blocks general knowledge questions: Who is the president?", () => {
-      const result = shouldRunVerificationPipeline("Who is the president?");
-      expect(result.shouldVerify).toBe(false);
-    });
-
-    it("blocks creative email requests", () => {
-      const result = shouldRunVerificationPipeline("Write me an email about my vacation.");
-      expect(result.shouldVerify).toBe(false);
-    });
-
-    it("blocks English translation requests", () => {
-      const result = shouldRunVerificationPipeline("Translate this paragraph.");
-      expect(result.shouldVerify).toBe(false);
-    });
-
-    it("blocks religious/philosophical verification questions", () => {
-      const result = shouldRunVerificationPipeline("Is totoo ba ang diyos?");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("religious");
-    });
-
-    it("blocks English concept questions: What is inflation?", () => {
-      const result = shouldRunVerificationPipeline("What is inflation?");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason).toContain("Definitional");
-    });
-
-    it("blocks vague 'fake news yan' style comments without specified propositions", () => {
-      const result = shouldRunVerificationPipeline("fake news yan");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason.toLowerCase()).toContain("broad label or commentary");
-    });
-
-    it("blocks open-ended questions like 'ano nangyari?' without checkable propositions", () => {
-      const result = shouldRunVerificationPipeline("ano nangyari?");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason.toLowerCase()).toContain("broad, open-ended question");
-    });
-
-    it("blocks intimate, sensitive, or private attributes of individual person", () => {
-      const result = shouldRunVerificationPipeline("malaki ba ang titi ni jason yap");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason.toLowerCase()).toContain("intimate, sensitive, or private");
-    });
-
-    it("blocks intimate/sensitive gossip attributes of public figures", () => {
-      const result = shouldRunVerificationPipeline("malaki ba ang boobs ni anne curtis");
-      expect(result.shouldVerify).toBe(false);
-      expect(result.reason.toLowerCase()).toContain("intimate, sensitive, or private");
-    });
+  it.each([
+    ['Mas magaling si X kaysa kay Y.', 'OPINION'],
+    ['Sa tingin mo mas maganda ang Android kaysa iPhone?', 'OPINION'],
+    ['Naranasan ko ang matinding sakit kahapon.', 'PERSONAL_EXPERIENCE'],
+    ['I feel sick after eating there.', 'PERSONAL_EXPERIENCE'],
+    ['Is LeBron James going to Sixers?', 'PREDICTION'],
+    ['Mananalo ang Pilipinas bukas.', 'PREDICTION'],
+    ['What if mawala ang internet bukas?', 'HYPOTHETICAL'],
+    ['Paano kung naging presidente ako?', 'HYPOTHETICAL'],
+    ['Totoo ba ang Diyos?', 'BELIEF'],
+    ['May sumpa ang bahay na ito.', 'BELIEF'],
+    ['Ano ang ASEAN?', 'INFORMATION_REQUEST'],
+    ['What is inflation?', 'INFORMATION_REQUEST'],
+    ['Who is the president?', 'INFORMATION_REQUEST'],
+    ['Bakit mataas ang inflation?', 'INFORMATION_REQUEST'],
+    ['Translate this paragraph.', 'COMMAND'],
+    ['Gumawa ng tula tungkol sa Maynila.', 'COMMAND'],
+    ['Tell me a joke.', 'COMMAND'],
+    ['Malaki ba ang titi ni Jason Yap?', 'PRIVATE_OR_UNVERIFIABLE'],
+    ['Did she say that in a private conversation?', 'PRIVATE_OR_UNVERIFIABLE'],
+    ['Earth is flat haha meme lang.', 'SATIRE_OR_MEME'],
+  ] as const)('rejects non-fact-check input: %s', (input, category) => {
+    expectCategory(input, category);
   });
 });

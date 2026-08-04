@@ -17,7 +17,7 @@ import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
 import { extractTextFromImageBrowser, OCR_MAX_FILE_BYTES, OCR_ALLOWED_MIME } from "@/services/ocrService";
-import { shouldRunVerificationPipeline } from "@/utils/intent";
+import { shouldRunVerificationPipeline, type ClassificationCategory } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import { type Category } from "@/constants";
@@ -44,6 +44,19 @@ const TIPS = [
   "I-specify ang lugar at petsa kung available",
   "I-check din ang konteksto ng statement",
 ];
+
+function getIntentTitle(category: ClassificationCategory | null): string {
+  if (category === "NEEDS_CONTEXT") return "Kailangan pa ng konteksto";
+  if (category === "INFORMATION_REQUEST") return "Impormasyon ang hinihingi ng tanong";
+  if (category === "COMMAND") return "Instruction ang ipinadala";
+  if (category === "PREDICTION") return "Pagtataya tungkol sa hinaharap";
+  if (category === "OPINION") return "Opinyon o personal na pananaw";
+  if (category === "PERSONAL_EXPERIENCE") return "Personal na karanasan";
+  if (category === "PRIVATE_OR_UNVERIFIABLE") return "Pribado o hindi mapapatunayang impormasyon";
+  if (category === "SATIRE_OR_MEME") return "Meme, biro, o satire";
+  if (category === "BELIEF") return "Paniniwala o supernatural na pahayag";
+  return "Hindi ito mukhang fact-check";
+}
 
 // ── Loading overlay (verify in progress) ─────────────────────────────────────
 
@@ -380,6 +393,7 @@ export default function VerifyPage() {
   const [claim, setClaim]                       = useState("");
 
   const [intentError, setIntentError]           = useState<string | null>(null);
+  const [intentCategory, setIntentCategory]     = useState<ClassificationCategory | null>(null);
 
   const { mutate, isPending, error, reset } = useVerify();
 
@@ -396,9 +410,11 @@ export default function VerifyPage() {
         const detection = shouldRunVerificationPipeline(filled);
         if (detection.shouldVerify) {
           setIntentError(null);
+          setIntentCategory(null);
           mutate({ claim: filled.trim() });
         } else {
           setIntentError(detection.reason);
+          setIntentCategory(detection.category);
         }
       }
     }
@@ -415,10 +431,12 @@ export default function VerifyPage() {
     const detection = shouldRunVerificationPipeline(claim.trim());
     if (!detection.shouldVerify) {
       setIntentError(detection.reason);
+      setIntentCategory(detection.category);
       return;
     }
 
     setIntentError(null);
+    setIntentCategory(null);
     reset();
     mutate({ claim: claim.trim() });
   };
@@ -480,10 +498,15 @@ export default function VerifyPage() {
           <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-5">
             <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-800">Hindi ito mukhang fact-check</p>
+               <p className="text-sm font-bold text-amber-800">{getIntentTitle(intentCategory)}</p>
               <p className="text-xs text-amber-900 mt-0.5">{intentError}</p>
+              {intentCategory === "NEEDS_CONTEXT" && (
+                <p className="text-xs text-amber-900 mt-1.5">
+                  Idagdag ang paksa, eksaktong pahayag, o iba pang detalye para matukoy ang claim.
+                </p>
+              )}
             </div>
-            <button type="button" onClick={() => setIntentError(null)} className="text-amber-500 hover:text-amber-700 shrink-0">
+            <button type="button" onClick={() => { setIntentError(null); setIntentCategory(null); }} className="text-amber-500 hover:text-amber-700 shrink-0">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -507,7 +530,10 @@ export default function VerifyPage() {
                   onChange={(e) => {
                     if (e.target.value.length <= MAX_CHARS) {
                       setClaim(e.target.value);
-                      if (intentError) setIntentError(null);
+                       if (intentError) {
+                         setIntentError(null);
+                         setIntentCategory(null);
+                       }
                     }
                   }}
                   rows={7}
