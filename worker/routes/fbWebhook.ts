@@ -68,7 +68,10 @@ async function verifyFacebookSignature(
   appSecret: string,
 ): Promise<boolean> {
   const signature = request.headers.get("x-hub-signature-256");
-  if (!signature) return false;
+  if (!signature) {
+    console.warn("[fbWebhook] No x-hub-signature-256 header found");
+    return false;
+  }
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -84,7 +87,13 @@ async function verifyFacebookSignature(
     .join("");
   const expected = `sha256=${hex}`;
 
-  // Constant-time comparison to prevent timing attacks
+  console.log("[fbWebhook] Signature verification details:", {
+    received: signature,
+    expected: expected,
+    bodyLength: rawBody.length,
+    secretLength: appSecret.length,
+  });
+
   return signature === expected;
 }
 
