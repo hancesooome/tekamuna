@@ -53,6 +53,7 @@ import { handlePostTemplates }  from "./routes/postTemplates";  // CRUD /api/adm
 import { handleUploadImage }    from "./routes/uploadImage";    // POST /api/admin/upload-image
 import { handleOgStore, handleOgImage, handleOgPreview } from "./routes/og";
 import { handleFieldDefaults }  from "./routes/fieldDefaults"; // GET/POST /api/admin/field-defaults
+import { handleFbWebhookVerify, handleFbWebhookEvent } from "./routes/fbWebhook"; // GET/POST /api/fb-webhook
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -86,6 +87,11 @@ export interface Env {
   SUPABASE_URL?:               string;  // e.g. https://xxx.supabase.co
   SUPABASE_ANON_KEY?:          string;  // Supabase anon key — safe for server-side reads
   SUPABASE_SERVICE_ROLE_KEY?:  string;  // Service role key — bypasses RLS for admin writes
+
+  // ── Facebook integration ──────────────────────────────────────────────────
+  FB_VERIFY_TOKEN?:      string;  // Secret token you set in the FB Webhooks dashboard
+  FB_PAGE_ACCESS_TOKEN?: string;  // Long-lived Page Access Token from Graph API Explorer
+  FB_APP_SECRET?:        string;  // App Secret from App Settings → Basic (for HMAC verification)
 }
 
 // ── CORS headers ──────────────────────────────────────────────────────────────
@@ -135,6 +141,14 @@ export default {
     }
     if (url.pathname === "/api/og/preview" && request.method === "GET") {
       return handleOgPreview(request, env);
+    }
+
+    // ── Facebook Webhook ────────────────────────────────────────────────────
+    // GET  /api/fb-webhook — Facebook verification handshake (called once when setting up)
+    // POST /api/fb-webhook — Incoming events (page mentions, feed posts)
+    if (url.pathname === "/api/fb-webhook") {
+      if (request.method === "GET")  return handleFbWebhookVerify(request, env);
+      if (request.method === "POST") return handleFbWebhookEvent(request, env, ctx);
     }
 
     // ── POST /api/verify ───────────────────────────────────────────────────
