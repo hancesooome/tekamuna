@@ -28,7 +28,6 @@ import {
   normalizeClaim,
   getCachedClaim,
   saveCachedClaim,
-  calculateExpiration,
 } from "../services/cache";
 
 // ── Pipeline version (keep in sync with verify.ts) ───────────────────────────
@@ -157,7 +156,7 @@ async function postFacebookReply(
 /**
  * Format the fact-check result into a clean Facebook comment.
  */
-function formatReply(claim: string, result: AnalysisResult): string {
+function formatReply(result: AnalysisResult): string {
   const verdict = result.verdict?.toLowerCase() ?? "unverified";
   const emoji = VERDICT_EMOJI[verdict] ?? "❓";
   const label = VERDICT_LABEL[verdict] ?? "HINDI MA-VERIFY";
@@ -309,7 +308,7 @@ export async function handleFbWebhookEvent(
               explanation:     cacheEntry.summary,
               reliableSources: cacheEntry.sources?.reliableSources ?? [],
             } as unknown as AnalysisResult;
-            const reply = formatReply(claim, cachedResult);
+            const reply = formatReply(cachedResult);
             await postFacebookReply(postId, reply, pageAccessToken);
             continue;
           }
@@ -359,7 +358,7 @@ export async function handleFbWebhookEvent(
           }
 
           // Format and post reply
-          const reply = formatReply(claim, rawResult);
+          const reply = formatReply(rawResult);
           await postFacebookReply(postId, reply, pageAccessToken);
 
         } catch (err) {
