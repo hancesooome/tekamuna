@@ -93,38 +93,37 @@ async function verifyFacebookSignature(
  * Handles both "mention" events and "feed" post events.
  */
 function extractClaim(entry: Record<string, unknown>): string | null {
-  // Try mention events first (page tagged in someone else's post)
+  console.log("[fbWebhook] Extracting claim from entry:", JSON.stringify(entry));
   const changes = entry.changes as Array<{ field: string; value: Record<string, unknown> }> | undefined;
   if (changes) {
     for (const change of changes) {
-      if (change.field === "mention" || change.field === "feed") {
-        const value = change.value;
-        // "message" is the post text in feed events
-        if (typeof value.message === "string" && value.message.trim().length > 10) {
-          return value.message.trim();
-        }
-        // "item" + "message" for comment events
-        if (typeof value.item === "string" && typeof value.message === "string") {
-          return value.message.trim();
-        }
+      const value = change.value;
+      if (!value) continue;
+
+      // Extract message text from post or comment
+      const message = value.message || value.comment || value.text;
+      if (typeof message === "string" && message.trim().length > 0) {
+        return message.trim();
       }
     }
   }
   return null;
 }
 
-/**
- * Extract the post/comment ID to reply to.
- */
 function extractPostId(entry: Record<string, unknown>): string | null {
   const changes = entry.changes as Array<{ field: string; value: Record<string, unknown> }> | undefined;
   if (changes) {
     for (const change of changes) {
       const value = change.value;
-      // Comment ID for mention events
+      if (!value) continue;
+
+      // Check comment ID first (to reply to a specific comment)
       if (typeof value.comment_id === "string") return value.comment_id;
-      // Post ID for feed events
+      if (typeof value.id === "string" && value.item === "comment") return value.id;
+
+      // Fall back to post ID
       if (typeof value.post_id === "string") return value.post_id;
+      if (typeof value.id === "string") return value.id;
     }
   }
   return null;
