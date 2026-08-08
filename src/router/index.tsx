@@ -35,6 +35,7 @@ const CheckPage            = lazy(() => import("@/pages/CheckPage"));
 const SourceComparisonPage = lazy(() => import("@/pages/SourceComparisonPage"));
 const HistoryPage          = lazy(() => import("@/pages/HistoryPage"));
 const AboutPage            = lazy(() => import("@/pages/AboutPage"));
+const PrivacyPage          = lazy(() => import("@/pages/PrivacyPage"));
 const MaintenancePage      = lazy(() => import("@/pages/MaintenancePage"));
 
 // ── Lazy-loaded admin pages ───────────────────────────────────────────────────
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       { path: "check",            element: withSuspense(CheckPage) },          // /check
       { path: "kasaysayan",       element: withSuspense(HistoryPage) },        // /kasaysayan
       { path: "tungkol",          element: withSuspense(AboutPage) },          // /tungkol
+      { path: "privacy",          element: withSuspense(PrivacyPage) },        // /privacy
       // Backward-compat alias — old bookmarks still work
       { path: "dashboard",        element: <Navigate to="/admin/dashboard" replace /> },
       { path: "*", element: <Navigate to="/" replace /> },                    // 404
