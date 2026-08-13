@@ -149,7 +149,7 @@ export default function AdminLoginPage() {
             <button
               id="admin-login-submit"
               type="submit"
-              disabled={submitting || !email || !password}
+              disabled={submitting || !email || !password || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
