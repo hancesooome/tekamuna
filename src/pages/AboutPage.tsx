@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AboutPage (Tungkol Sa Amin) — full page matching the Figma design.
  *
  * Sections:
@@ -223,6 +223,7 @@ function TrustedSourcesSection() {
                   target="_blank"
                   rel="noopener noreferrer"
                   title={source.name}
+                  aria-label={`Bisitahin ang website ng ${source.name}`}
                   className="group flex items-center justify-center h-14 w-36 transition-all duration-300"
                 >
                   <img
