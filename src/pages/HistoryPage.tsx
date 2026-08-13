@@ -161,6 +161,8 @@ export default function HistoryPage() {
   }, [navigate]);
 
   const handleDelete = useCallback((verifiedAt: string) => {
+    const ok = window.confirm("Sigurado ka ba na gusto mong burahin ang entry na ito?");
+    if (!ok) return;
     deleteFromHistory(verifiedAt);
     setHistory((prev) => prev.filter((h) => h.verifiedAt !== verifiedAt));
   }, []);
