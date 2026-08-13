@@ -166,6 +166,8 @@ export default function HistoryPage() {
   }, []);
 
   const handleClearAll = useCallback(() => {
+    const ok = window.confirm("Sigurado ka ba na gusto mong burahin ang lahat ng iyong kasaysayan ng pagsusuri? Hindi na ito mababawi.");
+    if (!ok) return;
     clearHistory();
     setHistory([]);
   }, []);
