@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HomePage — full landing page matching the Figma design.
  *
  * Sections:
@@ -199,12 +199,17 @@ function HeroSection() {
                     placeholder="I-type ang claim na gusto mong suriin..."
                     className="w-full resize-none overflow-hidden bg-transparent px-6 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-relaxed"
                   />
-                  <div className="flex justify-end px-2 pb-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-6 pb-4 pt-1">
+                    <span className={`text-xs ${query.trim().length >= 10 ? 'text-emerald-600' : 'text-amber-600'} font-medium`}>
+                      {query.trim().length >= 10 
+                        ? "Sapat na ang haba para suriin." 
+                        : `Kailangan ng hindi bababa sa 10 karakter (${query.trim().length}/10)`}
+                    </span>
                     <button
                       type="button"
                       onClick={handleSuriin}
                       disabled={!canSubmit}
-                      className="flex min-h-11 items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-11 items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 w-full sm:w-auto justify-center"
                     >
                       <Search className="h-4 w-4" />
                       Suriin
