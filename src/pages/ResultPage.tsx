@@ -478,7 +478,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
               </div>
               <div className="rounded-2xl bg-white/55 px-4 py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Kategorya</p>
-                <p className="text-sm font-semibold text-foreground">General</p>
+                <p className="text-sm font-semibold text-foreground">{result.category || "Pangkalahatan"}</p>
               </div>
               {/* Verdict card — replaces the empty "Nakaraang Verdict" placeholder */}
               <div className={cn("rounded-2xl bg-white/55 px-4 py-3 flex items-center gap-3", cfg.bg)}>
