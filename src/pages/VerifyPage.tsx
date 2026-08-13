@@ -542,12 +542,19 @@ export default function VerifyPage() {
                   className="w-full resize-none text-sm placeholder:text-muted-foreground/50 disabled:opacity-60 rounded-lg border-2"
                   aria-label="Ilagay ang claim na gusto mong suriin"
                 />
-                <span className={cn(
-                  "absolute bottom-4 right-4 text-xs font-bold tabular-nums",
-                  charsLeft <= 50 ? "text-red-500" : "text-muted-foreground",
-                )}>
-                  {claim.length}/{MAX_CHARS}
-                </span>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className={`text-xs ${claim.trim().length >= 10 ? 'text-emerald-600' : 'text-amber-600'} font-medium`}>
+                    {claim.trim().length >= 10 
+                      ? "Sapat na ang haba para suriin." 
+                      : `Kailangan ng hindi bababa sa 10 karakter (${claim.trim().length}/10)`}
+                  </span>
+                  <span className={cn(
+                    "text-xs font-bold tabular-nums",
+                    charsLeft <= 50 ? "text-red-500" : "text-muted-foreground",
+                  )}>
+                    {claim.length}/{MAX_CHARS}
+                  </span>
+                </div>
               </div>
             </div>
 
