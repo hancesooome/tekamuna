@@ -12,7 +12,14 @@ export function Footer() {
         </p>
         <p className="text-xs text-muted-foreground">
           Developed by{" "}
-          <span className="font-bold text-primary">Hance Dagondon</span>
+          <a
+            href="https://www.hancesoo.me"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-primary hover:underline"
+          >
+            Hance Dagondon
+          </a>
         </p>
       </div>
     </footer>
