@@ -3,7 +3,7 @@
  */
 
 import { useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Send } from "lucide-react";
+import { Check, Copy, Link2, MessageCircle, Send, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -173,9 +173,12 @@ export default function ShareDialog({ result, open, onOpenChange }: ShareDialogP
               ))}
             </div>
             {uploading && (
-              <p className="text-center text-[10px] text-muted-foreground animate-pulse">
-                Inihahanda ang preview…
-              </p>
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                <p className="text-center text-[10px] text-muted-foreground animate-pulse">
+                  Inihahanda ang preview…
+                </p>
+              </div>
             )}
           </div>
         </div>
