@@ -113,7 +113,18 @@ const SECTIONS = [
       },
       {
         subtitle: "Request deletion",
-        text: `To request deletion of any data associated with your use of Teka Muna, email us at ${CONTACT_EMAIL} with the subject "Data Deletion Request." We will process your request within 30 days.`,
+        text: (
+          <>
+            To request deletion of any data associated with your use of Teka Muna, email us at{" "}
+            <a
+              href={`mailto:${CONTACT_EMAIL}?subject=Data Deletion Request`}
+              className="text-primary underline hover:text-primary/80 font-medium"
+            >
+              {CONTACT_EMAIL}
+            </a>{" "}
+            with the subject "Data Deletion Request." We will process your request within 30 days.
+          </>
+        ),
       },
       {
         subtitle: "Admin accounts",
@@ -188,7 +199,7 @@ function PolicySection({
   title: string;
   color: string;
   bg: string;
-  content: ReadonlyArray<{ subtitle: string; text: string }>;
+  content: ReadonlyArray<{ subtitle: string; text: React.ReactNode }>;
 }) {
   return (
     <section id={id} className={`rounded-2xl border p-6 sm:p-8 ${bg}`}>
