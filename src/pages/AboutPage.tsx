@@ -10,6 +10,7 @@
  *  6. Awards        — "Mga Parangal at Pagkilala" — blue banner
  */
 
+import { useEffect } from "react";
 import { ShieldCheck, TrendingUp } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { LOGO_ICON_URL } from "@/constants";
@@ -251,6 +252,10 @@ function TrustedSourcesSection() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AboutPage() {
+  useEffect(() => {
+    document.title = "Tungkol sa Teka Muna — Teka Muna";
+  }, []);
+
   return (
     <PageContainer className="animate-page-in">
       <HeroSection />
