@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { LOGO_ICON_URL } from "@/constants";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
 ] as const;
 
 export function Navbar() {
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -46,7 +47,7 @@ export function Navbar() {
 
           {/* ── Logo ── */}
           <button
-            onClick={() => { window.location.href = "/"; handleNavClick(); }}
+            onClick={() => { void navigate("/"); handleNavClick(); }}
             className="tm-interactive group flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none"
             aria-label="Teka Muna — bumalik sa Home"
           >
