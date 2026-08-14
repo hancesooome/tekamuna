@@ -130,6 +130,7 @@ export default function HistoryPage() {
 
   // Load from sessionStorage via historyService — show empty state if none
   useEffect(() => {
+    document.title = "Kasaysayan ng Pagsusuri — Teka Muna";
     const stored = loadHistory();
     setHistory(stored);
   }, []);
