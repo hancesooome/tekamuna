@@ -410,6 +410,10 @@ function CTASection() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = "Teka Muna — AI-Powered Filipino Fact-Checking Platform";
+  }, []);
+
   return (
     <div className="animate-page-in">
       <HeroSection />
