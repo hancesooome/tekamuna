@@ -5,10 +5,14 @@
  * mascot logo, and Filipino text.
  */
 
+import { useEffect } from "react";
 import { Wrench } from "lucide-react";
 import { LOGO_ICON_URL, APP_NAME } from "@/constants";
 
 export default function MaintenancePage() {
+  useEffect(() => {
+    document.title = `Maintenance — ${APP_NAME}`;
+  }, []);
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center bg-gradient-primary">
       {/* Dot grid overlay */}
