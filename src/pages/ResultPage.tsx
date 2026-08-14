@@ -314,6 +314,7 @@ function SourceCarousel({ result }: { result: VerifyResult }) {
 
 function SuccessView({ result }: { result: VerifyResult }) {
   const navigate = useNavigate();
+  const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
   const cfg = V[result.verdict];
   const { Icon } = cfg;
   const label = VERDICT_LABELS[result.verdict];
@@ -390,13 +391,31 @@ function SuccessView({ result }: { result: VerifyResult }) {
 
           {/* Feedback row */}
           <div className="flex items-center gap-3 pt-1 border-t border-black/5">
-            <span className="text-xs text-muted-foreground">Tama ba ang hatol na ito?</span>
-            <button className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-emerald-600 transition-colors">
-              <ThumbsUp className="h-3.5 w-3.5" /> Oo
-            </button>
-            <button className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors">
-              <ThumbsDown className="h-3.5 w-3.5" /> Hindi
-            </button>
+            {feedback ? (
+              <span className={`text-xs font-semibold ${
+                feedback === "correct" ? "text-emerald-600" : "text-red-500"
+              }`}>
+                {feedback === "correct" ? "✓ Salamat sa iyong feedback!" : "✓ Salamat! Patuloy naming pagbubutihin."}
+              </span>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">Tama ba ang hatol na ito?</span>
+                <button
+                  onClick={() => setFeedback("correct")}
+                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-emerald-600 transition-colors"
+                  aria-label="Tama ang hatol"
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" /> Oo
+                </button>
+                <button
+                  onClick={() => setFeedback("incorrect")}
+                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors"
+                  aria-label="Mali ang hatol"
+                >
+                  <ThumbsDown className="h-3.5 w-3.5" /> Hindi
+                </button>
+              </>
+            )}
           </div>
         </section>
 
