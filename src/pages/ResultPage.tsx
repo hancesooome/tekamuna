@@ -651,6 +651,14 @@ export default function ResultPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (state.status === "success") {
+      document.title = `Resulta ng Pagsusuri — Teka Muna`;
+    } else if (state.status === "error") {
+      document.title = "Walang Resulta — Teka Muna";
+    }
+  }, [state]);
+
   if (state.status === "loading") return <LoadingSkeleton />;
   if (state.status === "error")   return <ErrorState />;
   return <SuccessView result={state.result} />;
