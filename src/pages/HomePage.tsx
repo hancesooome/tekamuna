@@ -361,7 +361,7 @@ function RecentChecksSection() {
               <div className="flex items-center gap-5 shrink-0">
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
-                    Confidence
+                    Kumpiyansa
                   </span>
                   <span className="text-lg font-black text-foreground tabular-nums">
                     {item.confidence}%
