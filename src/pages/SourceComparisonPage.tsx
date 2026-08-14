@@ -20,6 +20,7 @@ import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult, Source } from "@/types";
 import { cn } from "@/lib/utils";
+import { stripMarkdown } from "@/utils/stripMarkdown";
 
 // ─── Stance badge ─────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ function DetailCard({ source }: { source: Source }) {
       </div>
 
       {/* Summary */}
-      <p className="text-sm text-foreground leading-relaxed">{source.summary}</p>
+      <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(source.summary)}</p>
 
       {/* Key facts grid */}
       {facts.length > 0 && (

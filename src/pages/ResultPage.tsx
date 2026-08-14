@@ -25,6 +25,7 @@ import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import ShareButton from "@/components/shared/ShareButton";
+import { stripMarkdown } from "@/utils/stripMarkdown";
 
 // --- Verdict config -----------------------------------------------------------
 
@@ -375,7 +376,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
           </div>
 
           {/* Explanation */}
-          <p className="text-sm text-foreground leading-relaxed">{result.explanation}</p>
+          <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(result.explanation)}</p>
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2 pt-1">
@@ -517,7 +518,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
             {/* Summary */}
             <div className="rounded-2xl bg-white/55 p-4">
               <h3 className="text-sm font-black text-foreground mb-3">Buod ng Pagsusuri</h3>
-              <p className="text-sm text-foreground leading-relaxed">{result.explanation}</p>
+              <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(result.explanation)}</p>
             </div>
 
             {/* Truth statement */}
@@ -526,7 +527,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                 <HelpCircle className="h-3.5 w-3.5" />
                 Ano ang Totoo
               </p>
-              <p className="text-sm text-amber-900 leading-relaxed">{result.truthStatement}</p>
+              <p className="text-sm text-amber-900 leading-relaxed">{stripMarkdown(result.truthStatement)}</p>
             </div>
 
             {/* Related claims — swipeable carousel */}
@@ -572,7 +573,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
                         </div>
                         <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
                       </div>
-                      <p className="text-xs text-foreground leading-relaxed mb-3">{source.summary}</p>
+                      <p className="text-xs text-foreground leading-relaxed mb-3">{stripMarkdown(source.summary)}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground">
                           {formatDate(source.publishedDate)}
