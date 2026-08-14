@@ -182,6 +182,10 @@ function SourceComparisonView({ result }: { result: VerifyResult }) {
   const trackRef   = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false); // prevent scroll→index feedback loop
 
+  useEffect(() => {
+    document.title = "Paghahambing ng mga Source — Teka Muna";
+  }, []);
+
   // Helper: get the width of one card from the DOM
   const getCardWidth = () => {
     const el = trackRef.current;
