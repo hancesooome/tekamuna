@@ -31,18 +31,12 @@ import { allSourcesMerged, stanceOf, formatDate } from "@/utils/sources";
 import { decodeClaim } from "@/utils/shareUrl";
 import ShareButton from "@/components/shared/ShareButton";
 import ShareCardButton from "@/components/shared/ShareCardButton";
-import { VERDICT_LABELS }    from "@/constants";
+import { VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn }                from "@/lib/utils";
 
-// ─── Verdict config (mirrors ResultPage) ──────────────────────────────────────
-
-const V = {
-  true:       { Icon: CheckCircle,  bg: "bg-emerald-50", border: "border-emerald-200", iconBg: "bg-emerald-500", label: "text-emerald-600", arc: "#10b981" },
-  false:      { Icon: XCircle,      bg: "bg-red-50",     border: "border-red-200",     iconBg: "bg-red-500",     label: "text-red-600",     arc: "#ef4444" },
-  misleading: { Icon: AlertTriangle,bg: "bg-amber-50",   border: "border-amber-200",   iconBg: "bg-amber-500",   label: "text-amber-600",   arc: "#f59e0b" },
-  unverified: { Icon: HelpCircle,   bg: "bg-slate-50",   border: "border-slate-200",   iconBg: "bg-slate-400",   label: "text-slate-600",   arc: "#94a3b8" },
-} satisfies Record<Verdict, { Icon: React.ElementType; bg: string; border: string; iconBg: string; label: string; arc: string }>;
+// ─── Verdict config (imported from constants) ──────────────────────────────────
+const V = VERDICT_CONFIG;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

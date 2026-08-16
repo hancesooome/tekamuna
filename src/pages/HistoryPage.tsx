@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import {
   RESULT_STORAGE_KEY,
   FILTER_CATEGORIES,
+  VERDICT_TYPES,
 } from "@/constants";
 import { loadHistory, deleteFromHistory, clearHistory } from "@/services/historyService";
 import { inferCategory } from "@/utils/sources";
@@ -196,8 +197,8 @@ export default function HistoryPage() {
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {(["true", "false", "misleading", "unverified"] as Verdict[]).map((v) => (
-          <StatCard key={v} verdict={v} count={stats[v]} />
+        {VERDICT_TYPES.map((v) => (
+          <StatCard key={v} verdict={v as Verdict} count={stats[v as Verdict]} />
         ))}
       </div>
 

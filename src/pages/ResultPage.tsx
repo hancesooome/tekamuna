@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { RESULT_STORAGE_KEY, VERDICT_LABELS } from "@/constants";
+import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult, Verdict } from "@/types";
@@ -27,46 +27,8 @@ import ShareCardButton from "@/components/shared/ShareCardButton";
 import ShareButton from "@/components/shared/ShareButton";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 
-// --- Verdict config -----------------------------------------------------------
-
-const V = {
-  true: {
-    Icon: CheckCircle,
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    iconBg: "bg-emerald-500",
-    label: "text-emerald-600",
-    ring: "ring-emerald-200",
-    arc: "#10b981",
-  },
-  false: {
-    Icon: XCircle,
-    bg: "bg-red-50",
-    border: "border-red-200",
-    iconBg: "bg-red-500",
-    label: "text-red-600",
-    ring: "ring-red-200",
-    arc: "#ef4444",
-  },
-  misleading: {
-    Icon: AlertTriangle,
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    iconBg: "bg-amber-500",
-    label: "text-amber-600",
-    ring: "ring-amber-200",
-    arc: "#f59e0b",
-  },
-  unverified: {
-    Icon: HelpCircle,
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    iconBg: "bg-slate-400",
-    label: "text-slate-600",
-    ring: "ring-slate-200",
-    arc: "#94a3b8",
-  },
-} satisfies Record<Verdict, { Icon: React.ElementType; bg: string; border: string; iconBg: string; label: string; ring: string; arc: string }>;
+// ─── Verdict config (imported from constants) ───────────────────────────────
+const V = VERDICT_CONFIG;
 
 // --- Donut confidence gauge ---------------------------------------------------
 

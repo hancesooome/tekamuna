@@ -117,6 +117,10 @@ export const VERDICT_COLORS: Record<string, string> = {
   unverified: "slate",
 };
 
+// ── Verdict types array ──────────────────────────────────────────────────────
+/** Array of all verdict types. Used for filtering, mapping, and type narrowing. */
+export const VERDICT_TYPES = ["true", "false", "misleading", "unverified"] as const;
+
 // ── History keyword → category mapping ───────────────────────────────────────
 // Used by inferCategory() in HistoryPage to assign a display category
 // to claims that don't have one stored.
@@ -136,3 +140,49 @@ export const CATEGORY_KEYWORD_MAP: Record<string, string> = {
   "eleksyon":                           "Pulitika",
   "comelec":                            "Pulitika",
 };
+
+// ── Verdict styling config ───────────────────────────────────────────────────
+// Full styling and icon map for all verdict types.
+// Used by ResultPage, CheckPage, and any component that needs verdict-specific styles.
+
+import { CheckCircle, XCircle, AlertTriangle, HelpCircle } from "lucide-react";
+import type { Verdict } from "../types";
+
+export const VERDICT_CONFIG = {
+  true: {
+    Icon: CheckCircle,
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    iconBg: "bg-emerald-500",
+    label: "text-emerald-600",
+    ring: "ring-emerald-200",
+    arc: "#10b981",
+  },
+  false: {
+    Icon: XCircle,
+    bg: "bg-red-50",
+    border: "border-red-200",
+    iconBg: "bg-red-500",
+    label: "text-red-600",
+    ring: "ring-red-200",
+    arc: "#ef4444",
+  },
+  misleading: {
+    Icon: AlertTriangle,
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    iconBg: "bg-amber-500",
+    label: "text-amber-600",
+    ring: "ring-amber-200",
+    arc: "#f59e0b",
+  },
+  unverified: {
+    Icon: HelpCircle,
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    iconBg: "bg-slate-400",
+    label: "text-slate-600",
+    ring: "ring-slate-200",
+    arc: "#94a3b8",
+  },
+} satisfies Record<Verdict, { Icon: React.ElementType; bg: string; border: string; iconBg: string; label: string; ring: string; arc: string }>;
