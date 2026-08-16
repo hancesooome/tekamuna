@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  FileText, ThumbsUp, ThumbsDown, BarChart2, Search,
+  FileText, XCircle, HelpCircle, ThumbsUp, ThumbsDown, BarChart2, Search,
   ExternalLink, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
-  Search, Share2, BarChart2, ExternalLink, ChevronRight, FileText,
+  Search, XCircle, Share2, BarChart2, ExternalLink, ChevronRight, FileText,
   Loader2,
 } from "lucide-react";
 import { useMutation }       from "@tanstack/react-query";
