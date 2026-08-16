@@ -12,8 +12,9 @@ import { useState, useRef, useEffect } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
-import { LOGO_ICON_URL, MASCOT_URL, CATEGORY_KEYWORD_MAP } from "@/constants";
+import { LOGO_ICON_URL, MASCOT_URL } from "@/constants";
 import { loadHistory } from "@/services/historyService";
+import { inferCategory } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
@@ -62,13 +63,6 @@ const FEATURES = [
 ] as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function inferCategory(claim: string): string {
-  for (const [key, cat] of Object.entries(CATEGORY_KEYWORD_MAP)) {
-    if (claim.includes(key)) return cat;
-  }
-  return "Pangkalahatan";
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-PH", {

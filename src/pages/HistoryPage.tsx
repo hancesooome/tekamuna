@@ -21,21 +21,15 @@ import { Button } from "@/components/ui/button";
 import {
   RESULT_STORAGE_KEY,
   FILTER_CATEGORIES,
-  CATEGORY_KEYWORD_MAP,
 } from "@/constants";
 import { loadHistory, deleteFromHistory, clearHistory } from "@/services/historyService";
+import { inferCategory } from "@/utils/sources";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
 export type FilterCategory = (typeof FILTER_CATEGORIES)[number];
 
-// Category derived from claim keywords
-function inferCategory(claim: string): string {
-  for (const [key, cat] of Object.entries(CATEGORY_KEYWORD_MAP)) {
-    if (claim.includes(key)) return cat;
-  }
-  return "Pangkalahatan";
-}
+// Category derived from claim keywords — shared utility in @/utils/sources
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 

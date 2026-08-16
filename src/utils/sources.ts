@@ -204,3 +204,16 @@ export function extractKeyFacts(summary: string): string[] {
     // 5. Take only the first 4 facts to keep the UI concise.
     .slice(0, 4);
 }
+
+/**
+ * Infers a display category from a claim string by matching keywords.
+ * Falls back to "Pangkalahatan" if no keyword matches.
+ */
+import { CATEGORY_KEYWORD_MAP } from "@/constants";
+
+export function inferCategory(claim: string): string {
+  for (const [key, cat] of Object.entries(CATEGORY_KEYWORD_MAP)) {
+    if (claim.includes(key)) return cat;
+  }
+  return "Pangkalahatan";
+}
