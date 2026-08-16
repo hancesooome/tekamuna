@@ -11,8 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  FileText, XCircle, CheckCircle, AlertTriangle, HelpCircle,
-  ThumbsUp, ThumbsDown, BarChart2, Search,
+  FileText, ThumbsUp, ThumbsDown, BarChart2, Search,
   ExternalLink, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
-import type { VerifyResult, Verdict } from "@/types";
+import type { VerifyResult } from "@/types";
 import { cn } from "@/lib/utils";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import ShareButton from "@/components/shared/ShareButton";

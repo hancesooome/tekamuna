@@ -15,8 +15,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
-  Search, XCircle, CheckCircle, AlertTriangle, HelpCircle,
-  Share2, BarChart2, ExternalLink, ChevronRight, FileText,
+  Search, Share2, BarChart2, ExternalLink, ChevronRight, FileText,
   Loader2,
 } from "lucide-react";
 import { useMutation }       from "@tanstack/react-query";
@@ -32,7 +31,7 @@ import { decodeClaim } from "@/utils/shareUrl";
 import ShareButton from "@/components/shared/ShareButton";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import { VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
-import type { VerifyResult, Verdict } from "@/types";
+import type { VerifyResult } from "@/types";
 import { cn }                from "@/lib/utils";
 
 // ─── Verdict config (imported from constants) ──────────────────────────────────
