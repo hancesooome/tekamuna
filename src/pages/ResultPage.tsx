@@ -25,26 +25,11 @@ import { cn } from "@/lib/utils";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import ShareButton from "@/components/shared/ShareButton";
 import { ConfidenceDonut } from "@/components/shared/ConfidenceDonut";
+import { StanceBadge } from "@/components/shared/StanceBadge";
 import { stripMarkdown } from "@/utils/stripMarkdown";
 
 // ─── Verdict config (imported from constants) ───────────────────────────────
 const V = VERDICT_CONFIG;
-
-// --- Stance badge -------------------------------------------------------------
-
-function StanceBadge({ stance }: { stance: "Supports" | "Contradicts" | "Neutral" | "Partially Contradicts" }) {
-  const map = {
-    Supports:              "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Contradicts:           "bg-red-50 text-red-700 border-red-200",
-    "Partially Contradicts": "bg-amber-50 text-amber-700 border-amber-200",
-    Neutral:               "bg-slate-100 text-slate-600 border-slate-200",
-  };
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold", map[stance])}>
-      {stance}
-    </span>
-  );
-}
 
 // --- Credibility level badge --------------------------------------------------
 

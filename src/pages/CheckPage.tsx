@@ -32,6 +32,7 @@ import ShareButton from "@/components/shared/ShareButton";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import { VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
 import { ConfidenceDonut } from "@/components/shared/ConfidenceDonut";
+import { StanceBadge } from "@/components/shared/StanceBadge";
 import type { VerifyResult } from "@/types";
 import { cn }                from "@/lib/utils";
 
@@ -39,20 +40,6 @@ import { cn }                from "@/lib/utils";
 const V = VERDICT_CONFIG;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function StanceBadge({ stance }: { stance: "Supports" | "Contradicts" | "Neutral" | "Partially Contradicts" }) {
-  const map = {
-    Supports:               "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Contradicts:            "bg-red-50 text-red-700 border-red-200",
-    "Partially Contradicts":"bg-amber-50 text-amber-700 border-amber-200",
-    Neutral:                "bg-slate-100 text-slate-600 border-slate-200",
-  };
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold", map[stance])}>
-      {stance}
-    </span>
-  );
-}
 
 function CredBadge({ score }: { score: number }) {
   if (score >= 85) return <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Mataas na Kredibilidad</span>;
