@@ -24,7 +24,7 @@ import {
   VERDICT_TYPES,
 } from "@/constants";
 import { loadHistory, deleteFromHistory, clearHistory } from "@/services/historyService";
-import { inferCategory } from "@/utils/sources";
+import { inferCategory, formatDate } from "@/utils/sources";
 import type { VerifyResult, Verdict } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -64,9 +64,7 @@ function ClaimRow({
   onClick:  () => void;
   onDelete: (e: React.MouseEvent) => void;
 }) {
-  const date = new Date(item.verifiedAt).toLocaleDateString("en-PH", {
-    month: "short", day: "numeric", year: "numeric",
-  });
+  const date = formatDate(item.verifiedAt);
 
   // Highlight first keyword match in blue
   const highlighted = (() => {
