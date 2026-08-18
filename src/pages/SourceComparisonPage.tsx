@@ -21,27 +21,8 @@ import { allSourcesMerged, stanceOf, formatDate, extractKeyFacts } from "@/utils
 import type { VerifyResult, Source } from "@/types";
 import { cn } from "@/lib/utils";
 import { stripMarkdown } from "@/utils/stripMarkdown";
-
-// ─── Stance badge ─────────────────────────────────────────────────────────────
-
-type Stance = "Supports" | "Contradicts" | "Partially Contradicts" | "Neutral";
-
-function StanceBadge({ stance }: { stance: Stance }) {
-  const styles: Record<Stance, string> = {
-    Supports:               "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Contradicts:            "bg-red-50 text-red-700 border-red-200",
-    "Partially Contradicts":"bg-amber-50 text-amber-700 border-amber-200",
-    Neutral:                "bg-slate-100 text-slate-600 border-slate-200",
-  };
-  return (
-    <span className={cn(
-      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold whitespace-nowrap",
-      styles[stance],
-    )}>
-      {stance}
-    </span>
-  );
-}
+import { StanceBadge } from "@/components/shared/StanceBadge";
+import type { Stance } from "@/components/shared/StanceBadge";
 
 // ─── Detail card (carousel only) ─────────────────────────────────────────────
 
