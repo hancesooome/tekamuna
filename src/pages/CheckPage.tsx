@@ -33,6 +33,7 @@ import ShareCardButton from "@/components/shared/ShareCardButton";
 import { VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
 import { ConfidenceDonut } from "@/components/shared/ConfidenceDonut";
 import { StanceBadge } from "@/components/shared/StanceBadge";
+import { CredBadge } from "@/components/shared/CredBadge";
 import type { VerifyResult } from "@/types";
 import { cn }                from "@/lib/utils";
 
@@ -40,12 +41,6 @@ import { cn }                from "@/lib/utils";
 const V = VERDICT_CONFIG;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function CredBadge({ score }: { score: number }) {
-  if (score >= 85) return <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Mataas na Kredibilidad</span>;
-  if (score >= 65) return <span className="rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Katamtaman na Kredibilidad</span>;
-  return <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">Mababang Kredibilidad</span>;
-}
 
 // ─── Loading state ─────────────────────────────────────────────────────────────
 
