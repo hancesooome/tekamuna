@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
 import { LOGO_ICON_URL, MASCOT_URL, RESULT_STORAGE_KEY } from "@/constants";
 import { loadHistory } from "@/services/historyService";
-import { inferCategory } from "@/utils/sources";
+import { inferCategory, formatDate } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
@@ -61,14 +61,6 @@ const FEATURES = [
     ),
   },
 ] as const;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-PH", {
-    month: "short", day: "numeric", year: "numeric",
-  });
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
