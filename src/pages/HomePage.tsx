@@ -12,7 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
-import { LOGO_ICON_URL, MASCOT_URL } from "@/constants";
+import { LOGO_ICON_URL, MASCOT_URL, RESULT_STORAGE_KEY } from "@/constants";
 import { loadHistory } from "@/services/historyService";
 import { inferCategory } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
@@ -288,7 +288,7 @@ function RecentChecksSection() {
   }, []);
 
   const handleRowClick = (item: VerifyResult) => {
-    sessionStorage.setItem("teka_verify_result", JSON.stringify(item));
+    sessionStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(item));
     void navigate("/result");
   };
 
