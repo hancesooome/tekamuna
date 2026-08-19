@@ -15,7 +15,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { RESULT_STORAGE_KEY } from "@/constants";
+import { RESULT_STORAGE_KEY, APP_NAME } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult, Source } from "@/types";

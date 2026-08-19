@@ -13,7 +13,7 @@
 import { useEffect } from "react";
 import { ShieldCheck, TrendingUp } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { LOGO_ICON_URL } from "@/constants";
+import { LOGO_ICON_URL, APP_NAME } from "@/constants";
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 

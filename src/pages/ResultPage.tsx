@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG } from "@/constants";
+import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG, APP_NAME } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
@@ -586,7 +586,7 @@ export default function ResultPage() {
 
   useEffect(() => {
     if (state.status === "success") {
-      document.title = `Resulta ng Pagsusuri — Teka Muna`;
+      document.title = `Resulta ng Pagsusuri — ${APP_NAME}`;
     } else if (state.status === "error") {
       document.title = "Walang Resulta — Teka Muna";
     }

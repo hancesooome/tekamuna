@@ -20,7 +20,7 @@ import { extractTextFromImageBrowser, OCR_MAX_FILE_BYTES, OCR_ALLOWED_MIME } fro
 import { shouldRunVerificationPipeline, type ClassificationCategory } from "@/utils/intent";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
-import { type Category } from "@/constants";
+import { type Category, APP_NAME } from "@/constants";
 import thinkImage from "../assets/think.png";
 
 // ── Constants ─────────────────────────────────────────────────────────────────

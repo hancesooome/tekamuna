@@ -12,7 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, Zap, ShieldCheck, BarChart2, Globe, ArrowRight, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { VerdictBadge } from "@/components/shared/VerdictBadge";
-import { LOGO_ICON_URL, MASCOT_URL, RESULT_STORAGE_KEY } from "@/constants";
+import { LOGO_ICON_URL, MASCOT_URL, RESULT_STORAGE_KEY, APP_NAME } from "@/constants";
 import { loadHistory } from "@/services/historyService";
 import { inferCategory, formatDate } from "@/utils/sources";
 import type { VerifyResult } from "@/types";

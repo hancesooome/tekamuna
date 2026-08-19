@@ -22,6 +22,7 @@ import {
   RESULT_STORAGE_KEY,
   FILTER_CATEGORIES,
   VERDICT_TYPES,
+  APP_NAME,
 } from "@/constants";
 import { loadHistory, deleteFromHistory, clearHistory } from "@/services/historyService";
 import { inferCategory, formatDate } from "@/utils/sources";
