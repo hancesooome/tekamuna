@@ -397,7 +397,7 @@ function CTASection() {
 
 export default function HomePage() {
   useEffect(() => {
-    document.title = "Teka Muna — AI-Powered Filipino Fact-Checking Platform";
+    document.title = `${APP_NAME} — AI-Powered Filipino Fact-Checking Platform`;
   }, []);
 
   return (

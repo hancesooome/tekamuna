@@ -588,7 +588,7 @@ export default function ResultPage() {
     if (state.status === "success") {
       document.title = `Resulta ng Pagsusuri — ${APP_NAME}`;
     } else if (state.status === "error") {
-      document.title = "Walang Resulta — Teka Muna";
+      document.title = `Walang Resulta — ${APP_NAME}`;
     }
   }, [state]);
 

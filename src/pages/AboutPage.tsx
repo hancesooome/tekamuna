@@ -253,7 +253,7 @@ function TrustedSourcesSection() {
 
 export default function AboutPage() {
   useEffect(() => {
-    document.title = "Tungkol sa Teka Muna — Teka Muna";
+    document.title = `Tungkol sa ${APP_NAME} — ${APP_NAME}`;
   }, []);
 
   return (

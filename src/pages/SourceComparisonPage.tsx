@@ -165,7 +165,7 @@ function SourceComparisonView({ result }: { result: VerifyResult }) {
   const isScrolling = useRef(false); // prevent scroll→index feedback loop
 
   useEffect(() => {
-    document.title = "Paghahambing ng mga Source — Teka Muna";
+    document.title = `Paghahambing ng mga Source — ${APP_NAME}`;
   }, []);
 
   // Helper: get the width of one card from the DOM

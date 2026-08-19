@@ -399,7 +399,7 @@ export default function VerifyPage() {
 
   // Pre-fill claim from HomePage search bar navigation
   useEffect(() => {
-    document.title = "Suriin ang Claim — Teka Muna";
+    document.title = `Suriin ang Claim — ${APP_NAME}`;
     const state = location.state as { claim?: string; autoSubmit?: boolean } | null;
     if (state?.claim && state.claim.trim().length > 0) {
       const filled = state.claim.trim().slice(0, MAX_CHARS);
