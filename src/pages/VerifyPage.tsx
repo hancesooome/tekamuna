@@ -21,6 +21,7 @@ import { shouldRunVerificationPipeline, type ClassificationCategory } from "@/ut
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import { type Category, APP_NAME } from "@/constants";
+import { useLoadingStep } from "@/components/result";
 import thinkImage from "../assets/think.png";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -60,22 +61,8 @@ function getIntentTitle(category: ClassificationCategory | null): string {
 
 // ── Loading overlay (verify in progress) ─────────────────────────────────────
 
-const LOADING_STEPS = [
-  "Tinatanggap ang iyong claim...",
-  "Naghahanap ng mga pinagkukunan...",
-  "Sinusuri ang mga ebidensya...",
-  "Binubuo ang resulta...",
-];
-
 function LoadingOverlay() {
-  const [stepIdx, setStepIdx] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setStepIdx((i) => (i + 1) % LOADING_STEPS.length),
-      1200,
-    );
-    return () => clearInterval(id);
-  }, []);
+  const step = useLoadingStep();
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-xl bg-white/92 backdrop-blur-sm">
       <div className="relative">
@@ -85,7 +72,7 @@ function LoadingOverlay() {
       </div>
       <div className="text-center">
         <p className="text-sm font-black text-foreground">Sinusuri ang iyong claim...</p>
-        <p className="mt-1 text-xs text-muted-foreground animate-pulse">{LOADING_STEPS[stepIdx]}</p>
+        <p className="mt-1 text-xs text-muted-foreground animate-pulse">{step}</p>
       </div>
     </div>
   );

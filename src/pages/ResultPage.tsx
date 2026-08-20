@@ -11,28 +11,28 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  FileText, XCircle, HelpCircle, ThumbsUp, ThumbsDown, BarChart2, Search,
-  ExternalLink, ChevronRight,
+  XCircle, HelpCircle, ThumbsUp, ThumbsDown, BarChart2, Search,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG, APP_NAME } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
-import { allSourcesMerged, uniqueEvidenceSources, stanceOf, formatDate, extractKeyFacts } from "@/utils/sources";
+import { uniqueEvidenceSources, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
 import { cn } from "@/lib/utils";
 import ShareCardButton from "@/components/shared/ShareCardButton";
 import ShareButton from "@/components/shared/ShareButton";
-import { ConfidenceDonut } from "@/components/shared/ConfidenceDonut";
-import { StanceBadge } from "@/components/shared/StanceBadge";
-import { CredBadge } from "@/components/shared/CredBadge";
 import { stripMarkdown } from "@/utils/stripMarkdown";
+import {
+  ClaimBanner,
+  ConfidencePanel,
+  VerdictCard,
+  VerdictTabs,
+} from "@/components/result";
 
 // ─── Verdict config (imported from constants) ───────────────────────────────
 const V = VERDICT_CONFIG;
-
-// --- Credibility level badge — shared component in @/components/shared/CredBadge
 
 // --- Loading / Error skeletons ------------------------------------------------
 
@@ -233,13 +233,117 @@ function SuccessView({ result }: { result: VerifyResult }) {
   const { Icon } = cfg;
   const label = VERDICT_LABELS[result.verdict];
   const verifiedAt = new Date(result.verifiedAt);
-  const allSources = allSourcesMerged(result);
-  const credibleCount = allSources.filter((s) => getCredibility(s.url).score >= 70).length;
 
-  // Derived mini-bar values (approximate from available data)
-  const factualAccuracy = Math.round(result.confidence * 0.18);
-  const sourceAlignment = Math.round(result.confidence * 0.27);
-  const dataRecency     = Math.min(95, Math.round(result.confidence * 0.95));
+  // Verdict card action buttons (page-specific)
+  const actions = (
+    <>
+      <Button variant="outline" size="sm" className="text-xs" asChild>
+        <Link to="/result/sources" state={{ result }}>
+          <BarChart2 className="h-3.5 w-3.5" />
+          Ikumpara ang Sources
+        </Link>
+      </Button>
+      <ShareCardButton result={result} />
+      <ShareButton result={result} />
+    </>
+  );
+
+  // Feedback row rendered below the actions (page-specific footer)
+  const feedbackFooter = (
+    <div className="flex items-center gap-3 pt-1 border-t border-black/5">
+      {feedback ? (
+        <span className={`text-xs font-semibold ${
+          feedback === "correct" ? "text-emerald-600" : "text-red-500"
+        }`}>
+          {feedback === "correct" ? "✓ Salamat sa iyong feedback!" : "✓ Salamat! Patuloy naming pagbubutihin."}
+        </span>
+      ) : (
+        <>
+          <span className="text-xs text-muted-foreground">Tama ba ang hatol na ito?</span>
+          <button
+            onClick={() => setFeedback("correct")}
+            className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-emerald-600 transition-colors"
+            aria-label="Tama ang hatol"
+          >
+            <ThumbsUp className="h-3.5 w-3.5" /> Oo
+          </button>
+          <button
+            onClick={() => setFeedback("incorrect")}
+            className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors"
+            aria-label="Mali ang hatol"
+          >
+            <ThumbsDown className="h-3.5 w-3.5" /> Hindi
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  // "Buod" tab content (page-specific — has metadata grid + carousel)
+  const buod = (
+    <div className="flex flex-col gap-6">
+      {/* Metadata grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-white/55 px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Pinagmulan ng Claim</p>
+          <p className="text-sm font-semibold text-foreground">Web Search</p>
+        </div>
+        <div className="rounded-2xl bg-white/55 px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Napatunayan noong</p>
+          <p className="text-sm font-semibold text-foreground">{verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} · {verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}</p>
+        </div>
+        <div className="rounded-2xl bg-white/55 px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Kategorya</p>
+          <p className="text-sm font-semibold text-foreground">{result.category || "Pangkalahatan"}</p>
+        </div>
+        {/* Verdict card — replaces the empty "Nakaraang Verdict" placeholder */}
+        <div className={cn("rounded-2xl bg-white/55 px-4 py-3 flex items-center gap-3", cfg.bg)}>
+          <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.iconBg)}>
+            <Icon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Hatol</p>
+            <p className={cn("text-sm font-black", cfg.label)}>{label}</p>
+          </div>
+          <div className="ml-auto text-xs font-bold tabular-nums text-muted-foreground">
+            {result.confidence}% confidence
+          </div>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="rounded-2xl bg-white/55 p-4">
+        <h3 className="text-sm font-black text-foreground mb-3">Buod ng Pagsusuri</h3>
+        <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(result.explanation)}</p>
+      </div>
+
+      {/* Truth statement */}
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <p className="flex items-center gap-1.5 text-xs font-black text-amber-800 mb-2">
+          <HelpCircle className="h-3.5 w-3.5" />
+          Ano ang Totoo
+        </p>
+        <p className="text-sm text-amber-900 leading-relaxed">{stripMarkdown(result.truthStatement)}</p>
+      </div>
+
+      {/* Related claims — swipeable carousel */}
+      {(result.supportingEvidence.length > 0 || result.contradictingEvidence.length > 0) && (
+        <SourceCarousel result={result} />
+      )}
+    </div>
+  );
+
+  // "Mga Source" tab footer — full-comparison CTA (page-specific)
+  const sourcesFooter = (
+    <div className="mt-4">
+      <Button variant="outline" className="w-full text-sm font-bold" asChild>
+        <Link to="/result/sources" state={{ result }}>
+          <BarChart2 className="h-4 w-4" />
+          Tingnan ang Full Source Comparison
+        </Link>
+      </Button>
+    </div>
+  );
 
   return (
     <PageContainer className="animate-page-in max-w-[850px] pb-12">
@@ -247,307 +351,37 @@ function SuccessView({ result }: { result: VerifyResult }) {
       {/* -- Breadcrumb -- */}
       <nav className="flex items-center gap-1.5 pt-8 pb-6 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-        <ChevronRight className="h-3 w-3" />
+        <span aria-hidden className="text-muted-foreground/50">›</span>
         <Link to="/verify" className="hover:text-foreground transition-colors">Suriin</Link>
-        <ChevronRight className="h-3 w-3" />
+        <span aria-hidden className="text-muted-foreground/50">›</span>
         <span className="font-semibold text-foreground">Resulta</span>
       </nav>
 
       {/* -- Claim banner -- */}
-      <div className="mb-6 flex items-start gap-3 rounded-xl border border-[#d9e4ff] bg-[#f8faff] px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 mt-0.5">
-          <FileText className="h-4 w-4 text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-            Sinuri na Claim
-          </p>
-          <p className="text-sm font-bold text-foreground leading-snug break-words">
-            {result.claim}
-          </p>
-        </div>
-      </div>
+      <ClaimBanner claim={result.claim} />
 
       {/* -- Two-column: verdict + confidence -- */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-5 mb-6">
-
-        {/* Left: verdict card */}
-        <section aria-labelledby="ai-verdict-title" className={cn("flex flex-col gap-4 rounded-xl border-2 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.07)] sm:p-6", cfg.bg, cfg.border)}>
-          {/* Header */}
-          <div className="flex items-start gap-4">
-            <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm", cfg.iconBg)}>
-              <Icon className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p id="ai-verdict-title" className="mb-1 text-xs font-black uppercase tracking-[0.14em] text-primary">
-                Hatol ng AI
-              </p>
-              <p className={cn("text-3xl font-black leading-tight mt-0.5", cfg.label)}>
-                {label}
-              </p>
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(result.explanation)}</p>
-
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="outline" size="sm" className="text-xs" asChild>
-              <Link to="/result/sources" state={{ result }}>
-                <BarChart2 className="h-3.5 w-3.5" />
-                Ikumpara ang Sources
-              </Link>
-            </Button>
-            <ShareCardButton result={result} />
-            <ShareButton result={result} />
-          </div>
-
-          {/* Feedback row */}
-          <div className="flex items-center gap-3 pt-1 border-t border-black/5">
-            {feedback ? (
-              <span className={`text-xs font-semibold ${
-                feedback === "correct" ? "text-emerald-600" : "text-red-500"
-              }`}>
-                {feedback === "correct" ? "✓ Salamat sa iyong feedback!" : "✓ Salamat! Patuloy naming pagbubutihin."}
-              </span>
-            ) : (
-              <>
-                <span className="text-xs text-muted-foreground">Tama ba ang hatol na ito?</span>
-                <button
-                  onClick={() => setFeedback("correct")}
-                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-emerald-600 transition-colors"
-                  aria-label="Tama ang hatol"
-                >
-                  <ThumbsUp className="h-3.5 w-3.5" /> Oo
-                </button>
-                <button
-                  onClick={() => setFeedback("incorrect")}
-                  className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500 transition-colors"
-                  aria-label="Mali ang hatol"
-                >
-                  <ThumbsDown className="h-3.5 w-3.5" /> Hindi
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* Right: confidence panel */}
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-[#d9e4ff] bg-[#f8faff] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start">
-            Detection Confidence
-          </p>
-          {/* On mobile: horizontal layout. On desktop: vertical */}
-          <div className="flex flex-row items-center gap-4 w-full sm:flex-col sm:items-center">
-            <ConfidenceDonut value={result.confidence} color={cfg.arc} />
-            <div className="flex flex-col gap-1 sm:text-center sm:items-center">
-              <div className="text-xs text-muted-foreground leading-relaxed">
-                <span className="font-bold text-foreground">{allSources.length}</span> sources analyzed
-              </div>
-              <div className="text-xs text-muted-foreground">
-                <span className="font-bold text-foreground">{credibleCount}</span> high credibility
-              </div>
-            </div>
-          </div>
-          <p className="text-[10px] text-muted-foreground leading-relaxed border-t border-border/60 pt-2 w-full">
-            <strong>Detection Confidence</strong> indicates how confidently the claim detector classified the input as a fact-checkable claim based on routing heuristics and pattern matching. It is <strong>not</strong> the AI model's confidence in the truthfulness of the claim or the final verdict.
-          </p>
-          {/* Mini bars */}
-          <div className="w-full space-y-2.5 border-t border-border pt-3">
-            {[
-              { label: "Factual accuracy", value: factualAccuracy },
-              { label: "Source alignment", value: sourceAlignment },
-              { label: "Data recency",     value: dataRecency },
-            ].map(({ label: l, value }) => (
-              <div key={l}>
-                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                  <span>{l}</span><span className="font-bold">{value}%</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-700"
-                    style={{ width: `${value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <VerdictCard
+          result={result}
+          titleId="ai-verdict-title"
+          actions={actions}
+          footer={feedbackFooter}
+        />
+        <ConfidencePanel result={result} />
       </div>
 
       {/* -- Three tabs -- */}
-      <Tabs defaultValue="buod" className="w-full overflow-hidden rounded-xl border border-[#d9e4ff] bg-[#f8faff] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <TabsList className="w-full rounded-none border-b border-[#d9e4ff] bg-transparent p-0 h-auto justify-start gap-0 overflow-x-auto">
-          {(["buod", "timeline", "sources"] as const).map((v) => {
-            const names = { buod: "Buod", timeline: "Timeline ng Ebidensya", sources: "Mga Source" };
-            return (
-              <TabsTrigger
-                key={v} value={v}
-                className={cn(
-                  "flex-1 justify-center rounded-none border-b-2 border-transparent px-3 sm:px-5 py-4 text-sm font-semibold text-muted-foreground",
-                  "data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none",
-                  "hover:text-foreground transition-colors whitespace-nowrap",
-                )}
-              >
-                {names[v]}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        {/* -- Buod -- */}
-        <TabsContent value="buod" className="mt-0 px-5 py-5">
-          <div className="flex flex-col gap-6">
-            {/* Metadata grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/55 px-4 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Pinagmulan ng Claim</p>
-                <p className="text-sm font-semibold text-foreground">Web Search</p>
-              </div>
-              <div className="rounded-2xl bg-white/55 px-4 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Napatunayan noong</p>
-                <p className="text-sm font-semibold text-foreground">{verifiedAt.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })} · {verifiedAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}</p>
-              </div>
-              <div className="rounded-2xl bg-white/55 px-4 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Kategorya</p>
-                <p className="text-sm font-semibold text-foreground">{result.category || "Pangkalahatan"}</p>
-              </div>
-              {/* Verdict card — replaces the empty "Nakaraang Verdict" placeholder */}
-              <div className={cn("rounded-2xl bg-white/55 px-4 py-3 flex items-center gap-3", cfg.bg)}>
-                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.iconBg)}>
-                  <Icon className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Hatol</p>
-                  <p className={cn("text-sm font-black", cfg.label)}>{label}</p>
-                </div>
-                <div className="ml-auto text-xs font-bold tabular-nums text-muted-foreground">
-                  {result.confidence}% confidence
-                </div>
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="rounded-2xl bg-white/55 p-4">
-              <h3 className="text-sm font-black text-foreground mb-3">Buod ng Pagsusuri</h3>
-              <p className="text-sm text-foreground leading-relaxed">{stripMarkdown(result.explanation)}</p>
-            </div>
-
-            {/* Truth statement */}
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="flex items-center gap-1.5 text-xs font-black text-amber-800 mb-2">
-                <HelpCircle className="h-3.5 w-3.5" />
-                Ano ang Totoo
-              </p>
-              <p className="text-sm text-amber-900 leading-relaxed">{stripMarkdown(result.truthStatement)}</p>
-            </div>
-
-            {/* Related claims — swipeable carousel */}
-            {(result.supportingEvidence.length > 0 || result.contradictingEvidence.length > 0) && (
-              <SourceCarousel result={result} />
-            )}
-          </div>
-        </TabsContent>
-
-        {/* -- Timeline ng Ebidensya -- */}
-        <TabsContent value="timeline" className="mt-0 px-5 py-5">
+      <VerdictTabs
+        result={result}
+        buod={buod}
+        timelineIntro={
           <p className="text-xs text-primary mb-5">
             Narito ang mga ebidensya na nakolekta sa iba't ibang oras, mula pinaka-bago hanggang pinaka-luma.
           </p>
-          {allSources.length === 0 ? (
-            <div className="flex flex-col items-center py-12 gap-3 text-center">
-              <p className="text-sm text-muted-foreground">Walang ebidensya na nakolekta.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {allSources.map((source, i) => {
-                const { score } = getCredibility(source.url);
-                const stance = stanceOf(source, result);
-                return (
-                  <div key={i} className="flex gap-4">
-                    {/* Timeline dot */}
-                    <div className="flex flex-col items-center">
-                      <div className={cn(
-                        "h-4 w-4 rounded-full border-2 border-white shadow-sm shrink-0 mt-1",
-                        stance === "Supports" ? "bg-emerald-400" :
-                        stance === "Contradicts" ? "bg-red-400" : "bg-primary",
-                      )} />
-                      {i < allSources.length - 1 && (
-                        <div className="w-px flex-1 bg-border mt-1" />
-                      )}
-                    </div>
-                    {/* Card */}
-                    <div className="flex-1 rounded-2xl border border-border bg-white p-4 mb-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-black text-foreground">{source.sourceName}</span>
-                          <CredBadge score={score} />
-                        </div>
-                        <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
-                      </div>
-                      <p className="text-xs text-foreground leading-relaxed mb-3">{stripMarkdown(source.summary)}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-muted-foreground">
-                          {formatDate(source.publishedDate)}
-                        </span>
-                        <a href={source.url} target="_blank" rel="noreferrer"
-                          className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                          Buksan <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* -- Mga Source -- */}
-        <TabsContent value="sources" className="mt-0 px-5 py-5">
-          <p className="text-xs text-muted-foreground mb-4">
-            <span className="font-bold text-foreground">{allSources.length}</span> sources ang sinuri. Ang bawat isa ay sinusukat sa accuracy, recency, at domain authority.
-          </p>
-          <div className="rounded-2xl border border-[#d9e4ff] bg-white/55 overflow-hidden">
-            {allSources
-              .map((s) => ({ source: s, cred: getCredibility(s.url), stance: stanceOf(s, result) }))
-              .sort((a, b) => b.cred.score - a.cred.score)
-              .map(({ source, cred, stance }, i) => (
-                <div key={i}
-                  className={cn("flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors",
-                    i > 0 && "border-t border-border")}>
-                  {/* Score circle */}
-                  <div className={cn(
-                    "h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-xs font-black",
-                    scoreBg(cred.score), scoreColor(cred.score),
-                  )}>
-                    {cred.score}
-                  </div>
-                  {/* Name + domain */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2">{source.title || source.sourceName}</p>
-                    <p className="text-[10px] sm:text-[11px] text-muted-foreground">{source.sourceName}</p>
-                  </div>
-                  {/* Stance — always visible */}
-                  <div className="shrink-0">
-                    <StanceBadge stance={stance === "Neutral" ? "Neutral" : stance === "Supports" ? "Supports" : "Contradicts"} />
-                  </div>
-                </div>
-              ))}
-          </div>
-
-          {/* Full comparison CTA */}
-          <div className="mt-4">
-            <Button variant="outline" className="w-full text-sm font-bold" asChild>
-              <Link to="/result/sources" state={{ result }}>
-                <BarChart2 className="h-4 w-4" />
-                Tingnan ang Full Source Comparison
-              </Link>
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+        }
+        sourcesFooter={sourcesFooter}
+      />
 
       {/* -- Bottom actions -- */}
       <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
