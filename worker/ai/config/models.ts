@@ -53,14 +53,10 @@ export function resolveProvider(modelId: string): string {
 const DEFAULT_MODELS: Record<AITask, string[]> = {
   /**
    * VERDICT — most important task, needs best reasoning.
-   * Prefer larger reasoning-capable models.
+   * Let OpenRouter select from the free models currently available.
    */
   VERDICT: [
-    "google/gemma-4-26b-a4b-it:free",       // Google Gemma 4 — free, 262k ctx
-    "google/gemma-4-31b-it:free",            // Google Gemma 4 31B — free
-    "deepseek/deepseek-chat:free",           // DeepSeek — strong reasoning, free
-    "openrouter/free",                       // Dynamic router for currently available free models
-    // nvidia/nemotron-3-super-120b-a12b:free removed — unreliable JSON output
+    "openrouter/free", // Dynamic router for currently available free models
   ],
 
   /**
