@@ -16,7 +16,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ImagePlay, Plus, Pencil, Trash2, Loader2, AlertCircle,
-  CheckCircle2, ToggleLeft, ToggleRight, Upload, ImageIcon,
+  CheckCircle2, ToggleLeft, ToggleRight, ImageIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -34,6 +34,7 @@ import type {
   PostTemplate, TemplatePlatform, TemplateVerdict, CreateTemplatePayload,
 } from "@/types/postTemplate";
 import TemplateEditor from "@/components/template-editor/TemplateEditor";
+import { ImageUploadField } from "@/components/template-editor/ImageUploadField";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -54,9 +55,6 @@ const DEFAULT_CANVAS: Record<TemplatePlatform, { w: number; h: number }> = {
   instagram: { w: 1080, h: 1080 },
   story:     { w: 1080, h: 1920 },
 };
-
-const ALLOWED_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
 
 // ── Helper: get auth token ────────────────────────────────────────────────────
 
@@ -108,110 +106,6 @@ function useToast() {
 
 
 // ── ImageUploadField ──────────────────────────────────────────────────────────
-
-interface ImageUploadFieldProps {
-  currentPath: string | null;
-  onUploaded: (path: string) => void;
-  disabled?: boolean;
-}
-
-function ImageUploadField({ currentPath, onUploaded, disabled }: ImageUploadFieldProps) {
-  const inputRef                        = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading]       = useState(false);
-  const [uploadError, setUploadError]   = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl]     = useState<string | null>(
-    currentPath ? getPublicUrl(currentPath) : null,
-  );
-
-  useEffect(() => {
-    setPreviewUrl(currentPath ? getPublicUrl(currentPath) : null);
-  }, [currentPath]);
-
-  async function handleFile(file: File) {
-    if (!ALLOWED_MIME.includes(file.type.toLowerCase())) {
-      setUploadError("Allowed formats: JPG, PNG, WebP");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError("File too large. Maximum is 10 MB.");
-      return;
-    }
-    setUploadError(null);
-    setUploading(true);
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-    try {
-      const token = await getToken();
-      const form  = new FormData();
-      form.append("file", file);
-      form.append("folder", "backgrounds");
-      const res  = await fetch(`${API_BASE_URL}/admin/upload-image`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      });
-      const data = await res.json() as { path?: string; error?: string };
-      if (!res.ok || !data.path) throw new Error(data.error ?? "Upload failed");
-      onUploaded(data.path);
-      setPreviewUrl(getPublicUrl(data.path));
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
-      setPreviewUrl(currentPath ? getPublicUrl(currentPath) : null);
-    } finally {
-      setUploading(false);
-      URL.revokeObjectURL(localPreview);
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-        Background Image
-      </label>
-      <div
-        className="relative rounded-xl border-2 border-dashed border-border bg-muted/25 overflow-hidden cursor-pointer hover:border-primary/40 transition-colors"
-        style={{ aspectRatio: "16/9", minHeight: 120 }}
-        onClick={() => !disabled && !uploading && inputRef.current?.click()}
-      >
-        {previewUrl ? (
-          <img src={previewUrl} alt="Template background" className="w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-8 w-8 opacity-45" />
-            <span className="text-xs">Click to upload background</span>
-          </div>
-        )}
-        {uploading && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 text-white animate-spin" />
-          </div>
-        )}
-        {!disabled && !uploading && previewUrl && (
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-            <Upload className="h-6 w-6 text-white" />
-          </div>
-        )}
-      </div>
-      {uploadError && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
-          <AlertCircle className="h-3 w-3" />{uploadError}
-        </p>
-      )}
-      {currentPath && (
-        <p className="text-[10px] text-muted-foreground font-mono truncate">{currentPath}</p>
-      )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/jpg,image/png,image/webp"
-        className="sr-only"
-        disabled={disabled || uploading}
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.target.value = ""; }}
-      />
-    </div>
-  );
-}
-
 
 // ── Main Page Component ───────────────────────────────────────────────────────
 
