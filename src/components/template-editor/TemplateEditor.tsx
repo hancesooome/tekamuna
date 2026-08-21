@@ -21,6 +21,11 @@ import type { PostTemplate, TemplateField, FieldType } from "@/types/postTemplat
 import { downloadPng } from "@/lib/utils";
 import { toPng } from "html-to-image";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  fetchFieldDefaults,
+  persistFieldDefaults,
+  type FieldDefaultsMap,
+} from "./fieldDefaults";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -157,57 +162,6 @@ const STATIC_FIELDS  = (Object.entries(FIELD_CATALOGUE) as [FieldType, FieldDef]
 // Next time you open the editor from any device, those defaults are loaded
 // and merged on top of the hardcoded catalogue defaults when adding fields.
 
-/** Properties that should NOT be saved as defaults (they are per-template/per-field). */
-const NON_DEFAULT_PROPS = new Set([
-  "id", "type", "label", "x", "y", "zIndex", "visible",
-  "locked", "staticValue", "rotation", "opacity",
-]);
-
-type FieldDefaultsMap = Partial<Record<FieldType, Partial<TemplateField>>>;
-
-async function fetchFieldDefaults(token: string | null): Promise<FieldDefaultsMap> {
-  if (!token) return {};
-  try {
-    const res = await fetch(`${API_BASE_URL}/admin/field-defaults`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return {};
-    const data = await res.json() as { defaults?: FieldDefaultsMap };
-    return data.defaults ?? {};
-  } catch {
-    return {};
-  }
-}
-
-async function persistFieldDefaults(
-  fields: TemplateField[],
-  token: string | null,
-  existing: FieldDefaultsMap,
-): Promise<void> {
-  if (!token) return;
-  const updated = { ...existing };
-  for (const field of fields) {
-    const style: Partial<TemplateField> = {};
-    for (const [k, v] of Object.entries(field)) {
-      if (!NON_DEFAULT_PROPS.has(k)) {
-        (style as Record<string, unknown>)[k] = v;
-      }
-    }
-    updated[field.type] = { ...updated[field.type], ...style };
-  }
-  try {
-    await fetch(`${API_BASE_URL}/admin/field-defaults`, {
-      method:  "POST",
-      headers: {
-        "Content-Type":  "application/json",
-        Authorization:   `Bearer ${token}`,
-      },
-      body: JSON.stringify({ defaults: updated }),
-    });
-  } catch {
-    // fail silently — non-critical
-  }
-}
 
 // ── Small UI helpers ──────────────────────────────────────────────────────────
 
