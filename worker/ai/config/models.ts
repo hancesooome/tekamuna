@@ -14,7 +14,7 @@
  * ── How to change model priority ─────────────────────────────────────────────
  * Set the matching env var with a comma-separated list of model IDs.
  * Example:
- *   MODELS_VERDICT=deepseek/deepseek-chat:free,qwen/qwen3-32b:free
+ *   MODELS_VERDICT=deepseek/deepseek-chat:free,openrouter/free
  *
  * ── How to add a new provider ─────────────────────────────────────────────────
  * 1. Add a provider id to PROVIDER_FOR_MODEL or use the prefix convention.
@@ -59,7 +59,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "google/gemma-4-26b-a4b-it:free",       // Google Gemma 4 — free, 262k ctx
     "google/gemma-4-31b-it:free",            // Google Gemma 4 31B — free
     "deepseek/deepseek-chat:free",           // DeepSeek — strong reasoning, free
-    "qwen/qwen3-32b:free",                   // Qwen 3 32B — free
+    "openrouter/free",                       // Dynamic router for currently available free models
     // nvidia/nemotron-3-super-120b-a12b:free removed — unreliable JSON output
   ],
 
@@ -72,7 +72,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
     "google/gemma-4-26b-a4b-it:free",    // fast, good at structured output
     "google/gemma-4-31b-it:free",
     "deepseek/deepseek-chat:free",
-    "qwen/qwen3-32b:free",
+    "openrouter/free",
   ],
 
   /**
@@ -81,20 +81,20 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   SUMMARY: [
     "google/gemma-4-26b-a4b-it:free",
-    "qwen/qwen3-32b:free",
+    "openrouter/free",
     "deepseek/deepseek-chat:free",
     "google/gemma-4-31b-it:free",
   ],
 
   SEARCH_QUERY: [
     "google/gemma-4-26b-a4b-it:free",
-    "qwen/qwen3-32b:free",
+    "openrouter/free",
     "deepseek/deepseek-chat:free",
   ],
 
   TRANSLATION: [
     "google/gemma-4-26b-a4b-it:free",
-    "qwen/qwen3-32b:free",
+    "openrouter/free",
     "deepseek/deepseek-chat:free",
     "google/gemma-4-31b-it:free",
   ],
@@ -106,7 +106,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
 // Format: comma-separated model IDs in priority order.
 //
 // Example .dev.vars entry:
-//   MODELS_VERDICT=deepseek/deepseek-chat:free,qwen/qwen3-32b:free
+//   MODELS_VERDICT=deepseek/deepseek-chat:free,openrouter/free
 
 const TASK_ENV_VARS: Record<AITask, string> = {
   VERDICT:             "MODELS_VERDICT",
@@ -139,7 +139,7 @@ export function getModelsForTask(
   return modelIds.map((modelId) => ({
     modelId,
     providerId: resolveProvider(modelId),
-    free: modelId.endsWith(":free"),
+    free: modelId.endsWith(":free") || modelId === "openrouter/free",
     label: modelId,
   }));
 }
