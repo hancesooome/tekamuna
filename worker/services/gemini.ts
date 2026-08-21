@@ -89,9 +89,9 @@ const VALID_VERDICTS = new Set<Verdict>(["true", "false", "misleading", "unverif
 /** Parse and validate the minimum verdict contract required by the UI. */
 export function parseVerdictContent(
   content: string,
-  allowedUrls: ReadonlySet<string>,
+  suppliedSources: readonly SearchResult[],
 ): Partial<VerifyResult> {
-  const data = extractJson<Partial<VerifyResult>>(content);
+  const data = extractJson<Record<string, unknown>>(content);
   if (!VALID_VERDICTS.has(data.verdict as Verdict)) {
     throw new Error("AI response has an invalid or missing verdict.");
   }
@@ -105,18 +105,38 @@ export function parseVerdictContent(
   if (typeof data.truthStatement !== "string" || !data.truthStatement.trim()) {
     throw new Error("AI response has no truth statement.");
   }
-  for (const field of ["supportingEvidence", "contradictingEvidence"] as const) {
+  const parseEvidence = (field: "supportingEvidence" | "contradictingEvidence"): Source[] => {
     const evidence = data[field];
     if (!Array.isArray(evidence)) {
       throw new Error(`AI response has no ${field} array.`);
     }
-    for (const item of evidence) {
-      if (!item?.url || !allowedUrls.has(item.url)) {
-        throw new Error(`AI response cited an unknown URL in ${field}.`);
+    return evidence.map((value) => {
+      const item = value as Record<string, unknown>;
+      const sourceIndex = Number(item.sourceIndex);
+      if (!Number.isInteger(sourceIndex) || sourceIndex < 1 || sourceIndex > suppliedSources.length) {
+        throw new Error(`AI response cited an invalid sourceIndex in ${field}.`);
       }
-    }
-  }
-  return data;
+      const source = suppliedSources[sourceIndex - 1];
+      return {
+        title: source.title,
+        url: source.url,
+        sourceName: new URL(source.url).hostname.replace(/^www\./, ""),
+        publishedDate: source.publishedDate,
+        summary: typeof item.summary === "string" ? item.summary : source.content,
+      };
+    });
+  };
+
+  return {
+    verdict: data.verdict as Verdict,
+    confidence,
+    explanation: data.explanation as string,
+    truthStatement: data.truthStatement as string,
+    supportingEvidence: parseEvidence("supportingEvidence"),
+    contradictingEvidence: parseEvidence("contradictingEvidence"),
+    mascotAdvice: typeof data.mascotAdvice === "string" ? data.mascotAdvice : undefined,
+    searchResultsCount: Number(data.searchResultsCount ?? suppliedSources.length),
+  };
 }
 
 // ── Singleton AIManager ───────────────────────────────────────────────────────
@@ -273,8 +293,8 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `JSON shape (exact, no extra fields):\n` +
       `{"verdict":"true|false|misleading|unverified","confidence":0-100,` +
       `"explanation":"2-3 sentences Filipino/Taglish","truthStatement":"1-2 sentences",` +
-      `"supportingEvidence":[{"title":"","url":"","sourceName":"","publishedDate":"","summary":""}],` +
-      `"contradictingEvidence":[{"title":"","url":"","sourceName":"","publishedDate":"","summary":""}],` +
+      `"supportingEvidence":[{"sourceIndex":1,"summary":"max 25 words"}],` +
+      `"contradictingEvidence":[{"sourceIndex":2,"summary":"max 25 words"}],` +
       `"mascotAdvice":"1 Taglish sentence","searchResultsCount":${input.searchResults.length}}`,
   };
 
@@ -285,7 +305,8 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `CLAIM: "${input.claim}"` +
       (input.category ? ` [${input.category}]` : "") + // Only add category if provided
       `\n\nTOP ${rankedSources.length} SOURCES (by credibility):\n${topSourcesBlock}\n\n` +
-      `Use EXACT urls/titles from sources above. Return ONE JSON object only.`,
+      `Cite sources ONLY by their bracketed number using sourceIndex. Never output URLs or titles. ` +
+      `Return ONE JSON object only.`,
   };
 
   // ── Single verdict AI call ───────────────────────────────────────────────
@@ -311,7 +332,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       maxTokens:   1800,
       jsonMode:    true,
       validateContent: (content) => {
-        parseVerdictContent(content, new Set(rankedSources.map((source) => source.url)));
+        parseVerdictContent(content, rankedSources);
       },
       temperature: 0.1,       // Low temperature (0–1) = more deterministic, less creative
       requestId:   `verify_${Date.now()}`, // Unique ID for logging
@@ -323,7 +344,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
     try {
       verdictData = parseVerdictContent(
         response.content,
-        new Set(rankedSources.map((source) => source.url)),
+        rankedSources,
       );
     } catch {
       // If the AI returned malformed JSON, log it and return the fallback.
