@@ -7,7 +7,7 @@
  * Sidebar: Tips + Example claims
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Search, ImagePlus, X, Loader2, AlertCircle, ChevronDown,
   ScanText, CheckCircle2,
@@ -16,8 +16,8 @@ import { Button }         from "@/components/ui/button";
 import { Textarea }       from "@/components/ui/textarea";
 import { PageContainer }  from "@/components/shared/PageContainer";
 import { useVerify }      from "@/hooks/useVerify";
-import { extractTextFromImageBrowser, OCR_MAX_FILE_BYTES, OCR_ALLOWED_MIME } from "@/services/ocrService";
 import { shouldRunVerificationPipeline, type ClassificationCategory } from "@/utils/intent";
+import { OCR_IMAGE_MAX_SIZE_MB, useImageOcr } from "@/hooks/useImageOcr";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import { type Category, APP_NAME } from "@/constants";
@@ -27,10 +27,6 @@ import thinkImage from "../assets/think.png";
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_CHARS = 500;
-
-const ALLOWED_MIME = OCR_ALLOWED_MIME as readonly string[];
-// OCR.Space free tier cap is 1 MB
-const MAX_FILE_MB  = OCR_MAX_FILE_BYTES / (1024 * 1024);
 
 const EXAMPLE_CLAIMS: { claim: string; category: Category }[] = [
   { claim: "Libre ang COVID vaccine sa lahat ng Pilipino",                   category: "Kalusugan" },
@@ -86,87 +82,11 @@ interface ImageUploadProps {
 }
 
 function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
-  const inputRef                            = useRef<HTMLInputElement>(null);
   const [dragging, setDragging]             = useState(false);
-  const [preview, setPreview]               = useState<string | null>(null);
-  const [fileName, setFileName]             = useState<string | null>(null);
-  const [fileSize, setFileSize]             = useState<string | null>(null);
-  const [isExtracting, setIsExtracting]     = useState(false);
-  const [ocrError, setOcrError]             = useState<string | null>(null);
-  const [ocrSuccess, setOcrSuccess]         = useState(false);
-
-  useEffect(() => {
-    return () => { if (preview) URL.revokeObjectURL(preview); };
-  }, [preview]);
-
-  const formatSize = (bytes: number) =>
-    bytes < 1024 * 1024
-      ? `${(bytes / 1024).toFixed(0)} KB`
-      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-
-  const processFile = useCallback(async (file: File) => {
-    if (disabled) return;
-    if (!ALLOWED_MIME.includes(file.type.toLowerCase())) {
-      setOcrError("Hindi supportado ang format na ito. Gamitin ang JPG, PNG, o WebP.");
-      return;
-    }
-    if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setOcrError(`Masyadong malaki ang file (${formatSize(file.size)}). Hanggang ${MAX_FILE_MB} MB lang ang puwedeng i-upload.`);
-      return;
-    }
-
-    // Show preview immediately
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(URL.createObjectURL(file));
-    setFileName(file.name);
-    setFileSize(formatSize(file.size));
-    setOcrError(null);
-    setOcrSuccess(false);
-
-    // Run OCR + claim extraction directly in the browser (no Worker round-trip)
-    setIsExtracting(true);
-    try {
-      const result = await extractTextFromImageBrowser(file);
-      if (result.success) {
-        const fill = (result.suggestedClaim?.trim() || result.text?.trim()) ?? "";
-        if (fill) {
-          onClaim(fill);
-          setOcrSuccess(true);
-        } else {
-          setOcrError("Walang nahanap na teksto sa larawan. Subukan ang mas malinaw na screenshot.");
-        }
-      } else {
-        setOcrError(
-          result.error ??
-          "Hindi nakuha ang teksto mula sa larawan. Subukan ang ibang larawan o i-type na lang ang claim.",
-        );
-      }
-    } catch (err) {
-      setOcrError(
-        err instanceof Error
-          ? err.message
-          : "Hindi ma-konekta sa OCR service. Subukang muli.",
-      );
-    } finally {
-      setIsExtracting(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, preview, onClaim]);
-
-  const handleFiles = useCallback((list: FileList | null) => {
-    if (!list || list.length === 0) return;
-    void processFile(list[0]);
-  }, [processFile]);
-
-  const handleRemove = () => {
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(null);
-    setFileName(null);
-    setFileSize(null);
-    setOcrError(null);
-    setOcrSuccess(false);
-    if (inputRef.current) inputRef.current.value = "";
-  };
+  const {
+    inputRef, preview, fileName, fileSize, isExtracting, ocrError, ocrSuccess,
+    handleFiles, removeImage, clearError,
+  } = useImageOcr({ disabled, onClaim });
 
   // ── Dropzone (no image yet) ──────────────────────────────────────────────
   if (!preview) {
@@ -202,7 +122,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
               I-drag dito ang larawan o <span className="text-primary underline">pumili ng file</span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              JPG, PNG, WebP · max {MAX_FILE_MB} MB · isang larawan lamang
+              JPG, PNG, WebP · max {OCR_IMAGE_MAX_SIZE_MB} MB · isang larawan lamang
             </p>          </div>
         </button>
 
@@ -223,7 +143,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
               <p className="text-xs text-red-800 leading-relaxed">{ocrError}</p>
               <button
                 type="button"
-                onClick={() => setOcrError(null)}
+                onClick={clearError}
                 className="mt-1.5 text-xs font-bold text-red-600 hover:underline"
               >
                 Subukan ang ibang larawan
@@ -283,7 +203,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
           {!disabled && !isExtracting && (
             <button
               type="button"
-              onClick={handleRemove}
+              onClick={removeImage}
               className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
               aria-label="Alisin ang larawan"
             >
@@ -300,7 +220,7 @@ function ImageUploadCard({ disabled, onClaim }: ImageUploadProps) {
               <p className="text-xs text-red-800 leading-relaxed">{ocrError}</p>
               <button
                 type="button"
-                onClick={handleRemove}
+                onClick={removeImage}
                 className="mt-1.5 text-xs font-bold text-red-600 hover:underline"
               >
                 Subukan ang ibang larawan
