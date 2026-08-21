@@ -33,6 +33,10 @@ export interface AIRequest {
   maxTokens?: number;
   /** Temperature. Defaults to 0.1 for deterministic fact-checking. */
   temperature?: number;
+  /** Ask providers that support it to enforce a JSON object response. */
+  jsonMode?: boolean;
+  /** Reject unusable HTTP-200 content before AIManager marks an attempt successful. */
+  validateContent?: (content: string) => void;
   /** Caller-supplied identifier for logging (e.g. claim fingerprint). */
   requestId?: string;
   /**
@@ -49,6 +53,8 @@ export interface AIResponse {
   modelUsed: string;
   /** Which provider answered (e.g. "openrouter", "gemini"). */
   providerUsed: string;
+  /** Provider stop reason, when exposed by the upstream API. */
+  finishReason?: string;
   /** Number of models tried before success. 1 = first model worked. */
   attemptCount: number;
   /** Wall-clock latency in ms. */

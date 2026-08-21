@@ -84,6 +84,41 @@ function clampConfidence(confidence: number, relevantSources: number): number {
   return Math.max(30, Math.min(confidence, 95));
 }
 
+const VALID_VERDICTS = new Set<Verdict>(["true", "false", "misleading", "unverified"]);
+
+/** Parse and validate the minimum verdict contract required by the UI. */
+export function parseVerdictContent(
+  content: string,
+  allowedUrls: ReadonlySet<string>,
+): Partial<VerifyResult> {
+  const data = extractJson<Partial<VerifyResult>>(content);
+  if (!VALID_VERDICTS.has(data.verdict as Verdict)) {
+    throw new Error("AI response has an invalid or missing verdict.");
+  }
+  const confidence = Number(data.confidence);
+  if (!Number.isFinite(confidence) || confidence < 0 || confidence > 100) {
+    throw new Error("AI response has an invalid confidence value.");
+  }
+  if (typeof data.explanation !== "string" || !data.explanation.trim()) {
+    throw new Error("AI response has no explanation.");
+  }
+  if (typeof data.truthStatement !== "string" || !data.truthStatement.trim()) {
+    throw new Error("AI response has no truth statement.");
+  }
+  for (const field of ["supportingEvidence", "contradictingEvidence"] as const) {
+    const evidence = data[field];
+    if (!Array.isArray(evidence)) {
+      throw new Error(`AI response has no ${field} array.`);
+    }
+    for (const item of evidence) {
+      if (!item?.url || !allowedUrls.has(item.url)) {
+        throw new Error(`AI response cited an unknown URL in ${field}.`);
+      }
+    }
+  }
+  return data;
+}
+
 // ── Singleton AIManager ───────────────────────────────────────────────────────
 // IMPORTANT: must be module-level so health state persists across requests
 // within the same Worker isolate. A new instance per request throws away all
@@ -143,22 +178,21 @@ function getManager(input: AnalyseInput): AIManager {
  * Still shows all retrieved sources so the user can research manually.
  *
  * @param claim      The original claim text
- * @param reason     Human-readable explanation of why AI failed
+ * @param explanation User-facing explanation of why AI failed
  * @param allSources All Tavily sources retrieved (for UI display)
  */
 function fallbackResult(
   claim: string,
-  reason: string,
+  explanation: string,
   allSources: Source[],
 ): AnalysisResult {
   return {
     claim,
     verdict:               "unverified", // Can't verify without AI
     confidence:            0,            // Zero confidence — we have no AI verdict
-    explanation:
-      "Hindi pa namin masuri ang claim na ito dahil naubos ang aming AI quota ngayon. " +
-      "Makikita mo pa rin ang mga web sources na nahanap namin sa ibaba.",
-    truthStatement:        reason,       // Shows the technical reason to the user
+    explanation,
+    truthStatement:
+      "Walang kumpletong AI verdict na nakuha. Makikita mo pa rin ang mga web source sa ibaba.",
     supportingEvidence:    [],           // Empty — no AI classification
     contradictingEvidence: [],
     reliableSources:       allSources,   // Still show all sources! (better than nothing)
@@ -230,14 +264,17 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `2. credibilityScore affects confidence weight, NOT the verdict.\n` +
       `3. Verdict: "true"=evidence supports, "false"=evidence contradicts, ` +
       `"misleading"=partially true/out of context, "unverified"=insufficient evidence.\n` +
-      `4. Output ONLY a single JSON object. No markdown, no extra text.\n\n` +
+      `4. Write in clear, natural Filipino using short sentences an ordinary reader can understand.\n` +
+      `5. Silently correct grammar in the claim without changing its meaning. Do not copy its errors.\n` +
+      `6. Do not claim a relationship or event unless a provided source explicitly supports it.\n` +
+      `7. Output ONLY a single JSON object. No markdown, no extra text.\n` +
+      `8. Return at most 3 items per evidence array; each summary must be at most 25 words.\n\n` +
       // We include the exact JSON shape so the AI knows what fields to include.
       `JSON shape (exact, no extra fields):\n` +
       `{"verdict":"true|false|misleading|unverified","confidence":0-100,` +
       `"explanation":"2-3 sentences Filipino/Taglish","truthStatement":"1-2 sentences",` +
       `"supportingEvidence":[{"title":"","url":"","sourceName":"","publishedDate":"","summary":""}],` +
       `"contradictingEvidence":[{"title":"","url":"","sourceName":"","publishedDate":"","summary":""}],` +
-      `"reliableSources":[{"title":"","url":"","sourceName":"","publishedDate":"","summary":""}],` +
       `"mascotAdvice":"1 Taglish sentence","searchResultsCount":${input.searchResults.length}}`,
   };
 
@@ -271,20 +308,31 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
     const response = await manager.complete({
       task:        "VERDICT",
       messages:    [systemMsg, userMsg],
-      maxTokens:   1200,      // Limit output tokens to keep responses focused
+      maxTokens:   1800,
+      jsonMode:    true,
+      validateContent: (content) => {
+        parseVerdictContent(content, new Set(rankedSources.map((source) => source.url)));
+      },
       temperature: 0.1,       // Low temperature (0–1) = more deterministic, less creative
       requestId:   `verify_${Date.now()}`, // Unique ID for logging
       forcedProvider,
     });
 
     // response.content is the raw text from the AI.
-    // extractJson handles cases where the AI wraps JSON in ```json ... ``` fences.
+    // Parse and validate again so verdictData is available for result assembly.
     try {
-      verdictData = extractJson<Partial<VerifyResult>>(response.content);
+      verdictData = parseVerdictContent(
+        response.content,
+        new Set(rankedSources.map((source) => source.url)),
+      );
     } catch {
       // If the AI returned malformed JSON, log it and return the fallback.
       console.error(`[analyseEvidence] JSON parse failed. Raw: ${response.content.slice(0, 300)}`);
-      return fallbackResult(input.claim, `JSON parse error from ${response.modelUsed}.`, allSources);
+      return fallbackResult(
+        input.claim,
+        "Hindi kumpleto o hindi mabasa ang sagot ng AI. Pakisubukan muli mamaya.",
+        allSources,
+      );
     }
 
     aiModelUsed = `${response.providerUsed}/${response.modelUsed}`;
@@ -293,9 +341,16 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
     // AIExhaustedError is thrown when every AI provider failed.
     if (err instanceof AIExhaustedError) {
       console.error(`[analyseEvidence] All models exhausted: ${err.message}`);
+      const reasons = err.attempts.map((attempt) => attempt.reason.toLowerCase()).join(" ");
+      const explanation =
+        reasons.includes("quota") || reasons.includes("rate limit") || reasons.includes("429")
+          ? "Hindi pa namin masuri ang claim dahil pansamantalang naubos ang libreng AI quota. Pakisubukan muli mamaya."
+          : reasons.includes("truncated") || reasons.includes("parse") || reasons.includes("invalid")
+            ? "Hindi kumpleto o hindi mabasa ang mga sagot ng AI. Pakisubukan muli mamaya."
+            : "Hindi available ang mga AI provider sa ngayon. Pakisubukan muli mamaya.";
       return fallbackResult(
         input.claim,
-        "Lahat ng AI providers ay hindi available ngayon. Subukan ulit mamaya.",
+        explanation,
         allSources,
       );
     }

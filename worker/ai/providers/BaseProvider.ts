@@ -60,6 +60,7 @@ export function isRetryable(category: FailureCategory): boolean {
     category === "SERVER_ERROR"      ||
     category === "TIMEOUT"           ||
     category === "MODEL_UNAVAILABLE" ||
+    category === "PARSE_ERROR"       ||
     category === "UNKNOWN"
   );
 }

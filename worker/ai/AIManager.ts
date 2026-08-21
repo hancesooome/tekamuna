@@ -247,6 +247,7 @@ export class AIManager {
           // provider.complete() sends the request to OpenRouter or Gemini.
           // It throws on any failure (network, quota, bad response, etc.).
           const partial = await provider.complete(modelId, request);
+          request.validateContent?.(partial.content);
           const latencyMs = Date.now() - startMs; // Elapsed time in milliseconds
 
           // Record success in health state (resets failure count, updates latency).
@@ -263,14 +264,19 @@ export class AIManager {
             latencyMs,
             success:    true,
             statusCode: 200,
-            responseBody: { modelUsed: modelId, usage: partial.usage },
+            responseBody: {
+              requestedModel: modelId,
+              modelUsed: partial.modelUsed,
+              finishReason: partial.finishReason,
+              usage: partial.usage,
+            },
             quotaRemaining: partial.quotaRemaining,
           });
 
           this.pushLog({
             requestId,
             task:         request.task,
-            modelUsed:    modelId,
+            modelUsed:    partial.modelUsed,
             providerUsed: providerId,
             attemptCount,
             latencyMs,

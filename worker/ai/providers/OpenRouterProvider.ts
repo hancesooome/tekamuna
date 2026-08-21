@@ -23,6 +23,7 @@ const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 interface ORResponse {
   id?: string;
+  model?: string;
   choices?: Array<{
     message: { role: string; content: string };
     finish_reason?: string;
@@ -107,6 +108,9 @@ export class OpenRouterProvider extends BaseProvider {
           messages:    request.messages,
           temperature: request.temperature ?? 0.1,
           max_tokens:  request.maxTokens   ?? 2048,
+          ...(request.jsonMode
+            ? { response_format: { type: "json_object" } }
+            : {}),
         }),
       });
     } catch (networkErr) {
@@ -134,7 +138,17 @@ export class OpenRouterProvider extends BaseProvider {
     }
 
     // ── Empty / missing content ─────────────────────────────────────────────
-    const content = data.choices?.[0]?.message?.content ?? "";
+    const choice = data.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    if (finishReason === "length") {
+      throw makeProviderError(
+        `OpenRouter response was truncated at ${request.maxTokens ?? 2048} tokens.`,
+        "PARSE_ERROR",
+        response.status,
+      );
+    }
+
+    const content = choice?.message?.content ?? "";
     if (!content) {
       throw makeProviderError(
         "OpenRouter returned empty content.",
@@ -155,8 +169,9 @@ export class OpenRouterProvider extends BaseProvider {
 
     return {
       content:      stripFences(content),
-      modelUsed:    modelId,
+      modelUsed:    data.model ?? modelId,
       providerUsed: this.id,
+      finishReason,
       usage,
     };
   }

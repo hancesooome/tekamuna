@@ -53,10 +53,11 @@ export function resolveProvider(modelId: string): string {
 const DEFAULT_MODELS: Record<AITask, string[]> = {
   /**
    * VERDICT — most important task, needs best reasoning.
-   * Let OpenRouter select from the free models currently available.
+   * Prefer a consistent structured-output model, then use the dynamic free router.
    */
   VERDICT: [
-    "openrouter/free", // Dynamic router for currently available free models
+    "google/gemma-4-26b-a4b-it:free", // Consistent structured-output primary
+    "openrouter/free",                 // Dynamic free fallback
   ],
 
   /**
