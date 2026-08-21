@@ -57,7 +57,8 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   VERDICT: [
     "google/gemma-4-26b-a4b-it:free", // Consistent structured-output primary
-    "openrouter/free",                 // Dynamic free fallback
+    "google/gemma-4-31b-it:free",      // Multilingual structured-output fallback
+    "openai/gpt-oss-120b:free",        // General-purpose reasoning fallback
   ],
 
   /**
