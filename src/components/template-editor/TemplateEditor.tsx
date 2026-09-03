@@ -1245,11 +1245,6 @@ export default function TemplateEditor({ template, onBack, onSaveSuccess, token 
     setSaving(true); setSaveError(null); setSavedOk(false);
     const payload = { config_json: fields };
 
-    console.group(`[TemplateEditor] Saving "${template.name}"`);
-    console.log("template.id:", template.id);
-    console.log("config_json (%d fields):", fields.length, JSON.stringify(payload, null, 2));
-    console.groupEnd();
-
     try {
       const res = await fetch(`${API_BASE_URL}/admin/post-templates/${template.id}`, {
         method: "PATCH",
