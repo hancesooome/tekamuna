@@ -121,6 +121,10 @@ export const VERDICT_COLORS: Record<string, string> = {
 /** Array of all verdict types. Used for filtering, mapping, and type narrowing. */
 export const VERDICT_TYPES = ["true", "false", "misleading", "unverified"] as const;
 
+// ── Default category fallback ─────────────────────────────────────────────────
+/** Fallback category label when no keyword match is found. */
+export const DEFAULT_CATEGORY = "Pangkalahatan";
+
 // ── History keyword → category mapping ───────────────────────────────────────
 // Used by inferCategory() in HistoryPage to assign a display category
 // to claims that don't have one stored.

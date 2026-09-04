@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG, APP_NAME } from "@/constants";
+import { RESULT_STORAGE_KEY, VERDICT_LABELS, VERDICT_CONFIG, APP_NAME, DEFAULT_CATEGORY } from "@/constants";
 import { getCredibility, scoreColor, scoreBg } from "@/lib/credibility";
 import { uniqueEvidenceSources, formatDate, extractKeyFacts } from "@/utils/sources";
 import type { VerifyResult } from "@/types";
@@ -294,7 +294,7 @@ function SuccessView({ result }: { result: VerifyResult }) {
         </div>
         <div className="rounded-2xl bg-white/55 px-4 py-3">
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Kategorya</p>
-          <p className="text-sm font-semibold text-foreground">{result.category || "Pangkalahatan"}</p>
+          <p className="text-sm font-semibold text-foreground">{result.category || DEFAULT_CATEGORY}</p>
         </div>
         {/* Verdict card — replaces the empty "Nakaraang Verdict" placeholder */}
         <div className={cn("rounded-2xl bg-white/55 px-4 py-3 flex items-center gap-3", cfg.bg)}>
