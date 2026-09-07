@@ -31,7 +31,7 @@ import {
 } from "../services/cache";
 
 // ── Pipeline version (keep in sync with verify.ts) ───────────────────────────
-const CURRENT_PIPELINE_VERSION = 1;
+const CURRENT_PIPELINE_VERSION = 3;
 
 // ── Verdict emoji map ─────────────────────────────────────────────────────────
 const VERDICT_EMOJI: Record<string, string> = {

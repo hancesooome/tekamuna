@@ -84,12 +84,23 @@ function clampConfidence(confidence: number, relevantSources: number): number {
 }
 
 const VALID_VERDICTS = new Set<Verdict>(["true", "false", "misleading", "unverified"]);
+const VALID_TEMPORAL_STATUSES = new Set(["current", "past", "timeless", "unclear"] as const);
+type TemporalStatus = "current" | "past" | "timeless" | "unclear";
+type ParsedVerdict = Partial<VerifyResult> & { temporalStatus: TemporalStatus };
+
+/** Detect claims whose truth depends explicitly on a person's current status. */
+function requiresCurrentStatusEvidence(claim: string): boolean {
+  return /\b(currently|now|still|ngayon|kasalukuyan|kasalukuyang|hanggang ngayon|pa rin)\b/i.test(claim) ||
+    /\b(?:is|are)\s+(?:detained|in custody|jailed|imprisoned|arrested|missing|alive|dead|employed|suspended)\b/i.test(claim) ||
+    /\b(?:nakakulong|nakadetine|detenido|nasa kustodiya|nawawala)\b/i.test(claim);
+}
 
 /** Parse and validate the minimum verdict contract required by the UI. */
 export function parseVerdictContent(
   content: string,
   suppliedSources: readonly SearchResult[],
-): Partial<VerifyResult> {
+  claim = "",
+): ParsedVerdict {
   const data = extractJson<Record<string, unknown>>(content);
   if (!VALID_VERDICTS.has(data.verdict as Verdict)) {
     throw new Error("AI response has an invalid or missing verdict.");
@@ -104,6 +115,10 @@ export function parseVerdictContent(
   if (typeof data.truthStatement !== "string" || !data.truthStatement.trim()) {
     throw new Error("AI response has no truth statement.");
   }
+  if (!VALID_TEMPORAL_STATUSES.has(data.temporalStatus as TemporalStatus)) {
+    throw new Error("AI response has an invalid or missing temporalStatus.");
+  }
+  const temporalStatus = data.temporalStatus as TemporalStatus;
   const parseEvidence = (field: "supportingEvidence" | "contradictingEvidence"): Source[] => {
     const evidence = data[field];
     if (!Array.isArray(evidence)) {
@@ -147,6 +162,9 @@ export function parseVerdictContent(
   if (data.verdict === "misleading" && supportingEvidence.length + contradictingEvidence.length === 0) {
     throw new Error("AI response has no evidence for a misleading verdict.");
   }
+  if (data.verdict === "true" && requiresCurrentStatusEvidence(claim) && temporalStatus !== "current") {
+    throw new Error("AI response used non-current evidence for a current-status claim.");
+  }
 
   return {
     verdict: data.verdict as Verdict,
@@ -155,6 +173,7 @@ export function parseVerdictContent(
     truthStatement: data.truthStatement as string,
     supportingEvidence,
     contradictingEvidence,
+    temporalStatus,
     mascotAdvice: typeof data.mascotAdvice === "string" ? data.mascotAdvice : undefined,
     searchResultsCount: suppliedSources.length,
   };
@@ -314,7 +333,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `2. credibilityScore affects confidence weight, NOT the verdict.\n` +
       `3. Verdict: "true"=evidence supports, "false"=evidence contradicts, ` +
       `"misleading"=partially true/out of context, "unverified"=insufficient evidence.\n` +
-      `4. Write in clear, natural Filipino using short sentences an ordinary reader can understand.\n` +
+      `4. Write in natural Filipino or Taglish using short sentences an ordinary Filipino reader can understand. English words are allowed when commonly used, but avoid broken grammar and literal word-for-word translation.\n` +
       `5. Silently correct grammar in the claim without changing its meaning. Do not copy its errors.\n` +
       `6. Do not claim a relationship or event unless a provided source explicitly supports it.\n` +
       `7. Output ONLY a single JSON object. No markdown, no extra text.\n` +
@@ -327,10 +346,14 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `14. Prefer relevant primary records over secondhand assertions, but do not treat a domain score as proof. Excerpts may be incomplete; never imply you read the full article.\n` +
       `15. Every definitive verdict must cite evidence in the appropriate array. Summaries must explain what the excerpt establishes. Do not invent quotations. State what remains unknown in truthStatement.\n` +
       `16. Confidence reflects evidence quality and relevance, not the number of search hits; it is not a calibrated probability.\n\n` +
+      `17. Classify the evidence timeframe as temporalStatus: "current" if it confirms the status on the check date, "past" if it only describes an earlier event, "timeless" if time does not affect the fact, or "unclear" if the timeframe cannot be established.\n` +
+      `18. A past arrest, detention, appointment, or announcement does not prove a present-tense claim. Later release, bail, resignation, reversal, or expiration must affect the verdict.\n` +
+      `19. Prefer familiar Taglish over forced translations. Good: "Ayon sa mga source, inaresto siya noon pero nakapag-bail na." Bad: "Mga source ay nagpapakitang mag-araw ng arrest warrant" or "ang claim ay supported ng ebidensiya."\n` +
+      `20. Use one consistent language style within each sentence. Keep technical terms in English when translating them would sound unnatural.\n\n` +
       // We include the exact JSON shape so the AI knows what fields to include.
       `JSON shape (exact, no extra fields):\n` +
-      `{"verdict":"true|false|misleading|unverified","confidence":0-100,` +
-      `"explanation":"2-3 sentences Filipino/Taglish","truthStatement":"1-2 sentences",` +
+      `{"verdict":"true|false|misleading|unverified","confidence":0-100,"temporalStatus":"current|past|timeless|unclear",` +
+      `"explanation":"2-3 natural Filipino or Taglish sentences","truthStatement":"1-2 sentences",` +
       `"supportingEvidence":[{"sourceIndex":1,"summary":"max 25 words"}],` +
       `"contradictingEvidence":[{"sourceIndex":2,"summary":"max 25 words"}],` +
       `"mascotAdvice":"1 Taglish sentence","searchResultsCount":${input.searchResults.length}}`,
@@ -352,7 +375,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
 
   // Partial<VerifyResult> means "an object with SOME of VerifyResult's fields".
   // The AI might not return every field perfectly, so Partial is safer than VerifyResult.
-  let verdictData: Partial<VerifyResult>;
+  let verdictData: ParsedVerdict;
   let aiModelUsed = "unknown"; // Tracks which model/provider answered
 
   try {
@@ -370,7 +393,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       maxTokens:   4096,
       jsonMode:    true,
       validateContent: (content) => {
-        parseVerdictContent(content, rankedSources);
+        parseVerdictContent(content, rankedSources, input.claim);
       },
       temperature: 0.1,       // Low temperature (0–1) = more deterministic, less creative
       requestId:   `verify_${Date.now()}`, // Unique ID for logging
@@ -383,6 +406,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       verdictData = parseVerdictContent(
         response.content,
         rankedSources,
+        input.claim,
       );
     } catch {
       // If the AI returned malformed JSON, log it and return the fallback.

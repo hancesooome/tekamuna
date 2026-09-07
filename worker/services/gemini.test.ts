@@ -7,6 +7,7 @@ afterEach(() => { vi.restoreAllMocks(); });
 const validVerdict = {
   verdict: "true",
   confidence: 90,
+  temporalStatus: "timeless",
   explanation: "Sinusuportahan ng ulat ang claim.",
   truthStatement: "May ebidensiya sa ibinigay na ulat.",
   supportingEvidence: [{ sourceIndex: 1, summary: "Sinusuportahan ng ulat." }],
@@ -52,6 +53,7 @@ describe("parseVerdictContent", () => {
     const result = parseVerdictContent(JSON.stringify({
       verdict: "true",
       confidence: 82,
+      temporalStatus: "timeless",
       explanation: "Sinusuportahan ng mga ulat ang claim.",
       truthStatement: "May sapat na ebidensiya.",
       supportingEvidence: [{ sourceIndex: 1, summary: "Sinusuportahan ng ulat." }],
@@ -73,11 +75,37 @@ describe("parseVerdictContent", () => {
     expect(() => parseVerdictContent(JSON.stringify({
       verdict: "false",
       confidence: 70,
+      temporalStatus: "timeless",
       explanation: "Hindi ito sinusuportahan ng source.",
       truthStatement: "Salungat ang ebidensiya.",
       supportingEvidence: [],
       contradictingEvidence: [{ sourceIndex: 2, summary: "Hindi tugma." }],
     }), suppliedSources)).toThrow("invalid sourceIndex");
+  });
+
+  it("rejects past evidence for a present-tense detention claim", () => {
+    expect(() => parseVerdictContent(JSON.stringify({
+      ...validVerdict,
+      temporalStatus: "past",
+      explanation: "Inaresto siya noon at nakapag-bail pagkatapos.",
+      truthStatement: "Past detention lamang ang kinukumpirma ng source.",
+    }), suppliedSources, "Sara is detained")).toThrow("non-current evidence");
+  });
+
+  it("allows a true current-status verdict only with current evidence", () => {
+    const result = parseVerdictContent(JSON.stringify({
+      ...validVerdict,
+      temporalStatus: "current",
+    }), suppliedSources, "Sara is currently detained");
+    expect(result.temporalStatus).toBe("current");
+  });
+
+  it("requires the model to classify the evidence timeframe", () => {
+    const { temporalStatus: _temporalStatus, ...withoutTemporalStatus } = validVerdict;
+    expect(() => parseVerdictContent(
+      JSON.stringify(withoutTemporalStatus),
+      suppliedSources,
+    )).toThrow("temporalStatus");
   });
 });
 
