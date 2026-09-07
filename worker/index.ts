@@ -37,7 +37,7 @@
  *   MODELS_TRANSLATION         — override models for translation
  *
  * Example .dev.vars:
- *   MODELS_VERDICT=deepseek/deepseek-chat:free,qwen/qwen3-32b:free
+ *   MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
  */
 
 // ── Route handlers ─────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ export interface Env {
   // ── Per-task model overrides (optional) ───────────────────────────────────
   // These allow changing which AI models are used WITHOUT redeploying code.
   // Format: comma-separated model IDs in priority order.
-  // Example: "deepseek/deepseek-chat:free,qwen/qwen3-32b:free"
+  // Example: "minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free"
   MODELS_VERDICT?:             string;
   MODELS_EVIDENCE_EXTRACTION?: string;
   MODELS_SUMMARY?:             string;

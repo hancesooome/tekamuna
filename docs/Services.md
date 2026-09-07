@@ -137,7 +137,7 @@ Per-task model priority lists. The only place model IDs are hardcoded.
 
 **Override at runtime** via `.dev.vars` or Cloudflare secrets:
 ```
-MODELS_VERDICT=deepseek/deepseek-chat:free,qwen/qwen3-32b:free
+MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
 ```
 
 **Tasks:** `VERDICT`, `EVIDENCE_EXTRACTION`, `SUMMARY`, `SEARCH_QUERY`, `TRANSLATION`

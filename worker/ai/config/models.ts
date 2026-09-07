@@ -14,7 +14,7 @@
  * ── How to change model priority ─────────────────────────────────────────────
  * Set the matching env var with a comma-separated list of model IDs.
  * Example:
- *   MODELS_VERDICT=deepseek/deepseek-chat:free,openrouter/free
+ *   MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
  *
  * ── How to add a new provider ─────────────────────────────────────────────────
  * 1. Add a provider id to PROVIDER_FOR_MODEL or use the prefix convention.
@@ -57,10 +57,8 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   VERDICT: [
     "minimax/minimax-m3:free", // Evidence synthesis; verified in OpenRouter's catalog
-    "google/gemma-4-26b-a4b-it:free", // Structured-output fallback
-    "nvidia/nemotron-3-super-120b-a12b:free", // Cross-document reasoning fallback
-    "google/gemma-4-31b-it:free",      // Multilingual structured-output fallback
-    "openai/gpt-oss-120b:free",        // General-purpose reasoning fallback
+    "nvidia/nemotron-3-super-120b-a12b:free", // Explicit reasoning fallback
+    "google/gemma-4-31b-it:free", // Explicit multilingual fallback
   ],
 
   /**
@@ -69,10 +67,9 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    * Small/fast models preferred — this runs once per article.
    */
   EVIDENCE_EXTRACTION: [
-    "google/gemma-4-26b-a4b-it:free",    // fast, good at structured output
-    "google/gemma-4-31b-it:free",
-    "deepseek/deepseek-chat:free",
-    "openrouter/free",
+    "minimax/minimax-m3:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
   ],
 
   /**
@@ -81,22 +78,17 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
    */
   SUMMARY: [
     "google/gemma-4-26b-a4b-it:free",
-    "openrouter/free",
-    "deepseek/deepseek-chat:free",
-    "google/gemma-4-31b-it:free",
+    "minimax/minimax-m2.7:free",
   ],
 
   SEARCH_QUERY: [
     "google/gemma-4-26b-a4b-it:free",
-    "openrouter/free",
-    "deepseek/deepseek-chat:free",
+    "minimax/minimax-m2.7:free",
   ],
 
   TRANSLATION: [
-    "google/gemma-4-26b-a4b-it:free",
-    "openrouter/free",
-    "deepseek/deepseek-chat:free",
     "google/gemma-4-31b-it:free",
+    "minimax/minimax-m3:free",
   ],
 };
 
@@ -106,7 +98,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
 // Format: comma-separated model IDs in priority order.
 //
 // Example .dev.vars entry:
-//   MODELS_VERDICT=deepseek/deepseek-chat:free,openrouter/free
+//   MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
 
 const TASK_ENV_VARS: Record<AITask, string> = {
   VERDICT:             "MODELS_VERDICT",

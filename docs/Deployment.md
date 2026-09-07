@@ -60,7 +60,7 @@ Set locally in `.dev.vars`. Set in production via `wrangler secret put`.
 
 **Model override format:** comma-separated OpenRouter model IDs in priority order.
 ```
-MODELS_VERDICT=deepseek/deepseek-chat:free,qwen/qwen3-32b:free
+MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
 ```
 
 ---

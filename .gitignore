@@ -42,3 +42,6 @@ supabase/migrations/20260801_post_templates.sql
 .vercel
 .env*
 docs/FactCheckingQuality.md
+docs/Deployment.md
+docs/Services.md
+docs/Deployment.md
