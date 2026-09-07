@@ -108,6 +108,11 @@ const TASK_ENV_VARS: Record<AITask, string> = {
   TRANSLATION:         "MODELS_TRANSLATION",
 };
 
+/** Removed free variants that may remain in a deployed MODELS_* override. */
+const RETIRED_FREE_MODELS = new Set([
+  "openai/gpt-oss-120b:free",
+]);
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -124,8 +129,12 @@ export function getModelsForTask(
   const envKey   = TASK_ENV_VARS[task];
   const envValue = envVars[envKey]?.trim();
 
-  const modelIds: string[] = envValue
+  const overriddenIds = envValue
     ? envValue.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const usableOverrides = overriddenIds.filter((modelId) => !RETIRED_FREE_MODELS.has(modelId));
+  const modelIds: string[] = usableOverrides.length > 0
+    ? usableOverrides
     : DEFAULT_MODELS[task];
 
   return modelIds.map((modelId) => ({

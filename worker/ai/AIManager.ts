@@ -314,7 +314,9 @@ export class AIManager {
           const isUnavailable =
             statusCode === 404 ||
             msg.toLowerCase().includes("no endpoints found") ||
-            msg.toLowerCase().includes("model not found");
+            msg.toLowerCase().includes("model not found") ||
+            msg.toLowerCase().includes("unavailable for free") ||
+            msg.toLowerCase().includes("paid version is available");
 
           // Update health state (may trigger cooldown if too many failures).
           this.recordFailure(health, msg);
@@ -332,7 +334,7 @@ export class AIManager {
 
           // Non-retryable errors (e.g. 400 Bad Request = invalid prompt):
           // No point trying other models with the same bad input — throw immediately.
-          if (!retryable) {
+          if (!retryable && !isUnavailable) {
             const apiLogEntry = this.logToApiLogger({
               providerId,
               modelId,

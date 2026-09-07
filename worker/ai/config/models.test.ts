@@ -12,4 +12,12 @@ describe("default AI model configuration", () => {
     expect(models.every((model) => model.free)).toBe(true);
     expect(models.some((model) => model.modelId === "openrouter/free")).toBe(false);
   });
+
+  it("ignores the retired GPT-OSS free slug in old environment overrides", () => {
+    const models = getModelsForTask("VERDICT", {
+      MODELS_VERDICT: "openai/gpt-oss-120b:free",
+    });
+    expect(models[0].modelId).toBe("minimax/minimax-m3:free");
+    expect(models.some((model) => model.modelId === "openai/gpt-oss-120b:free")).toBe(false);
+  });
 });
