@@ -25,6 +25,7 @@ export type TavilyMode =
 
 export type AiProviderMode =
   | "auto"
+  | "force_groq"
   | "force_openrouter_key1"
   | "force_openrouter_key2"
   | "force_gemini";
@@ -134,6 +135,7 @@ function toTavilyMode(value: string | undefined): TavilyMode {
 function toAiProviderMode(value: string | undefined): AiProviderMode {
   const valid: AiProviderMode[] = [
     "auto",
+    "force_groq",
     "force_openrouter_key1",
     "force_openrouter_key2",
     "force_gemini",

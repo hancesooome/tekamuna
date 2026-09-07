@@ -59,6 +59,7 @@ export interface AnalyseInput {
   category?:         string;             // Optional category hint (e.g. "Pulitika")
   searchResults:     SearchResult[];     // Raw results from Tavily
   geminiApiKey?:     string | undefined; // Direct Gemini API key (fallback)
+  groqApiKey?:       string | undefined; // GroqCloud free-plan key
   openRouterApiKey?: string | undefined; // Primary OpenRouter key
   openRouterApiKey2?:string | undefined; // Second OpenRouter key (used when first is rate-limited)
   envVars?:          Record<string, string | undefined>; // All env vars for MODELS_* overrides
@@ -222,6 +223,7 @@ function getManager(input: AnalyseInput): AIManager {
     input.openRouterApiKey  ?? "",
     input.openRouterApiKey2 ?? "",
     input.geminiApiKey      ?? "",
+    input.groqApiKey        ?? "",
     JSON.stringify(input.envVars ? Object.entries(input.envVars).filter(([key]) => key.startsWith("MODELS_")).sort() : []),
   ].join("|"); // "|" is the separator, e.g. "key1|key2|"
 
@@ -229,6 +231,9 @@ function getManager(input: AnalyseInput): AIManager {
   if (!_manager || _managerKeys !== keyFingerprint) {
     _manager = new AIManager(
       {
+        groq: input.groqApiKey
+          ? { id: "groq", apiKey: input.groqApiKey }
+          : undefined,
         // Register each provider only if its API key exists.
         // Undefined providers are silently skipped by AIManager.
         openrouter: input.openRouterApiKey
@@ -409,6 +414,7 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
     if (input.aiProviderMode === "force_openrouter_key1") forcedProvider = "openrouter";
     else if (input.aiProviderMode === "force_openrouter_key2") forcedProvider = "openrouter2";
     else if (input.aiProviderMode === "force_gemini") forcedProvider = "gemini";
+    else if (input.aiProviderMode === "force_groq") forcedProvider = "groq";
 
     const response = await manager.complete({
       task:        "VERDICT",

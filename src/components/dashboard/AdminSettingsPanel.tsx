@@ -14,13 +14,14 @@ import { API_BASE_URL } from "@/constants";
 import { supabase } from "@/lib/supabase";
 
 export type TavilyModeOption = "auto" | "force_key1" | "force_key2";
-export type AiProviderModeOption = "auto" | "force_openrouter_key1" | "force_openrouter_key2" | "force_gemini";
+export type AiProviderModeOption = "auto" | "force_groq" | "force_openrouter_key1" | "force_openrouter_key2" | "force_gemini";
 
 interface KeyConfigStatus {
   tavilyKey1: boolean;
   tavilyKey2: boolean;
   openrouterKey1: boolean;
   openrouterKey2: boolean;
+  groq: boolean;
   gemini: boolean;
 }
 
@@ -60,6 +61,7 @@ export function AdminSettingsPanel() {
     tavilyKey2: false,
     openrouterKey1: false,
     openrouterKey2: false,
+    groq: false,
     gemini: false,
   });
 
@@ -219,6 +221,7 @@ export function AdminSettingsPanel() {
     (tavilyMode === "force_key2" && !keyStatus.tavilyKey2);
 
   const isAiWarning =
+    (aiProviderMode === "force_groq" && !keyStatus.groq) ||
     (aiProviderMode === "force_openrouter_key1" && !keyStatus.openrouterKey1) ||
     (aiProviderMode === "force_openrouter_key2" && !keyStatus.openrouterKey2) ||
     (aiProviderMode === "force_gemini" && !keyStatus.gemini);
@@ -293,9 +296,10 @@ export function AdminSettingsPanel() {
               <Badge variant="destructive" className="animate-pulse">Key Not Configured</Badge>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             {[
-              { id: "auto", label: "Auto Fallback", desc: "OR 1 → OR 2 → Gemini" },
+              { id: "auto", label: "Auto Fallback", desc: "Groq → OR 1 → OR 2" },
+              { id: "force_groq", label: "Force Groq", desc: "Use GPT-OSS 120B" },
               { id: "force_openrouter_key1", label: "Force OR 1", desc: "Use OpenRouter Key 1" },
               { id: "force_openrouter_key2", label: "Force OR 2", desc: "Use OpenRouter Key 2" },
               { id: "force_gemini", label: "Force Gemini", desc: "Use Gemini direct" },

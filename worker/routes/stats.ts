@@ -35,6 +35,7 @@ function syncConfigFromEnv(env: Env): void {
     tavily2:     Boolean(env.TAVILY_API_KEY_2?.trim()),
     openrouter:  Boolean(env.OPENROUTER_API_KEY?.trim()),
     openrouter2: Boolean(env.OPENROUTER_API_KEY_2?.trim()),
+    groq:        Boolean(env.GROQ_API_KEY?.trim()),
     gemini:      Boolean(env.GEMINI_API_KEY?.trim()),
   });
 }

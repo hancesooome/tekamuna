@@ -14,7 +14,7 @@
  * ── How to change model priority ─────────────────────────────────────────────
  * Set the matching env var with a comma-separated list of model IDs.
  * Example:
- *   MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
+ *   MODELS_VERDICT=groq/openai/gpt-oss-120b,minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
  *
  * ── How to add a new provider ─────────────────────────────────────────────────
  * 1. Add a provider id to PROVIDER_FOR_MODEL or use the prefix convention.
@@ -34,6 +34,7 @@ import type { AITask, ModelDescriptor } from "../types/index";
  * To add a new provider, extend this function.
  */
 export function resolveProvider(modelId: string): string {
+  if (modelId.startsWith("groq/")) return "groq";
   if (
     modelId.startsWith("gemini-") ||
     modelId.startsWith("models/gemini-")
@@ -50,12 +51,15 @@ export function resolveProvider(modelId: string): string {
 // All :free models are rate-limited but cost nothing.
 // Order = priority (index 0 = highest priority).
 
+export const PRIMARY_GROQ_VERDICT_MODEL = "groq/openai/gpt-oss-120b";
+
 const DEFAULT_MODELS: Record<AITask, string[]> = {
   /**
    * VERDICT — most important task, needs best reasoning.
    * Prefer MiniMax M3 for evidence synthesis, with explicit free-model fallbacks.
    */
   VERDICT: [
+    PRIMARY_GROQ_VERDICT_MODEL, // Groq free plan; strongest primary verdict model
     "minimax/minimax-m3:free", // Evidence synthesis; verified in OpenRouter's catalog
     "nvidia/nemotron-3-super-120b-a12b:free", // Explicit reasoning fallback
     "google/gemma-4-31b-it:free", // Explicit multilingual fallback
@@ -98,7 +102,7 @@ const DEFAULT_MODELS: Record<AITask, string[]> = {
 // Format: comma-separated model IDs in priority order.
 //
 // Example .dev.vars entry:
-//   MODELS_VERDICT=minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
+//   MODELS_VERDICT=groq/openai/gpt-oss-120b,minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free
 
 const TASK_ENV_VARS: Record<AITask, string> = {
   VERDICT:             "MODELS_VERDICT",
@@ -140,7 +144,7 @@ export function getModelsForTask(
   return modelIds.map((modelId) => ({
     modelId,
     providerId: resolveProvider(modelId),
-    free: modelId.endsWith(":free") || modelId === "openrouter/free",
+    free: modelId.startsWith("groq/") || modelId.endsWith(":free") || modelId === "openrouter/free",
     label: modelId,
   }));
 }

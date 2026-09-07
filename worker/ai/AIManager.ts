@@ -52,9 +52,15 @@ import { OpenRouterProvider } from "./providers/OpenRouterProvider";
 // (DeepSeek, Qwen, Mistral, etc.) — one API key, many models.
 
 import { GeminiProvider }      from "./providers/GeminiProvider";
+import { GroqProvider }        from "./providers/GroqProvider";
 // GeminiProvider calls Google's Gemini API directly — used as a fallback.
 
-import { getModelsForTask, getAllConfiguredModels } from "./config/models";
+import {
+  getModelsForTask,
+  getAllConfiguredModels,
+  PRIMARY_GROQ_VERDICT_MODEL,
+  resolveProvider,
+} from "./config/models";
 // getModelsForTask(task, envVars) → returns ordered list of model descriptors for a task
 // getAllConfiguredModels(envVars) → returns all models across all tasks (for health pre-warming)
 
@@ -112,6 +118,7 @@ interface RequestLog {
 }
 
 const PROVIDER_ENDPOINTS: Record<string, string> = {
+  groq:        "https://api.groq.com/openai/v1/chat/completions",
   openrouter:  "https://openrouter.ai/api/v1/chat/completions",
   openrouter2: "https://openrouter.ai/api/v1/chat/completions",
   gemini:      "https://generativelanguage.googleapis.com/v1beta/models",
@@ -139,6 +146,7 @@ export class AIManager {
 
   constructor(
     providerConfigs: {
+      groq?:        AIProviderConfig;
       openrouter?:  AIProviderConfig; // ? = optional provider
       openrouter2?: AIProviderConfig; // second OpenRouter key — used when first is exhausted
       gemini?:      AIProviderConfig;
@@ -146,6 +154,10 @@ export class AIManager {
     envVars: Record<string, string | undefined> = {}, // Default to empty object
   ) {
     this.envVars = envVars;
+
+    if (providerConfigs.groq?.apiKey) {
+      this.providers.set("groq", new GroqProvider(providerConfigs.groq));
+    }
 
     // Register providers — only those with valid API keys get registered.
     // Providers without keys are simply not added to the Map.
@@ -183,7 +195,18 @@ export class AIManager {
   async complete(request: AIRequest): Promise<AIResponse> {
     // Get the ordered model list for this task.
     // e.g. for "VERDICT": [deepseek-chat:free, qwen3-32b:free, gemini-flash]
-    const models    = getModelsForTask(request.task, this.envVars);
+    const configuredModels = getModelsForTask(request.task, this.envVars);
+    // An old MODELS_VERDICT override may predate Groq. Force Groq must still
+    // have a Groq descriptor to select, regardless of that optional override.
+    const models = request.forcedProvider === "groq" &&
+      !configuredModels.some((descriptor) => descriptor.providerId === "groq")
+      ? [{
+          modelId: PRIMARY_GROQ_VERDICT_MODEL,
+          providerId: resolveProvider(PRIMARY_GROQ_VERDICT_MODEL),
+          free: true,
+          label: PRIMARY_GROQ_VERDICT_MODEL,
+        }, ...configuredModels]
+      : configuredModels;
     const requestId = request.requestId ?? this.generateId(); // Use provided ID or generate one
     const retryChain: Array<{ modelId: string; reason: string }> = []; // Tracks all failures
     let attemptCount = 0;

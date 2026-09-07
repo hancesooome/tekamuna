@@ -10,7 +10,7 @@
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type ApiName = "tavily" | "tavily2" | "openrouter" | "openrouter2" | "gemini";
+export type ApiName = "tavily" | "tavily2" | "groq" | "openrouter" | "openrouter2" | "gemini";
 
 export type ApiHealthStatus = "healthy" | "slow" | "offline" | "disabled";
 
@@ -74,6 +74,7 @@ export interface ApiConfigStatus {
   tavily2: boolean;
   openrouter: boolean;
   openrouter2: boolean;
+  groq: boolean;
   gemini: boolean;
 }
 
@@ -88,10 +89,11 @@ const API_DISPLAY_NAMES: Record<ApiName, string> = {
   tavily2:     "Tavily (Key 2)",
   openrouter:  "OpenRouter",
   openrouter2: "OpenRouter (Key 2)",
+  groq:        "GroqCloud",
   gemini:      "Gemini API",
 };
 
-const ALL_APIS: ApiName[] = ["tavily", "tavily2", "openrouter", "openrouter2", "gemini"];
+const ALL_APIS: ApiName[] = ["tavily", "tavily2", "groq", "openrouter", "openrouter2", "gemini"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -177,6 +179,7 @@ class ApiLogger {
     tavily2:     false,
     openrouter:  false,
     openrouter2: false,
+    groq:        false,
     gemini:      false,
   };
 

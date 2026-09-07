@@ -31,7 +31,7 @@ import {
 } from "../services/cache";
 
 // ── Pipeline version (keep in sync with verify.ts) ───────────────────────────
-const CURRENT_PIPELINE_VERSION = 4;
+const CURRENT_PIPELINE_VERSION = 5;
 
 // ── Verdict emoji map ─────────────────────────────────────────────────────────
 const VERDICT_EMOJI: Record<string, string> = {
@@ -340,6 +340,7 @@ export async function handleFbWebhookEvent(
             claim,
             searchResults,
             geminiApiKey:      env.GEMINI_API_KEY,
+            groqApiKey:        env.GROQ_API_KEY,
             openRouterApiKey:  env.OPENROUTER_API_KEY,
             openRouterApiKey2: env.OPENROUTER_API_KEY_2,
             envVars:           env as unknown as Record<string, string | undefined>,

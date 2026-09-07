@@ -33,7 +33,7 @@ import {
 // Bump this whenever the prompt template, scoring algorithm, or AI model list
 // changes significantly. Incrementing the version automatically invalidates
 // all existing cache entries, forcing a fresh fact-check on next request.
-const CURRENT_PIPELINE_VERSION = 4;
+const CURRENT_PIPELINE_VERSION = 5;
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 
@@ -136,6 +136,9 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
   if (aiProviderMode === "force_gemini" && !env.GEMINI_API_KEY?.trim()) {
     return json({ error: "Admin configuration error: Gemini is forced but not configured in the Worker secrets." }, 503);
   }
+  if (aiProviderMode === "force_groq" && !env.GROQ_API_KEY?.trim()) {
+    return json({ error: "Admin configuration error: Groq is forced but not configured in the Worker secrets." }, 503);
+  }
 
   // ── 3. Normalize claim & check cache ─────────────────────────────────────
   const normalizedClaim = normalizeClaim(cleanClaim);
@@ -197,6 +200,7 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     category:          cleanCategory,
     searchResults,
     geminiApiKey:      env.GEMINI_API_KEY,
+    groqApiKey:        env.GROQ_API_KEY,
     openRouterApiKey:  env.OPENROUTER_API_KEY,
     openRouterApiKey2: env.OPENROUTER_API_KEY_2,
     envVars:           env as unknown as Record<string, string | undefined>,

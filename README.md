@@ -70,6 +70,7 @@ Edit `.dev.vars` with your keys:
 
 ```env
 TAVILY_API_KEY=your-tavily-key
+GROQ_API_KEY=your-groq-key
 OPENROUTER_API_KEY=your-openrouter-primary-key
 OPENROUTER_API_KEY_2=your-openrouter-secondary-key
 GEMINI_API_KEY=your-gemini-key
@@ -190,6 +191,7 @@ Your site will be live at `https://<YOUR-PAGES-SUBDOMAIN>.pages.dev`.
 ### Configure Production Secrets
 
 ```bash
+wrangler secret put GROQ_API_KEY
 wrangler secret put OPENROUTER_API_KEY
 wrangler secret put OPENROUTER_API_KEY_2
 wrangler secret put GEMINI_API_KEY

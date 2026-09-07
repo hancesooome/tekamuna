@@ -68,12 +68,13 @@ export interface Env {
   OPENROUTER_API_KEY?:   string;  // Primary OpenRouter key (free models available)
   OPENROUTER_API_KEY_2?: string;  // Second key — used when first hits rate limits
   GEMINI_API_KEY?:       string;  // Direct Gemini API (fallback if OpenRouter exhausted)
+  GROQ_API_KEY?:         string;  // GroqCloud (GPT-OSS 120B primary verdict provider)
   // ? = optional — Worker still starts if these are absent, but AI won't work
 
   // ── Per-task model overrides (optional) ───────────────────────────────────
   // These allow changing which AI models are used WITHOUT redeploying code.
   // Format: comma-separated model IDs in priority order.
-  // Example: "minimax/minimax-m3:free,nvidia/nemotron-3-super-120b-a12b:free"
+  // Example: "groq/openai/gpt-oss-120b,minimax/minimax-m3:free"
   MODELS_VERDICT?:             string;
   MODELS_EVIDENCE_EXTRACTION?: string;
   MODELS_SUMMARY?:             string;
@@ -221,6 +222,7 @@ export default {
             tavily:      env.TAVILY_API_KEY      ? "configured" : "missing",
             openrouter:  env.OPENROUTER_API_KEY   ? "configured" : "missing",
             openrouter2: env.OPENROUTER_API_KEY_2 ? "configured" : "missing",
+            groq:        env.GROQ_API_KEY          ? "configured" : "missing",
             gemini:      env.GEMINI_API_KEY       ? "configured" : "missing",
             ocr:         env.OCR_SPACE_API_KEY    ? "configured" : "missing",
           },

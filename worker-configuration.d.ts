@@ -3,6 +3,7 @@
 // Runtime types generated with workerd@1.20250604.0 2025-05-01 nodejs_compat
 declare namespace Cloudflare {
 	interface Env {
+		GROQ_API_KEY: string;
 		GEMINI_API_KEY: string;
 		OPENROUTER_API_KEY: string;
 		OPENROUTER_API_KEY_2: string;
@@ -19,7 +20,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "GEMINI_API_KEY" | "OPENROUTER_API_KEY" | "OPENROUTER_API_KEY_2" | "TAVILY_API_KEY" | "TAVILY_API_KEY_2" | "SUPABASE_URL" | "SUPABASE_ANON_KEY" | "SUPABASE_SERVICE_ROLE_KEY" | "OCR_SPACE_API_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "GROQ_API_KEY" | "GEMINI_API_KEY" | "OPENROUTER_API_KEY" | "OPENROUTER_API_KEY_2" | "TAVILY_API_KEY" | "TAVILY_API_KEY_2" | "SUPABASE_URL" | "SUPABASE_ANON_KEY" | "SUPABASE_SERVICE_ROLE_KEY" | "OCR_SPACE_API_KEY">> {}
 }
 
 // Begin runtime types

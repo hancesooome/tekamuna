@@ -38,6 +38,7 @@ function json(body: unknown, status = 200): Response {
 const VALID_TAVILY_MODES:      TavilyMode[]     = ["auto", "force_key1", "force_key2"];
 const VALID_AI_PROVIDER_MODES: AiProviderMode[] = [
   "auto",
+  "force_groq",
   "force_openrouter_key1",
   "force_openrouter_key2",
   "force_gemini",
@@ -62,6 +63,7 @@ export async function handleAdminConfig(request: Request, env: Env): Promise<Res
       tavilyKey2:      Boolean(env.TAVILY_API_KEY_2?.trim()),
       openrouterKey1:  Boolean(env.OPENROUTER_API_KEY?.trim()),
       openrouterKey2:  Boolean(env.OPENROUTER_API_KEY_2?.trim()),
+      groq:             Boolean(env.GROQ_API_KEY?.trim()),
       gemini:          Boolean(env.GEMINI_API_KEY?.trim()),
     };
 

@@ -20,6 +20,7 @@ const API_LABELS: Record<string, string> = {
   tavily:      "Tavily",
   openrouter:  "OpenRouter",
   openrouter2: "OpenRouter (Key 2)",
+  groq:        "GroqCloud",
   gemini:      "Gemini",
 };
 
