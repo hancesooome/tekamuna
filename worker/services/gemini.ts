@@ -95,6 +95,22 @@ function requiresCurrentStatusEvidence(claim: string): boolean {
     /\b(?:nakakulong|nakadetine|detenido|nasa kustodiya|nawawala)\b/i.test(claim);
 }
 
+/** Catch a small set of known translation-like phrases before they reach users. */
+function validateReadableExplanation(data: Record<string, unknown>): void {
+  const text = [data.explanation, data.truthStatement]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
+  const awkwardPatterns = [
+    /\bito ay nagtutukoy\b/i,
+    /\bmag-araw ng\b/i,
+    /\bang claim\b.{0,40}\bsupported (?:ng|by)\b/i,
+    /\bmga source ay nagpapakitang\b/i,
+  ];
+  if (awkwardPatterns.some((pattern) => pattern.test(text))) {
+    throw new Error("AI response contains awkward translated phrasing.");
+  }
+}
+
 /** Parse and validate the minimum verdict contract required by the UI. */
 export function parseVerdictContent(
   content: string,
@@ -115,6 +131,7 @@ export function parseVerdictContent(
   if (typeof data.truthStatement !== "string" || !data.truthStatement.trim()) {
     throw new Error("AI response has no truth statement.");
   }
+  validateReadableExplanation(data);
   if (!VALID_TEMPORAL_STATUSES.has(data.temporalStatus as TemporalStatus)) {
     throw new Error("AI response has an invalid or missing temporalStatus.");
   }
@@ -350,6 +367,12 @@ export async function analyseEvidence(input: AnalyseInput): Promise<AnalysisResu
       `18. A past arrest, detention, appointment, or announcement does not prove a present-tense claim. Later release, bail, resignation, reversal, or expiration must affect the verdict.\n` +
       `19. Prefer familiar Taglish over forced translations. Good: "Ayon sa mga source, inaresto siya noon pero nakapag-bail na." Bad: "Mga source ay nagpapakitang mag-araw ng arrest warrant" or "ang claim ay supported ng ebidensiya."\n` +
       `20. Use one consistent language style within each sentence. Keep technical terms in English when translating them would sound unnatural.\n\n` +
+      `WRITING PATTERN:\n` +
+      `- Lead with the answer. Then explain the decisive evidence or distinction. Do not end by saying that the claim is "supported by the evidence."\n` +
+      `- These are style examples only. Never copy their facts into another fact-check.\n` +
+      `TRUE style: "Ayon sa mga source, bahagi ng pambansang programa ang libreng pagbabakuna. Saklaw nito ang mga Pilipinong kwalipikado sa programa."\n` +
+      `FALSE style: "Hindi pa ipinagbabawal ang social media para sa mga menor de edad. May mga panukala at rekomendasyon, pero wala pang umiiral na ganitong pagbabawal."\n` +
+      `MISLEADING style: "Kabilang ang Maynila sa mga lungsod na may mataas na polusyon, pero hindi ipinapakita ng datos na ito ang number one sa buong mundo."\n\n` +
       // We include the exact JSON shape so the AI knows what fields to include.
       `JSON shape (exact, no extra fields):\n` +
       `{"verdict":"true|false|misleading|unverified","confidence":0-100,"temporalStatus":"current|past|timeless|unclear",` +

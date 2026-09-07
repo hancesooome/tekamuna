@@ -33,7 +33,7 @@ import {
 // Bump this whenever the prompt template, scoring algorithm, or AI model list
 // changes significantly. Incrementing the version automatically invalidates
 // all existing cache entries, forcing a fresh fact-check on next request.
-const CURRENT_PIPELINE_VERSION = 3;
+const CURRENT_PIPELINE_VERSION = 4;
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 

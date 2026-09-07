@@ -107,6 +107,18 @@ describe("parseVerdictContent", () => {
       suppliedSources,
     )).toThrow("temporalStatus");
   });
+
+  it.each([
+    "Ito ay nagtutukoy na siya ay nakulong.",
+    "Nakita ng korte na mag-araw ng arrest warrant.",
+    "Sa kabuuan, ang claim ay supported ng ebidensiya.",
+    "Mga source ay nagpapakitang siya ay naaresto.",
+  ])("rejects awkward translated phrasing: %s", (explanation) => {
+    expect(() => parseVerdictContent(JSON.stringify({
+      ...validVerdict,
+      explanation,
+    }), suppliedSources)).toThrow("awkward translated phrasing");
+  });
 });
 
 describe("analyseEvidence", () => {
