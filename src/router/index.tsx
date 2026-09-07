@@ -26,6 +26,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 import { RootLayout } from "@/layouts/RootLayout";
 import { PageLoader } from "@/components/shared/PageLoader";
 import { AdminRoute } from "@/components/shared/AdminRoute";
+import { RouteErrorPage } from "@/components/shared/RouteErrorPage";
 
 // ── Lazy-loaded public pages ──────────────────────────────────────────────────
 const HomePage             = lazy(() => import("@/pages/HomePage"));
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       { index: true,              element: withSuspense(HomePage) },           // /
       { path: "verify",           element: withSuspense(VerifyPage) },         // /verify
@@ -77,6 +79,7 @@ const router = createBrowserRouter([
   {
     path: "/admin/login",
     element: withSuspense(AdminLoginPage),
+    errorElement: <RouteErrorPage />,
   },
 
   // ── Admin: protected routes (require session) ───────────────────────────────
@@ -85,6 +88,7 @@ const router = createBrowserRouter([
   {
     path: "/admin",
     element: <AdminRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       { index: true,             element: <Navigate to="/admin/dashboard" replace /> },
       { path: "dashboard",       element: withSuspense(DashboardPage) },
@@ -96,6 +100,7 @@ const router = createBrowserRouter([
   {
     path: "/maintenance",
     element: withSuspense(MaintenancePage),
+    errorElement: <RouteErrorPage />,
   },
 ]);
 
