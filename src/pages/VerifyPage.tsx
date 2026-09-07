@@ -21,7 +21,7 @@ import { OCR_IMAGE_MAX_SIZE_MB, useImageOcr } from "@/hooks/useImageOcr";
 import { cn }             from "@/lib/utils";
 import { useLocation }    from "react-router-dom";
 import { type Category, APP_NAME } from "@/constants";
-import { useLoadingStep } from "@/components/result";
+import { VerdictProgress } from "@/components/result";
 import thinkImage from "../assets/think.png";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -58,18 +58,9 @@ function getIntentTitle(category: ClassificationCategory | null): string {
 // ── Loading overlay (verify in progress) ─────────────────────────────────────
 
 function LoadingOverlay() {
-  const step = useLoadingStep();
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-xl bg-white/92 backdrop-blur-sm">
-      <div className="relative">
-        <div className="h-14 w-14 rounded-full border-4 border-primary/20" />
-        <div className="absolute inset-0 h-14 w-14 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-        <Search className="absolute inset-0 m-auto h-5 w-5 text-primary" />
-      </div>
-      <div className="text-center">
-        <p className="text-sm font-black text-foreground">Sinusuri ang iyong claim...</p>
-        <p className="mt-1 text-xs text-muted-foreground animate-pulse">{step}</p>
-      </div>
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/95 backdrop-blur-sm">
+      <VerdictProgress compact />
     </div>
   );
 }
@@ -475,7 +466,7 @@ export default function VerifyPage() {
               className="w-full rounded-xl py-4 text-base font-black shadow-lg hover:shadow-xl transition-all"
             >
               {isPending
-                ? <><Loader2 className="h-5 w-5 animate-spin" /> Sinusuri...</>
+                ? <><Search className="h-5 w-5" /> Sinusuri...</>
                 : <><Search  className="h-5 w-5" /> Suriin Ngayon</>}
             </Button>
 
