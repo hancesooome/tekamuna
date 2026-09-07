@@ -14,7 +14,9 @@ import {
   useApiStatsApis,
   useApiStatsTimeline,
   useApiStatsErrors,
+  useSearchHistory,
 } from "@/hooks/useApiStats";
+import { SearchHistory } from "@/components/dashboard/SearchHistory";
 import { AdminSettingsPanel } from "@/components/dashboard/AdminSettingsPanel";
 import { OpenRouterUsageCard } from "@/components/dashboard/OpenRouterUsageCard";
 import { GeminiUsageCard } from "@/components/dashboard/GeminiUsageCard";
@@ -30,9 +32,10 @@ export default function DashboardPage() {
   const apisQuery     = useApiStatsApis();
   const timelineQuery = useApiStatsTimeline(timelineRange);
   const errorsQuery   = useApiStatsErrors(10);
+  const searchesQuery = useSearchHistory(25);
 
   const fetchError =
-    summaryQuery.error ?? apisQuery.error ?? timelineQuery.error ?? errorsQuery.error;
+    summaryQuery.error ?? apisQuery.error ?? timelineQuery.error ?? errorsQuery.error ?? searchesQuery.error;
 
   function openLog(id: string) {
     setSelectedLogId(id);
@@ -103,6 +106,8 @@ export default function DashboardPage() {
         isLoading={errorsQuery.isLoading}
         onSelectLog={openLog}
       />
+
+      <SearchHistory searches={searchesQuery.data} isLoading={searchesQuery.isLoading} />
 
       <LogDrawer
         logId={selectedLogId}

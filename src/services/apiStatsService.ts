@@ -10,12 +10,19 @@ import type {
   StatsSummary,
   TimelineRange,
   TimelineResponse,
+  SearchHistoryEntry,
 } from "@/types/apiStats";
+import { supabase } from "@/lib/supabase";
 
 const BASE = `${API_BASE_URL}/stats`;
 
 async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE}${path}`);
+  const { data: { session } } = await supabase.auth.getSession();
+  const response = await fetch(`${BASE}${path}`, {
+    headers: session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : {},
+  });
   const data: unknown = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message =
@@ -50,5 +57,10 @@ export const realApiStatsService: ApiStatsService = {
       `/logs?apiName=${apiName}&limit=${limit}`,
     );
     return data.logs;
+  },
+
+  getSearches: async (limit = 25) => {
+    const data = await get<{ searches: SearchHistoryEntry[] }>(`/searches?limit=${limit}`);
+    return data.searches;
   },
 };

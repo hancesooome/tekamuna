@@ -172,6 +172,7 @@ function deriveStatus(
 
 class ApiLogger {
   private logs: ApiLogEntry[] = [];
+  private persistEntry: ((entry: ApiLogEntry) => void) | null = null;
   /** Latest quota fetched from provider APIs or response headers. */
   private quotaCache = new Map<ApiName, QuotaValue>();
   private configStatus: ApiConfigStatus = {
@@ -195,7 +196,12 @@ class ApiLogger {
   };
 
   constructor() {
-    this.seedInitialLogs();
+    // Production data starts empty and is loaded from Supabase by stats routes.
+    // Never seed synthetic requests: they make "Last Used" inaccurate.
+  }
+
+  setPersistenceHandler(handler: ((entry: ApiLogEntry) => void) | null): void {
+    this.persistEntry = handler;
   }
 
   private seedInitialLogs(): void {
@@ -317,6 +323,12 @@ class ApiLogger {
       this.logs.shift();
     }
 
+    try {
+      this.persistEntry?.(entry);
+    } catch (err) {
+      console.error("[ApiLogger] Could not schedule persistent log:", err);
+    }
+
     // ── Accumulate Gemini internal usage stats ──────────────────────────
     if (entry.apiName === "gemini") {
       this.geminiStats.totalRequests++;
@@ -428,23 +440,23 @@ class ApiLogger {
     return { ...this.geminiStats };
   }
 
-  getLogById(id: string): ApiLogEntry | undefined {
-    return this.logs.find((l) => l.id === id);
+  getLogById(id: string, logs = this.logs): ApiLogEntry | undefined {
+    return logs.find((l) => l.id === id);
   }
 
-  getRecentErrors(limit = 10): ApiLogEntry[] {
-    return [...this.logs]
+  getRecentErrors(limit = 10, logs = this.logs): ApiLogEntry[] {
+    return [...logs]
       .filter((l) => !l.success)
       .slice(-limit)
       .reverse();
   }
 
-  getLogsForApi(apiName: ApiName, limit = 50): ApiLogEntry[] {
-    return this.logs.filter((l) => l.apiName === apiName).slice(-limit);
+  getLogsForApi(apiName: ApiName, limit = 50, logs = this.logs): ApiLogEntry[] {
+    return logs.filter((l) => l.apiName === apiName).slice(-limit).reverse();
   }
 
-  getSummary(): StatsSummary {
-    const todayLogs = this.logs.filter((l) => isToday(l.timestamp));
+  getSummary(logs = this.logs): StatsSummary {
+    const todayLogs = logs.filter((l) => isToday(l.timestamp));
     const total = todayLogs.length;
     const successes = todayLogs.filter((l) => l.success).length;
     const errors = todayLogs.filter((l) => !l.success).length;
@@ -463,9 +475,9 @@ class ApiLogger {
     };
   }
 
-  getAggregates(): ApiAggregate[] {
+  getAggregates(logs = this.logs): ApiAggregate[] {
     return ALL_APIS.map((apiName) => {
-      const apiLogs = this.logs.filter((l) => l.apiName === apiName);
+      const apiLogs = logs.filter((l) => l.apiName === apiName);
       const configured = this.configStatus[apiName];
       const successes = apiLogs.filter((l) => l.success);
       const failed = apiLogs.filter((l) => !l.success);
@@ -492,7 +504,7 @@ class ApiLogger {
       return {
         apiName,
         displayName:    API_DISPLAY_NAMES[apiName],
-        status:         deriveStatus(apiName, configured, this.logs),
+        status:         deriveStatus(apiName, configured, logs),
         requests:       apiLogs.length,
         success:        successes.length,
         failed:         failed.length,
@@ -503,7 +515,7 @@ class ApiLogger {
     });
   }
 
-  getTimeline(range: TimelineRange): TimelinePoint[] {
+  getTimeline(range: TimelineRange, logs = this.logs): TimelinePoint[] {
     const now = Date.now();
     let bucketMs: number;
     let bucketCount: number;
@@ -544,7 +556,7 @@ class ApiLogger {
       const bucketEnd = bucketStart + bucketMs;
       const d = new Date(bucketStart);
 
-      const count = this.logs.filter((l) => {
+      const count = logs.filter((l) => {
         const t = new Date(l.timestamp).getTime();
         return t >= bucketStart && t < bucketEnd;
       }).length;

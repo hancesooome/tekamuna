@@ -54,6 +54,8 @@ import { handleUploadImage }    from "./routes/uploadImage";    // POST /api/adm
 import { handleOgStore, handleOgImage, handleOgPreview } from "./routes/og";
 import { handleFieldDefaults }  from "./routes/fieldDefaults"; // GET/POST /api/admin/field-defaults
 import { handleFbWebhookVerify, handleFbWebhookEvent } from "./routes/fbWebhook"; // GET/POST /api/fb-webhook
+import { apiLogger } from "./lib/apiLogger";
+import { persistApiLog } from "./services/telemetry";
 
 // ── Env interface ─────────────────────────────────────────────────────────────
 // Cloudflare Workers passes secrets/bindings through an `env` object.
@@ -121,6 +123,11 @@ function jsonResponse(body: unknown, status: number): Response {
 // Every HTTP request to your Worker domain triggers this function.
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    apiLogger.setPersistenceHandler((entry) => {
+      ctx.waitUntil(persistApiLog(env, entry).catch((err) => {
+        console.error("[Telemetry] Failed to persist API log:", err);
+      }));
+    });
     // Parse the URL once so we can check pathname and search params.
     const url = new URL(request.url);
     // e.g. url.pathname = "/api/verify", url.search = "?q=marcos"

@@ -40,6 +40,14 @@ export function useApiStatsErrors(limit = 10) {
   });
 }
 
+export function useSearchHistory(limit = 25) {
+  return useQuery({
+    queryKey: ["api-stats", "searches", limit],
+    queryFn: () => apiStats.getSearches(limit),
+    refetchInterval: REFETCH_MS,
+  });
+}
+
 export function useApiLog(id: string | null) {
   return useQuery({
     queryKey: ["api-stats", "log", id],

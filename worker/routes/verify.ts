@@ -26,6 +26,7 @@ import {
   saveCachedClaim,
   calculateExpiration,
 } from "../services/cache";
+import { persistSearch } from "../services/telemetry";
 // fetchAdminSettings reads routing config from Supabase (cached 60s per isolate).
 // It determines which Tavily key to use and which AI provider to force.
 
@@ -113,6 +114,31 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     );
   }
 
+  const normalizedClaim = normalizeClaim(cleanClaim);
+  const recordSearch = (input: {
+    verdict: VerifyResult["verdict"] | null;
+    confidence: number | null;
+    cached: boolean;
+    status: "completed" | "failed";
+    errorMessage: string | null;
+    resolvedCategory?: string | null;
+  }) => {
+    ctx.waitUntil(persistSearch(env, {
+      claim: cleanClaim,
+      claimNormalized: normalizedClaim,
+      category: input.resolvedCategory ?? cleanCategory ?? null,
+      verdict: input.verdict,
+      confidence: input.confidence,
+      cached: input.cached,
+      status: input.status,
+      errorMessage: input.errorMessage,
+    }).catch((err) => console.error("[verify] Failed to persist search history:", err)));
+  };
+  const configurationError = (message: string): Response => {
+    recordSearch({ verdict: null, confidence: null, cached: false, status: "failed", errorMessage: message });
+    return json({ error: message }, 503);
+  };
+
   // ── 2. Load admin settings & determine routing ──────────────────────────
   // Settings are fetched from Supabase and cached for 60 seconds per isolate.
   // Falls back to 'auto' defaults if Supabase is unreachable.
@@ -122,27 +148,25 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
   // Safety check: if a forced provider is selected but its key is missing,
   // reject the request before wasting quota on the search step.
   if (tavilyMode === "force_key1" && !env.TAVILY_API_KEY?.trim()) {
-    return json({ error: "Admin configuration error: Tavily Key 1 is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: Tavily Key 1 is forced but not configured in the Worker secrets.");
   }
   if (tavilyMode === "force_key2" && !env.TAVILY_API_KEY_2?.trim()) {
-    return json({ error: "Admin configuration error: Tavily Key 2 is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: Tavily Key 2 is forced but not configured in the Worker secrets.");
   }
   if (aiProviderMode === "force_openrouter_key1" && !env.OPENROUTER_API_KEY?.trim()) {
-    return json({ error: "Admin configuration error: OpenRouter Key 1 is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: OpenRouter Key 1 is forced but not configured in the Worker secrets.");
   }
   if (aiProviderMode === "force_openrouter_key2" && !env.OPENROUTER_API_KEY_2?.trim()) {
-    return json({ error: "Admin configuration error: OpenRouter Key 2 is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: OpenRouter Key 2 is forced but not configured in the Worker secrets.");
   }
   if (aiProviderMode === "force_gemini" && !env.GEMINI_API_KEY?.trim()) {
-    return json({ error: "Admin configuration error: Gemini is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: Gemini is forced but not configured in the Worker secrets.");
   }
   if (aiProviderMode === "force_groq" && !env.GROQ_API_KEY?.trim()) {
-    return json({ error: "Admin configuration error: Groq is forced but not configured in the Worker secrets." }, 503);
+    return configurationError("Admin configuration error: Groq is forced but not configured in the Worker secrets.");
   }
 
   // ── 3. Normalize claim & check cache ─────────────────────────────────────
-  const normalizedClaim = normalizeClaim(cleanClaim);
-
   const cacheEntry = await getCachedClaim(env, normalizedClaim);
 
   if (cacheEntry) {
@@ -171,6 +195,14 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
         pipelineVersion:       cacheEntry.pipeline_version,
         category:              cacheEntry.category,
       };
+      recordSearch({
+        verdict: cached.verdict,
+        confidence: cached.confidence,
+        cached: true,
+        status: "completed",
+        errorMessage: null,
+        resolvedCategory: cached.category,
+      });
       return json(cached, 200);
     }
 
@@ -251,6 +283,15 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     category:        cacheCategory,
   };
 
+  recordSearch({
+    verdict: finalResult.verdict,
+    confidence: finalResult.confidence,
+    cached: false,
+    status: "completed",
+    errorMessage: null,
+    resolvedCategory: finalResult.category,
+  });
+
   return json(finalResult, 200);
 
   } catch (err) {
@@ -259,6 +300,7 @@ export async function handleVerify(request: Request, env: Env, ctx: ExecutionCon
     console.error("[verify] Pipeline error:", err);
     const message =
       err instanceof Error ? err.message : "Unexpected server error.";
+    recordSearch({ verdict: null, confidence: null, cached: false, status: "failed", errorMessage: message });
     return json({ error: message }, 500);
   }
 }

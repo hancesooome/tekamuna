@@ -56,6 +56,18 @@ export interface TimelineResponse {
   points: TimelinePoint[];
 }
 
+export interface SearchHistoryEntry {
+  id: string;
+  claim: string;
+  category: string | null;
+  verdict: "true" | "false" | "misleading" | "unverified" | null;
+  confidence: number | null;
+  cached: boolean;
+  status: "completed" | "failed";
+  errorMessage: string | null;
+  createdAt: string;
+}
+
 export interface ApiStatsService {
   getSummary(): Promise<StatsSummary>;
   getApis(): Promise<ApiAggregate[]>;
@@ -63,4 +75,5 @@ export interface ApiStatsService {
   getErrors(limit?: number): Promise<ApiLogEntry[]>;
   getLog(id: string): Promise<ApiLogEntry>;
   getLogsForApi(apiName: ApiName, limit?: number): Promise<ApiLogEntry[]>;
+  getSearches(limit?: number): Promise<SearchHistoryEntry[]>;
 }
