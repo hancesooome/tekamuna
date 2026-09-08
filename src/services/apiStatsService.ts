@@ -12,17 +12,12 @@ import type {
   TimelineResponse,
   SearchHistoryEntry,
 } from "@/types/apiStats";
-import { supabase } from "@/lib/supabase";
+import { authenticatedFetch } from "@/services/authenticatedFetch";
 
 const BASE = `${API_BASE_URL}/stats`;
 
 async function get<T>(path: string): Promise<T> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const response = await fetch(`${BASE}${path}`, {
-    headers: session?.access_token
-      ? { Authorization: `Bearer ${session.access_token}` }
-      : {},
-  });
+  const response = await authenticatedFetch(`${BASE}${path}`);
   const data: unknown = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message =

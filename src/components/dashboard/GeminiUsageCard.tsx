@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { API_BASE_URL } from "@/constants";
+import { authenticatedFetch } from "@/services/authenticatedFetch";
 
 interface GeminiUsageData {
   configured: boolean;
@@ -32,7 +33,7 @@ export function GeminiUsageCard() {
   const fetchUsage = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/stats/gemini-usage`);
+      const res = await authenticatedFetch(`${API_BASE_URL}/stats/gemini-usage`);
       if (res.ok) {
         const json = (await res.json()) as GeminiUsageData;
         setData(json);

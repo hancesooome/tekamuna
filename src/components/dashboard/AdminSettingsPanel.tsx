@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Zap, RefreshCw, Check, Key, Settings } from "lucide-react";
 import { API_BASE_URL } from "@/constants";
 import { supabase } from "@/lib/supabase";
+import { authenticatedFetch } from "@/services/authenticatedFetch";
 
 export type TavilyModeOption = "auto" | "force_key1" | "force_key2";
 export type AiProviderModeOption = "auto" | "force_groq" | "force_openrouter_key1" | "force_openrouter_key2" | "force_gemini";
@@ -80,7 +81,7 @@ export function AdminSettingsPanel() {
           if (data.keyStatus) setKeyStatus(data.keyStatus);
         }
 
-        const usageRes = await fetch(`${API_BASE_URL}/stats/tavily-usage`);
+        const usageRes = await authenticatedFetch(`${API_BASE_URL}/stats/tavily-usage`);
         if (usageRes.ok && isMounted) {
           const usage = (await usageRes.json()) as TavilyUsageState;
           setUsageData(usage);

@@ -8,6 +8,12 @@ export function SearchHistory({ searches, isLoading }: {
   searches: SearchHistoryEntry[] | undefined;
   isLoading?: boolean;
 }) {
+  const verdictVariant = (verdict: SearchHistoryEntry["verdict"]): "default" | "destructive" | "misleading" | "unverified" => {
+    if (verdict === "true") return "default";
+    if (verdict === "false") return "destructive";
+    return verdict ?? "unverified";
+  };
+
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="pb-2"><CardTitle className="text-lg font-black">Previous User Searches</CardTitle></CardHeader>
@@ -27,7 +33,7 @@ export function SearchHistory({ searches, isLoading }: {
                 <TableCell>
                   {search.status === "failed"
                     ? <Badge variant="destructive">Failed</Badge>
-                    : <Badge variant={search.verdict ?? "unverified"}>{search.verdict ?? "unverified"}</Badge>}
+                    : <Badge variant={verdictVariant(search.verdict)}>{search.verdict ?? "unverified"}</Badge>}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">{search.confidence === null ? "—" : `${search.confidence}%`}</TableCell>
                 <TableCell className="hidden text-muted-foreground md:table-cell">{formatRelativeTime(search.createdAt)}</TableCell>

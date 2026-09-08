@@ -11,8 +11,16 @@ create table if not exists public.api_usage_logs (
   status_code integer,
   error_message text,
   quota_remaining jsonb,
+  input_tokens integer,
+  output_tokens integer,
+  total_tokens integer,
   created_at timestamptz not null default now()
 );
+
+-- Also upgrades an installation where an earlier draft of this migration ran.
+alter table public.api_usage_logs add column if not exists input_tokens integer;
+alter table public.api_usage_logs add column if not exists output_tokens integer;
+alter table public.api_usage_logs add column if not exists total_tokens integer;
 
 create index if not exists api_usage_logs_created_at_idx
   on public.api_usage_logs (created_at desc);
@@ -49,4 +57,3 @@ comment on table public.api_usage_logs is
   'Private external API telemetry. Does not store prompts, credentials, or response bodies.';
 comment on table public.user_search_history is
   'Private history of claims submitted to the verification pipeline; contains no IP address or user identifier.';
-

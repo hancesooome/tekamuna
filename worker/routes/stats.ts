@@ -20,7 +20,7 @@ import { fetchApiLogs, fetchRecentSearches, hasValidAdminSession } from "../serv
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 function jsonResponse(body: unknown, status: number): Response {
@@ -95,7 +95,8 @@ export async function handleStats(request: Request, env: Env): Promise<Response>
   }
 
   if (path === "/api/stats/gemini-usage" && request.method === "GET") {
-    const stats = apiLogger.getGeminiUsageStats();
+    const logs = await fetchApiLogs(env, { apiName: "gemini", limit: 5000 });
+    const stats = apiLogger.getGeminiUsageStats(logs ?? undefined);
     return jsonResponse({
       configured: Boolean(env.GEMINI_API_KEY?.trim()),
       ...stats,

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Key, ShieldCheck, Zap, RefreshCw, Check } from "lucide-react";
 import { API_BASE_URL } from "@/constants";
+import { authenticatedFetch } from "@/services/authenticatedFetch";
 
 export type TavilyKeyOption = "auto" | "key1" | "key2";
 
@@ -61,14 +62,14 @@ export function TavilyKeySwitcher() {
     let isMounted = true;
     async function fetchConfigAndUsage() {
       try {
-        const configRes = await fetch(`${API_BASE_URL}/stats/tavily-config`);
+        const configRes = await authenticatedFetch(`${API_BASE_URL}/stats/tavily-config`);
         if (configRes.ok && isMounted) {
           const data = (await configRes.json()) as TavilyConfigState;
           setConfigStatus(data);
           if (data.preferredKey) setMode(data.preferredKey);
         }
 
-        const usageRes = await fetch(`${API_BASE_URL}/stats/tavily-usage`);
+        const usageRes = await authenticatedFetch(`${API_BASE_URL}/stats/tavily-usage`);
         if (usageRes.ok && isMounted) {
           const data = (await usageRes.json()) as TavilyUsageState;
           setUsageData(data);
@@ -89,7 +90,7 @@ export function TavilyKeySwitcher() {
     setLoading(true);
 
     try {
-      await fetch(`${API_BASE_URL}/stats/tavily-config`, {
+      await authenticatedFetch(`${API_BASE_URL}/stats/tavily-config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ preferredKey: selectedMode }),
@@ -329,4 +330,3 @@ export function TavilyKeySwitcher() {
     </Card>
   );
 }
-

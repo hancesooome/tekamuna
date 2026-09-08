@@ -6,7 +6,7 @@ const CHUNK_ERROR_PATTERN = /dynamically imported module|loading chunk|importing
 function errorMessage(error: unknown): string {
   if (isRouteErrorResponse(error)) return `${error.status} ${error.statusText}`;
   if (error instanceof Error) return error.message;
-  return String(error ?? "Unknown application error");
+  return typeof error === "string" ? error : "Unknown application error";
 }
 
 export function RouteErrorPage() {
