@@ -14,6 +14,11 @@ describe("GroqProvider", () => {
       headers: {
         "Content-Type": "application/json",
         "x-ratelimit-remaining-requests": "999",
+        "x-ratelimit-limit-requests": "1000",
+        "x-ratelimit-reset-requests": "2h30m",
+        "x-ratelimit-remaining-tokens": "7400",
+        "x-ratelimit-limit-tokens": "8000",
+        "x-ratelimit-reset-tokens": "7.5s",
       },
     }));
     vi.stubGlobal("fetch", fetchMock);
@@ -32,7 +37,15 @@ describe("GroqProvider", () => {
     expect(body.response_format).toEqual({ type: "json_object" });
     expect(body.include_reasoning).toBe(false);
     expect(result.providerUsed).toBe("groq");
-    expect(result.quotaRemaining).toEqual({ label: "999 requests remaining" });
+    expect(result.quotaRemaining).toMatchObject({
+      label: "999 daily requests remaining",
+      requestLimit: 1000,
+      requestsRemaining: 999,
+      requestsReset: "2h30m",
+      tokenLimit: 8000,
+      tokensRemaining: 7400,
+      tokensReset: "7.5s",
+    });
   });
 
   it("returns a retryable error when Groq is rate limited", async () => {

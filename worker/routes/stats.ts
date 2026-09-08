@@ -94,6 +94,18 @@ export async function handleStats(request: Request, env: Env): Promise<Response>
     return jsonResponse({ key1: key1Data, key2: key2Data }, 200);
   }
 
+  if (path === "/api/stats/groq-usage" && request.method === "GET") {
+    const logs = await fetchApiLogs(env, { apiName: "groq", limit: 1 });
+    const latest = logs?.[logs.length - 1]?.quotaRemaining ?? apiLogger.getQuotaCache("groq");
+    const snapshot = typeof latest === "object" && latest !== null && "capturedAt" in latest
+      ? latest
+      : null;
+    return jsonResponse({
+      configured: Boolean(env.GROQ_API_KEY?.trim()),
+      snapshot,
+    }, 200);
+  }
+
   if (path === "/api/stats/gemini-usage" && request.method === "GET") {
     const logs = await fetchApiLogs(env, { apiName: "gemini", limit: 5000 });
     const stats = apiLogger.getGeminiUsageStats(logs ?? undefined);

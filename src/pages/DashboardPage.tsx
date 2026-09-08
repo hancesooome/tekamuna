@@ -20,6 +20,7 @@ import { SearchHistory } from "@/components/dashboard/SearchHistory";
 import { AdminSettingsPanel } from "@/components/dashboard/AdminSettingsPanel";
 import { OpenRouterUsageCard } from "@/components/dashboard/OpenRouterUsageCard";
 import { GeminiUsageCard } from "@/components/dashboard/GeminiUsageCard";
+import { GroqUsageCard } from "@/components/dashboard/GroqUsageCard";
 import { isMockStatsEnabled, apiStats } from "@/services/apiStats";
 import type { ApiName, TimelineRange } from "@/types/apiStats";
 
@@ -84,6 +85,7 @@ export default function DashboardPage() {
       <AdminSettingsPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <GroqUsageCard />
         <OpenRouterUsageCard />
         <GeminiUsageCard />
       </div>

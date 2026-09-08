@@ -17,7 +17,18 @@ export type ApiHealthStatus = "healthy" | "slow" | "offline" | "disabled";
 export type TimelineRange = "1h" | "today" | "7d" | "30d";
 
 /** Percent (0–100), sentinel strings, or a human-readable label from the provider. */
-export type QuotaValue = number | "unlimited" | "unknown" | { label: string };
+export interface GroqQuotaSnapshot {
+  label: string;
+  requestLimit: number | null;
+  requestsRemaining: number | null;
+  requestsReset: string | null;
+  tokenLimit: number | null;
+  tokensRemaining: number | null;
+  tokensReset: string | null;
+  capturedAt: string;
+}
+
+export type QuotaValue = number | "unlimited" | "unknown" | { label: string } | GroqQuotaSnapshot;
 
 export interface ApiLogEntry {
   id: string;

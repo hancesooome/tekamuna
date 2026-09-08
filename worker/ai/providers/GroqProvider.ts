@@ -2,7 +2,7 @@
 
 import { BaseProvider, categoryFromStatus, makeProviderError } from "./BaseProvider";
 import type { AIProviderConfig, AIRequest, AIResponse } from "../types/index";
-import { apiLogger } from "../../lib/apiLogger";
+import { apiLogger, type GroqQuotaSnapshot } from "../../lib/apiLogger";
 
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL_PREFIX = "groq/";
@@ -28,6 +28,35 @@ function stripFences(text: string): string {
     .replace(/^```\s*/i, "")
     .replace(/\s*```\s*$/i, "")
     .trim();
+}
+
+function numericHeader(response: Response, name: string): number | null {
+  const value = response.headers.get(name);
+  if (value === null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function quotaSnapshot(response: Response): GroqQuotaSnapshot | undefined {
+  const requestLimit = numericHeader(response, "x-ratelimit-limit-requests");
+  const requestsRemaining = numericHeader(response, "x-ratelimit-remaining-requests");
+  const tokenLimit = numericHeader(response, "x-ratelimit-limit-tokens");
+  const tokensRemaining = numericHeader(response, "x-ratelimit-remaining-tokens");
+  if ([requestLimit, requestsRemaining, tokenLimit, tokensRemaining].every((value) => value === null)) {
+    return undefined;
+  }
+  return {
+    label: requestsRemaining === null
+      ? "Rate limits available"
+      : `${requestsRemaining.toLocaleString()} daily requests remaining`,
+    requestLimit,
+    requestsRemaining,
+    requestsReset: response.headers.get("x-ratelimit-reset-requests"),
+    tokenLimit,
+    tokensRemaining,
+    tokensReset: response.headers.get("x-ratelimit-reset-tokens"),
+    capturedAt: new Date().toISOString(),
+  };
 }
 
 export class GroqProvider extends BaseProvider {
@@ -69,10 +98,7 @@ export class GroqProvider extends BaseProvider {
     }
 
     const data = (await response.json()) as GroqResponse;
-    const remainingRequests = response.headers.get("x-ratelimit-remaining-requests");
-    const quotaRemaining = remainingRequests
-      ? { label: `${remainingRequests} requests remaining` }
-      : undefined;
+    const quotaRemaining = quotaSnapshot(response);
     if (quotaRemaining) apiLogger.setQuotaCache("groq", quotaRemaining);
 
     if (!response.ok) {
